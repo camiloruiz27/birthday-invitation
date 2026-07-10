@@ -967,6 +967,7 @@
 <!-- Music button -->
 <button id="music-btn" title="Reproducir nuestra canción" aria-label="Reproducir música">🎵</button>
 <audio id="bg-music" loop preload="none">
+    <source src="{{ asset('audio/cancion.mp3') }}" type="audio/mpeg">
     <!-- Nota: añade el archivo de música si lo tienes -->
 </audio>
 
@@ -1285,6 +1286,8 @@ musicBtn.addEventListener('click', () => {
 });
 
 // ===== GALLERY SWIPER =====
+const IMAGE_BASE_URL = @json(asset('images'));
+
 const GALLERY_IMAGES = [
     { n: '1', ext: 'jfif' },
     { n: '2', ext: 'PNG' },
@@ -1307,7 +1310,7 @@ const galleryWrapper = document.getElementById('gallery-wrapper');
 GALLERY_IMAGES.forEach(img => {
     const slide = document.createElement('div');
     slide.className = 'swiper-slide';
-    slide.innerHTML = `<img src="/images/${img.n}.${img.ext}" alt="Foto ${img.n} de Isabella y Camilo" loading="lazy">`;
+    slide.innerHTML = `<img src="${IMAGE_BASE_URL}/${img.n}.${img.ext}" alt="Foto ${img.n} de Isabella y Camilo" loading="lazy">`;
     galleryWrapper.appendChild(slide);
 });
 
@@ -1404,7 +1407,7 @@ function buildGrid() {
                     <span class="card-pattern">💛</span>
                 </div>
                 <div class="card-face card-front">
-                    <img src="/images/${img.n}.${img.ext}" alt="Foto secreta" loading="lazy">
+                    <img src="${IMAGE_BASE_URL}/${img.n}.${img.ext}" alt="Foto secreta" loading="lazy">
                 </div>
             </div>
         `;

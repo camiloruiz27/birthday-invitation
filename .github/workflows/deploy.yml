@@ -1,0 +1,60 @@
+name: Build Vite and deploy to Hostinger
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Vite
+        run: |
+          npm run build
+          test -f public/build/manifest.json
+
+      - name: Ensure remote build dir exists
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          script: |
+            mkdir -p /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html/public/build
+
+      - name: Upload Vite build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          source: "public/build/*"
+          target: "/home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html/public/build"
+          strip_components: 2
+          
+      - name: Clear Laravel caches
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          script: |
+            cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
+            php artisan optimize:clear
+            ls -la public/build/manifest.json
