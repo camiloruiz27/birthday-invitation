@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+    --font-romantic: "Cormorant Garamond", serif;
+    --font-sans: "Montserrat", sans-serif;
+
+    --color-romantic-50: #fff8fa;
+    --color-romantic-100: #ffeef3;
+    --color-romantic-200: #ffdce7;
+    --color-romantic-300: #ffb9cf;
+    --color-romantic-400: #ff86ad;
+    --color-romantic-500: #f94f88;
+    --color-romantic-600: #e72868;
+    --color-romantic-700: #c41950;
+    --color-romantic-800: #a41945;
+    --color-romantic-900: #891a3d;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-family: var(--font-sans);
+    background: #fff8fa;
+    color: #3f1727;
+}
+
+[x-cloak] {
+    display: none !important;
+}
