@@ -1168,17 +1168,17 @@
 
             <div class="message-body">
                 <p>
-                    Isabella, hoy celebramos <strong>tu cumpleaños</strong> — y ya van <strong>4 años</strong>
+                    Amor mío, hoy celebramos <strong>tu cumpleaños</strong>  y ya van <strong>4 años</strong>
                     en los que he tenido el privilegio de estar a tu lado. Cada año contigo
                     ha sido mejor que el anterior, y este no será la excepción.
                 </p>
                 <p>
                     Me siento <strong>inmensamente feliz</strong> de poder celebrarlo contigo.
                     Ahora ya es oficial: soy la persona que más tiempo ha pasado contigo
-                    en este cumpleaños, y eso me hace el ganador más afortunado del mundo. 🏆
+                    en este cumpleaños, yo gané. 🏆
                 </p>
                 <p>
-                    Esta noche está preparada especialmente para ti. Espero que sea
+                    Esa noche está preparada especialmente para ti. Espero que sea
                     una noche que <strong>siempre recuerdes</strong> con una sonrisa.
                 </p>
             </div>
@@ -1187,13 +1187,13 @@
                 <div class="signature-heart">❤️</div>
                 <div class="signature-text">
                     <div class="signature-name">Camilo</div>
-                    <div class="signature-sub">Tu persona favorita 😄</div>
+                    <div class="signature-sub">Tu novio 😄</div>
                 </div>
             </div>
 
             <div style="text-align:center; position:relative; z-index:1;">
                 <button class="cta-btn" onclick="launchFinalConfetti()">
-                    🎊 &nbsp; ¡Feliz Cumpleaños, Isabella!
+                    🎊 &nbsp; ¡Feliz Cumpleaños, Mi vida bella!
                 </button>
             </div>
         </div>
