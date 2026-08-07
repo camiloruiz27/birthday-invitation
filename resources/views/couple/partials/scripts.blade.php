@@ -373,14 +373,14 @@
         return audioContext;
     }
 
-    function playTone(frequency = 660, duration = 0.12, volume = 0.08) {
+    function playTone(frequency = 660, duration = 0.12, volume = 0.08, type = 'sine') {
         if (!soundEnabled) return;
         const context = getAudioContext();
         if (!context) return;
         const oscillator = context.createOscillator();
         const gain = context.createGain();
         const now = context.currentTime;
-        oscillator.type = 'sine';
+        oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, now);
         gain.gain.setValueAtTime(0.0001, now);
         gain.gain.exponentialRampToValueAtTime(volume, now + 0.015);
@@ -397,6 +397,14 @@
     const playPhaseSound = () => {
         playTone(760, 0.12, 0.08);
         setTimeout(() => playTone(980, 0.16, 0.08), 140);
+    };
+    const playAlarmSound = () => {
+        [0, 240, 480, 720, 960, 1200].forEach((delay, index) => {
+            setTimeout(() => {
+                playTone(index % 2 ? 1040 : 820, 0.2, 0.24, 'square');
+                setTimeout(() => playTone(index % 2 ? 820 : 1040, 0.18, 0.2, 'sawtooth'), 90);
+            }, delay);
+        });
     };
 
     tabs.forEach(tab => tab.addEventListener('click', () => {
@@ -493,6 +501,7 @@
                     clearInterval(interval);
                     timerStart.disabled = false;
                     showGameOutput('Timer terminado. Cierren diciendo: esto me acerco a ti porque...');
+                    playAlarmSound();
                 }
             }, 1000);
         });
@@ -529,7 +538,7 @@
         expressInterval = setInterval(() => {
             expressSeconds--;
             if (expressSeconds <= 0) {
-                playPhaseSound();
+                playAlarmSound();
                 if (expressIsChange) {
                     expressIsChange = false;
                     expressRoundCount++;
@@ -609,7 +618,7 @@
                         clearInterval(levelSixTimerInterval);
                         levelSixTimerInterval = null;
                         if (levelSixTimerState) levelSixTimerState.textContent = 'Terminado';
-                        playPhaseSound();
+                        playAlarmSound();
                     }
                 }, 1000);
             });
