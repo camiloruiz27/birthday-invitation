@@ -5,7 +5,28 @@ import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import confetti from 'canvas-confetti';
-import { createIcons, Heart, Music, MapPin, CalendarDays } from 'lucide';
+import {
+    createIcons,
+    Brain,
+    CalendarDays,
+    Check,
+    CirclePause,
+    Dices,
+    Heart,
+    HeartHandshake,
+    LogOut,
+    MapPin,
+    MessageCircleHeart,
+    Music,
+    Play,
+    RotateCw,
+    Send,
+    ShieldCheck,
+    Sparkles,
+    Timer,
+    Wand2,
+    X,
+} from 'lucide';
 import Swiper from 'swiper';
 import { Navigation, Pagination, EffectCoverflow } from 'swiper/modules';
 import 'swiper/css';
@@ -30,10 +51,25 @@ Alpine.start();
 
 createIcons({
     icons: {
+        Brain,
+        Check,
+        CirclePause,
+        Dices,
         Heart,
-        Music,
-        MapPin,
+        HeartHandshake,
+        LogOut,
         CalendarDays,
+        MapPin,
+        MessageCircleHeart,
+        Music,
+        Play,
+        RotateCw,
+        Send,
+        ShieldCheck,
+        Sparkles,
+        Timer,
+        Wand2,
+        X,
     },
 });
 
