@@ -46,8 +46,8 @@ jobs:
           source: "public/build/*"
           target: "/home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html/public/build"
           strip_components: 2
-          
-      - name: Clear Laravel caches
+
+      - name: Sincronizar codigo PHP y migrar en el servidor
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -55,31 +55,11 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: 65002
           script: |
+            set -e
             cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
+            git fetch origin main
+            git reset --hard origin/main
+            composer install --no-dev --optimize-autoloader --no-interaction
+            php artisan migrate --force
             php artisan optimize:clear
             ls -la public/build/manifest.json
-
-      - name: Diagnostico temporal (solo lectura, no modifica nada)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: 65002
-          script: |
-            cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
-            echo "--- es un repo git? ---"
-            git rev-parse --is-inside-work-tree 2>&1 || echo "NO es un repo git"
-            echo "--- HEAD actual (si es git) ---"
-            git log -1 --oneline 2>&1 || true
-            echo "--- remoto configurado (si es git) ---"
-            git remote -v 2>&1 || true
-            echo "--- composer disponible? ---"
-            which composer 2>&1 || echo "composer no encontrado en PATH"
-            composer --version 2>&1 || true
-            echo "--- version de php ---"
-            php -v
-            echo "--- existe app/Modules/Immersion en el servidor? ---"
-            ls -la app/Modules/ 2>&1 || echo "no existe app/Modules"
-            echo "--- rutas gm registradas actualmente? ---"
-            php artisan route:list 2>&1 | grep -i "gm\|immersion" || echo "ninguna ruta immersion registrada"
