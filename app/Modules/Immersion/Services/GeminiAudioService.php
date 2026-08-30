@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Modules\Immersion\Services;
+
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * Genera (y cachea) el audio TTS de un evento de la linea de tiempo llamando
+ * al proyecto "mystery-case" del gateway lawxora-ai-service, con el mismo
+ * patron defensivo que App\Services\CoupleAiService: si el gateway no esta
+ * configurado o falla, el correo simplemente sale sin audio adjunto en vez
+ * de romper el envio de la linea de tiempo.
+ */
+class GeminiAudioService
+{
+    public function synthesize(int $eventId, string $script): ?string
+    {
+        $relativePath = "audio/{$eventId}.wav";
+
+        if (Storage::disk('local')->exists($relativePath)) {
+            return $relativePath;
+        }
+
+        $baseUrl = rtrim((string) env('IMMERSION_AI_SERVICE_URL', ''), '/');
+        $projectId = (string) env('IMMERSION_AI_PROJECT_ID', 'mystery-case');
+        $apiKey = (string) env('IMMERSION_AI_INTERNAL_API_KEY', '');
+
+        if ($baseUrl === '' || $apiKey === '' || str_starts_with($apiKey, 'CHANGE_ME')) {
+            Log::warning('immersion_tts_not_configured', ['event_id' => $eventId]);
+
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(60)
+                ->withHeaders([
+                    'x-project-id' => $projectId,
+                    'x-internal-api-key' => $apiKey,
+                ])
+                ->post("{$baseUrl}/api/projects/{$projectId}/tts", [
+                    'script' => $script,
+                ]);
+
+            if (! $response->successful()) {
+                Log::warning('immersion_tts_failed_response', [
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                ]);
+
+                return null;
+            }
+
+            Storage::disk('local')->put($relativePath, $response->body());
+
+            return $relativePath;
+        } catch (\Throwable $exception) {
+            Log::warning('immersion_tts_exception', [
+                'event_id' => $eventId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+}
