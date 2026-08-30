@@ -9,16 +9,16 @@
 @endsection
 
 @section('content')
-    <div class="mb-4 flex items-center justify-between border-2 border-[#241f14] bg-[#f5efe0] px-4 py-3">
-        <div class="flex items-center gap-3">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-2 border-[#241f14] bg-[#f5efe0] px-4 py-3">
+        <div class="flex min-w-0 items-center gap-3">
             <img src="{{ asset('immersion/photos/' . $suspect['photo']) }}" alt="{{ $suspect['name'] }}"
-                 class="h-14 w-14 rounded object-cover border border-[#8a7b57]">
-            <div>
-                <p class="immersion-stamp text-xs uppercase tracking-[0.2em] text-[#5c5236]">{{ $suspect['role'] }}</p>
-                <h2 class="text-lg font-bold">{{ $suspect['name'] }}</h2>
+                 class="h-14 w-14 shrink-0 rounded object-cover border border-[#8a7b57]">
+            <div class="min-w-0">
+                <p class="immersion-stamp wrap-break-word text-xs uppercase tracking-[0.2em] text-[#5c5236]">{{ $suspect['role'] }}</p>
+                <h2 class="wrap-break-word text-lg font-bold">{{ $suspect['name'] }}</h2>
             </div>
         </div>
-        <span class="text-sm font-bold">Preguntas: {{ $session->questions_used }}/5</span>
+        <span class="shrink-0 text-sm font-bold">Preguntas: {{ $session->questions_used }}/5</span>
     </div>
 
     <div class="mb-4 space-y-3">

@@ -18,16 +18,18 @@
 </head>
 <body class="immersion-typewriter min-h-screen bg-[#e9e2d0] text-[#241f14] antialiased">
     <header class="border-b-4 border-double border-[#241f14] bg-[#241f14] text-[#e9e2d0] px-4 py-4 sm:px-8">
-        <div class="mx-auto flex max-w-5xl items-center justify-between">
-            <div>
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3">
+            <div class="min-w-0">
                 <p class="immersion-stamp text-xs uppercase tracking-[0.3em] text-[#c9b98a]">Caso SF 554301 &middot; Confidencial</p>
-                <h1 class="mt-1 text-xl font-bold sm:text-2xl">{{ $heading ?? '¿Que le sucedio a Steve Jacobs?' }}</h1>
+                <h1 class="mt-1 wrap-break-word text-lg font-bold sm:text-2xl">{{ $heading ?? '¿Que le sucedio a Steve Jacobs?' }}</h1>
             </div>
-            @yield('header-actions')
+            <div class="flex flex-wrap items-center gap-2">
+                @yield('header-actions')
+            </div>
         </div>
     </header>
 
-    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8">
+    <main class="mx-auto w-full max-w-5xl overflow-x-hidden px-4 py-8 sm:px-8">
         @if (session('status'))
             <div class="mb-6 border-2 border-[#241f14] bg-[#f5efe0] px-4 py-3 text-sm">
                 {{ session('status') }}

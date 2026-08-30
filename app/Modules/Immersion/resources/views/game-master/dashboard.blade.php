@@ -50,12 +50,15 @@
                 <p class="text-xs text-[#5c5236]">Borra filas con la "x" si vas a probar con menos de 6 personas.</p>
                 <div id="player-rows" class="mt-2 space-y-2">
                     @for ($i = 0; $i < 6; $i++)
-                        <div class="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
+                        <div class="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_1fr_auto]">
                             <input type="text" name="players[{{ $i }}][name]" placeholder="Nombre" required
                                 class="border-2 border-[#241f14] bg-white px-3 py-2 text-sm">
                             <input type="email" name="players[{{ $i }}][email]" placeholder="Correo" required
                                 class="border-2 border-[#241f14] bg-white px-3 py-2 text-sm">
-                            <button type="button" class="remove-player-row border-2 border-[#241f14] px-2 py-2 text-xs font-bold" title="Quitar">&times;</button>
+                            <button type="button" class="remove-player-row w-full border-2 border-[#241f14] px-2 py-2 text-xs font-bold sm:w-auto" title="Quitar">
+                                <span class="sm:hidden">Quitar jugador</span>
+                                <span class="hidden sm:inline">&times;</span>
+                            </button>
                         </div>
                     @endfor
                 </div>
@@ -89,11 +92,13 @@
 
             addButton.addEventListener('click', function () {
                 var row = document.createElement('div');
-                row.className = 'grid grid-cols-[1fr_1fr_auto] items-center gap-2';
+                row.className = 'grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_1fr_auto]';
                 row.innerHTML =
                     '<input type="text" name="players[' + index + '][name]" placeholder="Nombre" required class="border-2 border-[#241f14] bg-white px-3 py-2 text-sm">' +
                     '<input type="email" name="players[' + index + '][email]" placeholder="Correo" required class="border-2 border-[#241f14] bg-white px-3 py-2 text-sm">' +
-                    '<button type="button" class="remove-player-row border-2 border-[#241f14] px-2 py-2 text-xs font-bold" title="Quitar">&times;</button>';
+                    '<button type="button" class="remove-player-row w-full border-2 border-[#241f14] px-2 py-2 text-xs font-bold sm:w-auto" title="Quitar">' +
+                    '<span class="sm:hidden">Quitar jugador</span><span class="hidden sm:inline">&times;</span>' +
+                    '</button>';
                 rows.appendChild(row);
                 bindRemove(row);
                 index++;

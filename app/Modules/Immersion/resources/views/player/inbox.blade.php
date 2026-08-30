@@ -3,16 +3,14 @@
 @section('title', 'Bandeja de '.$player->name)
 
 @section('header-actions')
-    <div class="flex gap-2">
-        @if ($player->game->interrogation_enabled)
-            <a href="{{ route('immersion.player.interrogation.index', $player->access_token) }}" class="border-2 border-[#e9e2d0] px-3 py-1 text-xs uppercase tracking-wide hover:bg-[#e9e2d0] hover:text-[#241f14]">
-                Interrogatorio
-            </a>
-        @endif
-        <a href="{{ route('immersion.player.accusation', $player->access_token) }}" class="border-2 border-[#e9e2d0] px-3 py-1 text-xs uppercase tracking-wide hover:bg-[#e9e2d0] hover:text-[#241f14]">
-            Formulario de acusacion
+    @if ($player->game->interrogation_enabled)
+        <a href="{{ route('immersion.player.interrogation.index', $player->access_token) }}" class="border-2 border-[#e9e2d0] px-3 py-1 text-xs uppercase tracking-wide hover:bg-[#e9e2d0] hover:text-[#241f14]">
+            Interrogatorio
         </a>
-    </div>
+    @endif
+    <a href="{{ route('immersion.player.accusation', $player->access_token) }}" class="border-2 border-[#e9e2d0] px-3 py-1 text-xs uppercase tracking-wide hover:bg-[#e9e2d0] hover:text-[#241f14]">
+        Formulario de acusacion
+    </a>
 @endsection
 
 @section('content')
