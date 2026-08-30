@@ -195,6 +195,12 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
+        /*
+         * Immersion module (juego "Que le sucedio a Steve Jacobs?")...
+         * Quitar esta linea + borrar app/Modules/Immersion desactiva el modulo.
+         */
+        App\Modules\Immersion\ImmersionServiceProvider::class,
+
     ],
 
     /*
