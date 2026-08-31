@@ -63,3 +63,39 @@ jobs:
             php artisan migrate --force
             php artisan optimize:clear
             ls -la public/build/manifest.json
+
+      - name: Asegurar cron del scheduler de Laravel (Immersion)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          script: |
+            set -e
+            CRON_LINE="* * * * * cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html && /opt/alt/php82/usr/bin/php artisan schedule:run >> /dev/null 2>&1"
+            ( crontab -l 2>/dev/null | grep -vF "artisan schedule:run" ; echo "$CRON_LINE" ) | crontab -
+            echo "--- crontab resultante ---"
+            crontab -l
+
+      - name: Diagnostico post-deploy (solo lectura)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          script: |
+            cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
+            echo "--- IMMERSION_AI_SERVICE_URL configurada en produccion ---"
+            grep "^IMMERSION_AI_SERVICE_URL=" .env || echo "NO esta definida en .env"
+            echo "--- IMMERSION_AI_PROJECT_ID configurado ---"
+            grep "^IMMERSION_AI_PROJECT_ID=" .env || echo "NO esta definida en .env"
+            echo "--- IMMERSION_AI_INTERNAL_API_KEY definida? (no se imprime el valor) ---"
+            grep -q "^IMMERSION_AI_INTERNAL_API_KEY=." .env && echo "si, tiene valor" || echo "NO tiene valor"
+            echo "--- IMMERSION_GM_PASSWORD definida? ---"
+            grep -q "^IMMERSION_GM_PASSWORD=." .env && echo "si, tiene valor" || echo "NO tiene valor"
+            echo "--- ultimas lineas de log relacionadas con audio TTS de Immersion ---"
+            grep -i "immersion_tts" storage/logs/laravel.log 2>&1 | tail -20 || echo "sin coincidencias"
+            echo "--- ultimas lineas de log relacionadas con el timeline de Immersion ---"
+            grep -i "immersion" storage/logs/laravel.log 2>&1 | tail -30 || echo "sin coincidencias"
