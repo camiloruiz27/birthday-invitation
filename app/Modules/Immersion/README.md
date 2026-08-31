@@ -47,14 +47,30 @@ de ejemplo y las 8 entradas de linea de tiempo (minutos 10 a 75).
    php artisan immersion:process-timeline
    ```
    (en produccion esto lo dispara solo el scheduler de Laravel, registrado por
-   el propio modulo, cada minuto - recuerda tener el cron de Laravel corriendo:
-   `* * * * * php artisan schedule:run`).
+   el propio modulo, cada minuto - ver "Cron en produccion (Hostinger)" abajo).
 5. Copia el link de bandeja de cualquier jugador desde el dashboard del GM
    (`/jugador/{access_token}`) y revisa sus correos.
 6. Cuando llegue el evento de tipo `unlock` (minuto 75, o forzalo manualmente
    con el boton "Forzar siguiente evento"), el jugador puede enviar su
    acusacion en `/jugador/{access_token}/acusacion`.
 7. El GM ve el resumen comparativo en "Ver acusaciones".
+
+## 4.1 Cron en produccion (Hostinger)
+
+Sin esto, los correos SOLO salen al forzar el evento manualmente desde el
+dashboard del GM; nunca salen solos al pasar los minutos. El pipeline de
+deploy (`.github/workflows/deploy.yml`) no puede configurar esto por SSH
+porque el comando `crontab` no esta disponible para el usuario de este
+hosting compartido, asi que hay que agregarlo **una sola vez** a mano:
+
+1. Entra a hPanel (Hostinger) > Avanzado > Cron Jobs.
+2. Crea un cron job nuevo con frecuencia "Cada minuto" (`* * * * *`).
+3. Comando:
+   ```
+   cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html && /opt/alt/php82/usr/bin/php artisan schedule:run >> /dev/null 2>&1
+   ```
+   (ajusta la ruta del binario de PHP si hPanel te ofrece un selector de
+   version en vez de la ruta completa; usar PHP 8.2).
 
 ## 5. Audio (TTS)
 
