@@ -64,19 +64,11 @@ jobs:
             php artisan optimize:clear
             ls -la public/build/manifest.json
 
-      - name: Asegurar cron del scheduler de Laravel (Immersion)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOSTINGER_HOST }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          port: 65002
-          script: |
-            set -e
-            CRON_LINE="* * * * * cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html && /opt/alt/php82/usr/bin/php artisan schedule:run >> /dev/null 2>&1"
-            ( crontab -l 2>/dev/null | grep -vF "artisan schedule:run" ; echo "$CRON_LINE" ) | crontab -
-            echo "--- crontab resultante ---"
-            crontab -l
+      # NOTA: no se puede gestionar el cron por SSH en este hosting compartido
+      # (el comando "crontab" no esta disponible para este usuario). El cron
+      # del scheduler de Laravel debe agregarse manualmente una sola vez desde
+      # el panel de Hostinger (hPanel > Avanzado > Cron Jobs). Ver instrucciones
+      # en app/Modules/Immersion/README.md.
 
       - name: Diagnostico post-deploy (solo lectura)
         uses: appleboy/ssh-action@v1.0.3
