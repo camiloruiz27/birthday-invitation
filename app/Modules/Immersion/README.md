@@ -40,9 +40,14 @@ php artisan migrate
 php artisan db:seed --class="App\Modules\Immersion\Database\Seeders\ImmersionDemoSeeder"
 ```
 
-Esto crea una partida de prueba del caso por defecto con 6 jugadores de
-ejemplo y la linea de tiempo declarada en el manifiesto de ese caso (para
-steve-jacobs: 8 entradas, minutos 10 a 75).
+Esto siembra la cadena completa que una partida necesita: una cuenta de Game
+Master (`gm@example.test` / `password`), su acceso al caso, y la partida con 6
+jugadores de ejemplo y la linea de tiempo del manifiesto (para steve-jacobs:
+8 entradas, minutos 10 a 75).
+
+Siembra la cuenta a proposito: una partida sin dueno es inalcanzable por web
+(la niega `GamePolicy`), asi que no serviria de nada. Es idempotente — correrlo
+dos veces reutiliza la cuenta.
 
 ## 4. Probar el flujo completo en local
 
