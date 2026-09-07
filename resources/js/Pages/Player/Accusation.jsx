@@ -1,88 +1,118 @@
-import { Head, Link, useForm } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
+import { Head, useForm } from '@inertiajs/react';
+import PlayerLayout from '../../Layouts/PlayerLayout';
 
-export default function Accusation({ player, unlocked }) {
-    const { data, setData, post, processing } = useForm({
+function CaseField({ id, label, value, onChange, error, type = 'text', rows }) {
+    const Control = rows ? 'textarea' : 'input';
+
+    return (
+        <div>
+            <label htmlFor={id} className="case-stamp block text-xs">
+                {label}
+            </label>
+            <Control
+                id={id}
+                name={id}
+                type={rows ? undefined : type}
+                rows={rows}
+                required
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                aria-invalid={error ? 'true' : undefined}
+                aria-describedby={error ? `${id}-error` : undefined}
+                className={`mt-1.5 w-full border-2 bg-white px-3 py-2.5 text-base ${
+                    error ? 'border-red-800' : 'border-paper-ink'
+                }`}
+            />
+            {error && (
+                <p id={`${id}-error`} className="mt-1 text-xs font-bold text-red-800">
+                    {error}
+                </p>
+            )}
+        </div>
+    );
+}
+
+export default function Accusation({ player, game, unlocked }) {
+    const { data, setData, post, processing, errors } = useForm({
         suspect_name: player.accusation?.suspect_name || '',
         weapon: player.accusation?.weapon || '',
         motive: player.accusation?.motive || '',
     });
 
-    function submit(e) {
-        e.preventDefault();
+    const alreadySent = Boolean(player.accusation);
+
+    function submit(event) {
+        event.preventDefault();
         post(route('immersion.player.accusation.store', player.access_token));
     }
 
     return (
-        <ImmersionLayout
+        <PlayerLayout
+            player={player}
+            game={game}
+            section="accusation"
+            kicker="Expediente"
             title="Acusación final"
-            headerActions={
-                <Link
-                    href={route('immersion.player.inbox', player.access_token)}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    &larr; Bandeja
-                </Link>
-            }
         >
             <Head title="Acusación final" />
 
             {!unlocked ? (
-                <div className="border-2 border-dashed border-border-soft p-6 text-center text-sm text-muted">
-                    El formulario de acusación todavía no está disponible. El Game Master lo habilitará cuando corresponda.
+                <div className="border-2 border-dashed border-paper-line px-6 py-12 text-center">
+                    <p className="case-stamp text-sm">Todavía no disponible</p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-paper-muted">
+                        El formulario se habilita cuando la investigación llega a su fase
+                        final. Sigue revisando tu bandeja.
+                    </p>
                 </div>
             ) : (
-                <Card>
-                    <h2 className="immersion-stamp text-sm uppercase tracking-[0.2em] text-muted">Tu acusación, {player.name}</h2>
-                    <p className="mt-2 text-sm text-muted">
-                        Puedes enviarla y actualizarla las veces que quieras mientras el Game Master no revele la solución.
+                <div className="border-2 border-paper-ink bg-paper-raised p-4 sm:p-6">
+                    <h2 className="case-stamp text-sm">Tu acusación, {player.name}</h2>
+                    <p className="mt-2 text-sm text-paper-muted">
+                        {alreadySent
+                            ? 'Ya enviaste una acusación. Puedes cambiarla mientras el Game Master no revele la solución.'
+                            : 'Puedes enviarla y cambiarla mientras el Game Master no revele la solución.'}
                     </p>
 
-                    <form onSubmit={submit} className="mt-6 space-y-4">
-                        <div>
-                            <label htmlFor="suspect_name" className="block text-sm font-bold">Sospechoso</label>
-                            <input
-                                type="text"
-                                id="suspect_name"
-                                required
-                                value={data.suspect_name}
-                                onChange={(e) => setData('suspect_name', e.target.value)}
-                                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm"
-                            />
-                        </div>
+                    <form onSubmit={submit} className="mt-6 space-y-5">
+                        <CaseField
+                            id="suspect_name"
+                            label="¿Quién?"
+                            value={data.suspect_name}
+                            onChange={(value) => setData('suspect_name', value)}
+                            error={errors.suspect_name}
+                        />
 
-                        <div>
-                            <label htmlFor="weapon" className="block text-sm font-bold">Arma o método</label>
-                            <input
-                                type="text"
-                                id="weapon"
-                                required
-                                value={data.weapon}
-                                onChange={(e) => setData('weapon', e.target.value)}
-                                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm"
-                            />
-                        </div>
+                        <CaseField
+                            id="weapon"
+                            label="¿Con qué?"
+                            value={data.weapon}
+                            onChange={(value) => setData('weapon', value)}
+                            error={errors.weapon}
+                        />
 
-                        <div>
-                            <label htmlFor="motive" className="block text-sm font-bold">Motivo</label>
-                            <textarea
-                                id="motive"
-                                rows={4}
-                                required
-                                value={data.motive}
-                                onChange={(e) => setData('motive', e.target.value)}
-                                className="mt-1 w-full border-2 border-ink bg-white px-3 py-2 text-sm"
-                            />
-                        </div>
+                        <CaseField
+                            id="motive"
+                            label="¿Por qué?"
+                            rows={5}
+                            value={data.motive}
+                            onChange={(value) => setData('motive', value)}
+                            error={errors.motive}
+                        />
 
-                        <Button type="submit" disabled={processing} className="w-full">
-                            Enviar acusación
-                        </Button>
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="case-stamp min-h-12 w-full border-2 border-paper-ink bg-paper-ink px-4 py-3 text-sm text-paper disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {processing
+                                ? 'Enviando…'
+                                : alreadySent
+                                  ? 'Actualizar acusación'
+                                  : 'Enviar acusación'}
+                        </button>
                     </form>
-                </Card>
+                </div>
             )}
-        </ImmersionLayout>
+        </PlayerLayout>
     );
 }

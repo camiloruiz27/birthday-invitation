@@ -1,35 +1,36 @@
-import { Head, Link } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
+import { Head } from '@inertiajs/react';
+import PlayerLayout from '../../Layouts/PlayerLayout';
 import SuspectCard from '../../components/player/SuspectCard';
 
-export default function InterrogationIndex({ player, suspects, victim, sessions, maxQuestions }) {
+export default function InterrogationIndex({ player, game, suspects, victim, sessions, maxQuestions }) {
     return (
-        <ImmersionLayout
-            title="Interrogatorio"
-            headerActions={
-                <Link
-                    href={route('immersion.player.inbox', player.access_token)}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    &larr; Bandeja
-                </Link>
-            }
+        <PlayerLayout
+            player={player}
+            game={game}
+            section="interrogation"
+            kicker="Expediente"
+            title="Personas de interés"
         >
             <Head title="Interrogatorio" />
 
-            <p className="mb-4 text-sm text-muted">Elige a quien interrogar. Tienes un máximo de {maxQuestions} preguntas por persona.</p>
-
-            <div className="mb-6 flex items-center gap-4 border-2 border-ink bg-ink p-4 text-paper">
+            <div className="mb-5 flex items-center gap-4 border-2 border-paper-ink bg-paper-ink p-4 text-paper">
                 <img
                     src={victim.photo_url}
                     alt={victim.name}
                     className="h-16 w-16 shrink-0 rounded border-2 border-paper object-cover"
                 />
-                <div>
-                    <p className="immersion-stamp text-[10px] uppercase tracking-[0.2em] text-accent">Víctima</p>
-                    <p className="font-bold">{victim.name}</p>
+                <div className="min-w-0">
+                    <p className="case-stamp text-[10px] text-paper-accent">Víctima</p>
+                    <p className="truncate font-bold">{victim.name}</p>
                 </div>
             </div>
+
+            <p className="mb-4 text-sm text-paper-muted">
+                Tienes <strong className="text-paper-ink">{maxQuestions} preguntas</strong> por
+                persona. Cada persona habla con un solo investigador: el primero que le
+                pregunte se queda con ese interrogatorio, así que repártanse y compartan lo
+                que averigüen.
+            </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
                 {Object.entries(suspects).map(([slug, suspect]) => (
@@ -39,11 +40,10 @@ export default function InterrogationIndex({ player, suspects, victim, sessions,
                         slug={slug}
                         suspect={suspect}
                         session={sessions[slug]}
-                        maxQuestions={maxQuestions}
                         currentPlayerId={player.id}
                     />
                 ))}
             </div>
-        </ImmersionLayout>
+        </PlayerLayout>
     );
 }

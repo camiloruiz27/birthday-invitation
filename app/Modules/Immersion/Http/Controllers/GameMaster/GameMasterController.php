@@ -19,15 +19,26 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class GameMasterController extends Controller
 {
-    public function index(): Response
+    /**
+     * Every action below is scoped to the signed-in Game Master: the listing
+     * filters by owner, and the single-game actions authorize through
+     * GamePolicy. Route model binding alone would happily hand over someone
+     * else's game.
+     */
+    public function index(Request $request): Response
     {
         return Inertia::render('GameMaster/Dashboard', [
-            'games' => fn () => Game::query()->latest()->get(),
+            'games' => fn () => $request->user()->games()->latest()->get(),
+            'library' => fn () => $request->user()->library()->map(fn ($case) => [
+                'slug' => $case->slug,
+                'name' => $case->name,
+            ])->values(),
         ]);
     }
 
@@ -43,7 +54,16 @@ class GameMasterController extends Controller
 
         $case = $cases->get($data['case_slug'] ?? (string) config('immersion.default_case'));
 
+        // You can only run a case you actually own. Checked on the server:
+        // hiding the option in the form is not a restriction.
+        if (! $request->user()->ownsCase($case->slug)) {
+            throw ValidationException::withMessages([
+                'case_slug' => 'No tienes acceso a este caso todavia.',
+            ]);
+        }
+
         $game = Game::create([
+            'user_id' => $request->user()->id,
             'name' => $data['name'],
             'case_slug' => $case->slug,
             'case_version' => $case->version(),

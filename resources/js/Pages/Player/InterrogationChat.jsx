@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
+import { Head, router } from '@inertiajs/react';
+import PlayerLayout from '../../Layouts/PlayerLayout';
 import ChatMessage from '../../components/player/ChatMessage';
 import ChatComposer from '../../components/player/ChatComposer';
 import axios from '../../lib/axios';
 
+// Negative ids for optimistic messages, so they cannot collide with real ones.
 let tempId = -1;
 
-export default function InterrogationChat({ player, slug, suspect, session, originalTestimonyHtml, lockedBy }) {
+export default function InterrogationChat({
+    player,
+    game,
+    slug,
+    suspect,
+    session,
+    originalTestimonyHtml,
+    lockedBy,
+}) {
     const [messages, setMessages] = useState(session.messages);
     const [closed, setClosed] = useState(session.closed_at !== null);
     const [questionsUsed, setQuestionsUsed] = useState(session.questions_used);
@@ -19,22 +28,30 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
     const scrollRef = useRef(null);
 
     const effectiveLockedBy = lockedBy || raceLockedBy;
+    const readOnly = closed || Boolean(effectiveLockedBy);
 
     useEffect(() => {
-        const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
+        const element = scrollRef.current;
+        if (element) element.scrollTop = element.scrollHeight;
     }, [messages]);
 
     async function handleSend(question) {
         const playerTempId = tempId--;
         const suspectTempId = tempId--;
-        const now = new Date().toISOString();
 
         setLastQuestion(question);
         setSending(true);
-        setMessages((prev) => [
-            ...prev,
-            { id: playerTempId, role: 'player', content: question, created_at: now },
+
+        // Show the question and a typing bubble immediately: the AI turn takes
+        // seconds, and a silent form feels broken.
+        setMessages((previous) => [
+            ...previous,
+            {
+                id: playerTempId,
+                role: 'player',
+                content: question,
+                created_at: new Date().toISOString(),
+            },
             { id: suspectTempId, role: 'suspect', content: null, typing: true },
         ]);
 
@@ -44,8 +61,10 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
                 { question }
             );
 
-            setMessages((prev) => [
-                ...prev.filter((m) => m.id !== playerTempId && m.id !== suspectTempId),
+            setMessages((previous) => [
+                ...previous.filter(
+                    (message) => message.id !== playerTempId && message.id !== suspectTempId
+                ),
                 data.player_message,
                 data.suspect_message,
             ]);
@@ -54,18 +73,21 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
             setClosed(data.closed);
             if (data.original_testimony_html) setTestimonyHtml(data.original_testimony_html);
             setLastQuestion(null);
-        } catch (err) {
-            if (err.response?.data?.locked) {
-                // Alguien mas gano la carrera por interrogar a este sospechoso
-                // justo ahora: recargamos la pagina para traer el chat real
-                // (el de la otra persona) y la declaracion oficial ya reveladas.
+        } catch (error) {
+            if (error.response?.data?.locked) {
+                // Someone else claimed this suspect in the same instant.
+                // Reload to get their transcript and the official statement.
+                setRaceLockedBy(error.response.data.locked_by);
                 router.reload();
+
                 return;
             }
 
-            setMessages((prev) =>
-                prev.map((m) =>
-                    m.id === suspectTempId ? { ...m, typing: false, failed: true, content: '' } : m
+            setMessages((previous) =>
+                previous.map((message) =>
+                    message.id === suspectTempId
+                        ? { ...message, typing: false, failed: true, content: '' }
+                        : message
                 )
             );
         } finally {
@@ -73,83 +95,99 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
         }
     }
 
-    function retry(failedSuspectId) {
+    function retry(failedId) {
         if (!lastQuestion) return;
-        setMessages((prev) => prev.filter((m) => m.id !== failedSuspectId && m.id !== failedSuspectId + 1));
+
+        // Drop the failed pair (question + failed reply) before resending.
+        setMessages((previous) =>
+            previous.filter((message) => message.id !== failedId && message.id !== failedId + 1)
+        );
         handleSend(lastQuestion);
     }
 
     return (
-        <ImmersionLayout
-            title={`Interrogatorio — ${suspect.name}`}
-            headerActions={
-                <Link
-                    href={route('immersion.player.interrogation.index', player.access_token)}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    &larr; Personas
-                </Link>
-            }
+        <PlayerLayout
+            player={player}
+            game={game}
+            focused
+            kicker={suspect.role}
+            title={suspect.name}
+            back={{
+                href: route('immersion.player.interrogation.index', player.access_token),
+                label: 'Personas',
+            }}
+            contentClassName="px-0 py-0 sm:px-6 sm:py-6"
         >
             <Head title={`Interrogatorio — ${suspect.name}`} />
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-paper-card px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex items-center gap-3 border-b-2 border-paper-ink bg-paper-raised px-4 py-3 sm:border-2">
                     <img
                         src={suspect.photo_url}
                         alt={suspect.name}
-                        className="h-14 w-14 shrink-0 rounded border border-border-soft object-cover"
+                        className="h-12 w-12 shrink-0 rounded border border-paper-line object-cover"
                     />
-                    <div className="min-w-0">
-                        <p className="immersion-stamp text-xs uppercase tracking-[0.2em] text-muted">{suspect.role}</p>
-                        <h2 className="text-lg font-bold">{suspect.name}</h2>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate font-bold leading-tight">{suspect.name}</p>
+                        {suspect.connection && (
+                            <p className="truncate text-xs text-paper-muted">{suspect.connection}</p>
+                        )}
                     </div>
+
+                    {!effectiveLockedBy && (
+                        <span className="tabular shrink-0 text-sm font-bold">
+                            {questionsUsed}/{maxQuestions}
+                        </span>
+                    )}
                 </div>
-                {!effectiveLockedBy && (
-                    <span className="shrink-0 text-sm font-bold">
-                        Preguntas: {questionsUsed}/{maxQuestions}
-                    </span>
+
+                {messages.length > 0 && (
+                    <div
+                        ref={scrollRef}
+                        className="flex-1 space-y-2.5 overflow-y-auto bg-paper/40 px-3 py-4 sm:max-h-[55vh] sm:border-x-2 sm:border-paper-ink"
+                    >
+                        {messages.map((message) => (
+                            <ChatMessage
+                                key={message.id}
+                                role={message.role}
+                                content={message.content}
+                                createdAt={message.created_at}
+                                typing={message.typing}
+                                failed={message.failed}
+                                onRetry={() => retry(message.id)}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {!readOnly ? (
+                    <div className="sm:border-x-2 sm:border-b-2 sm:border-paper-ink">
+                        <ChatComposer
+                            onSend={handleSend}
+                            sending={sending}
+                            remaining={maxQuestions - questionsUsed}
+                        />
+                    </div>
+                ) : (
+                    <div className="px-4 py-4 sm:px-0">
+                        <div className="border-2 border-dashed border-paper-line px-4 py-4 text-center text-sm text-paper-muted">
+                            {effectiveLockedBy
+                                ? `${suspect.name} ya fue interrogado por ${effectiveLockedBy}. Abajo tienes lo que se preguntó y su declaración oficial.`
+                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Abajo tienes su declaración oficial completa.`}
+                        </div>
+
+                        <div className="mt-4 border-2 border-paper-ink bg-paper-raised p-4">
+                            <p className="case-stamp mb-3 text-[10px] text-paper-muted">
+                                Declaración oficial
+                            </p>
+                            <div
+                                className="case-prose text-[15px]"
+                                dangerouslySetInnerHTML={{ __html: testimonyHtml || '' }}
+                            />
+                        </div>
+                    </div>
                 )}
             </div>
-
-            {messages.length > 0 && (
-                <div
-                    ref={scrollRef}
-                    className="mb-4 max-h-[60vh] space-y-2 overflow-y-auto border border-border-soft bg-paper/40 p-3"
-                >
-                    {messages.map((message) => (
-                        <ChatMessage
-                            key={message.id}
-                            role={message.role}
-                            content={message.content}
-                            createdAt={message.created_at}
-                            typing={message.typing}
-                            failed={message.failed}
-                            onRetry={() => retry(message.id)}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {!closed && !effectiveLockedBy ? (
-                <ChatComposer onSend={handleSend} sending={sending} remaining={maxQuestions - questionsUsed} />
-            ) : (
-                <>
-                    <div className="border-2 border-dashed border-border-soft p-4 text-center text-sm text-muted">
-                        {effectiveLockedBy
-                            ? `Ya fue interrogado por ${effectiveLockedBy}. Aquí tienes lo que se preguntó y su declaración oficial.`
-                            : `Ya usaste tus ${maxQuestions} preguntas con ${suspect.name}. Abajo tienes su declaración oficial completa.`}
-                    </div>
-
-                    <div className="mt-4 border-2 border-ink bg-paper-card p-4">
-                        <p className="immersion-stamp mb-2 text-xs uppercase tracking-[0.2em] text-muted">Declaración oficial</p>
-                        <div
-                            className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: testimonyHtml || '' }}
-                        />
-                    </div>
-                </>
-            )}
-        </ImmersionLayout>
+        </PlayerLayout>
     );
 }

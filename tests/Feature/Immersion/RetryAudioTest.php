@@ -2,27 +2,32 @@
 
 namespace Tests\Feature\Immersion;
 
+use App\Models\User;
 use App\Modules\Immersion\Mail\CaseTimelineMail;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
 
 class RetryAudioTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesGameMasters, RefreshDatabase;
+
+    private User $owner;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->owner = $this->gameMaster();
+    }
 
     private function makeGameWithAudioEvent(): array
     {
-        $game = Game::create(['name' => 'Test Game', 'status' => 'running']);
-
-        $game->players()->create([
-            'name' => 'Player One',
-            'email' => 'player@example.com',
-            'access_token' => 'test-token-1',
-        ]);
+        [$game] = $this->gameOwnedBy($this->owner, ['status' => 'running']);
 
         $event = $game->timelineEvents()->create([
             'type' => 'audio_email',
@@ -44,7 +49,7 @@ class RetryAudioTest extends TestCase
             '*' => Http::response('fake-wav-bytes', 200),
         ]);
 
-        $this->withSession(['immersion_gm_ok' => true]);
+        $this->actingAs($this->owner);
         [$game, $event] = $this->makeGameWithAudioEvent();
 
         $response = $this->postJson(route('immersion.gm.game.event.retry-audio', [$game, $event]));
@@ -62,7 +67,7 @@ class RetryAudioTest extends TestCase
             '*' => Http::response(null, 500),
         ]);
 
-        $this->withSession(['immersion_gm_ok' => true]);
+        $this->actingAs($this->owner);
         [$game, $event] = $this->makeGameWithAudioEvent();
 
         $response = $this->postJson(route('immersion.gm.game.event.retry-audio', [$game, $event]));
@@ -73,8 +78,9 @@ class RetryAudioTest extends TestCase
 
     public function test_retry_audio_rejects_non_audio_events(): void
     {
-        $this->withSession(['immersion_gm_ok' => true]);
-        $game = Game::create(['name' => 'Test Game', 'status' => 'running']);
+        $this->actingAs($this->owner);
+        [$game] = $this->gameOwnedBy($this->owner, ['status' => 'running']);
+
         $event = $game->timelineEvents()->create([
             'type' => 'email',
             'trigger_offset_minutes' => 5,
@@ -87,12 +93,24 @@ class RetryAudioTest extends TestCase
             ->assertStatus(400);
     }
 
-    public function test_retry_audio_without_gm_session_returns_401_json(): void
+    public function test_retry_audio_requires_authentication(): void
     {
         [$game, $event] = $this->makeGameWithAudioEvent();
 
         $this->postJson(route('immersion.gm.game.event.retry-audio', [$game, $event]))
-            ->assertStatus(401)
-            ->assertJsonStructure(['message', 'redirect']);
+            ->assertStatus(401);
+    }
+
+    public function test_retry_audio_is_denied_to_another_game_master(): void
+    {
+        [$game, $event] = $this->makeGameWithAudioEvent();
+
+        $intruder = $this->gameMaster(attributes: ['email' => 'intruder@example.com']);
+
+        // Owning a case is not owning a game: the intruder has the same
+        // entitlement but not this run.
+        $this->actingAs($intruder)
+            ->postJson(route('immersion.gm.game.event.retry-audio', [$game, $event]))
+            ->assertForbidden();
     }
 }

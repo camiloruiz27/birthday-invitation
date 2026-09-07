@@ -22,7 +22,7 @@ return [
         'photo' => 'steve-jacobs.jpg',
     ],
 
-    'mechanics' => ['inbox', 'gallery', 'audio', 'interrogation', 'accusation'],
+    'mechanics' => ['inbox', 'timeline', 'gallery', 'audio', 'interrogation', 'accusation'],
 
     'limits' => [
         'interrogation_questions' => 5,

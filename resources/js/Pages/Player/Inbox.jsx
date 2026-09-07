@@ -1,50 +1,38 @@
-import { Head, Link } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
+import { Head } from '@inertiajs/react';
+import PlayerLayout from '../../Layouts/PlayerLayout';
 import InboxItem from '../../components/player/InboxItem';
 import usePoll from '../../hooks/usePoll';
 
 export default function Inbox({ player, game, items, case: mysteryCase }) {
+    // New envelopes arrive on the server's clock, so the inbox refreshes
+    // itself while the player is reading.
     usePoll(['items'], { interval: 15000 });
 
     return (
-        <ImmersionLayout
+        <PlayerLayout
+            player={player}
+            game={game}
+            section="inbox"
+            kicker={`Caso ${mysteryCase.code} · Confidencial`}
             title={`Bandeja de ${player.name}`}
-            headerActions={
-                <>
-                    {game.interrogation_enabled && (
-                        <Link
-                            href={route('immersion.player.interrogation.index', player.access_token)}
-                            className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                        >
-                            Interrogatorio
-                        </Link>
-                    )}
-                    <Link
-                        href={route('immersion.player.accusation', player.access_token)}
-                        className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                    >
-                        Formulario de acusación
-                    </Link>
-                </>
-            }
         >
             <Head title={`Bandeja de ${player.name}`} />
 
-            <p className="mb-6 text-sm text-muted">
-                Hola {player.name}. Estos son los mensajes que has recibido sobre el caso {mysteryCase.code}.
-            </p>
-
-            {items.length === 0 && (
-                <p className="border-2 border-dashed border-border-soft p-6 text-center text-sm text-muted">
-                    Todavía no ha llegado ningún correo. El Game Master iniciará el caso pronto.
-                </p>
+            {items.length === 0 ? (
+                <div className="border-2 border-dashed border-paper-line px-6 py-12 text-center">
+                    <p className="case-stamp text-sm">Sin mensajes todavía</p>
+                    <p className="mx-auto mt-2 max-w-sm text-sm text-paper-muted">
+                        El expediente llegará por partes a medida que avance la
+                        investigación. Deja esta página abierta: se actualiza sola.
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {items.map((item) => (
+                        <InboxItem key={item.event.id} item={item} playerToken={player.access_token} />
+                    ))}
+                </div>
             )}
-
-            <div className="space-y-6">
-                {items.map((item) => (
-                    <InboxItem key={item.event.id} item={item} playerToken={player.access_token} />
-                ))}
-            </div>
-        </ImmersionLayout>
+        </PlayerLayout>
     );
 }

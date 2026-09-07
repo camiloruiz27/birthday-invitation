@@ -32,6 +32,7 @@ class InterrogationController extends Controller
 
         return Inertia::render('Player/InterrogationIndex', [
             'player' => $player->revealCredentials(),
+            'game' => $player->game,
             'suspects' => $case->suspects(),
             'victim' => $case->victim(),
             'sessions' => $sessions,
@@ -64,6 +65,7 @@ class InterrogationController extends Controller
 
         return Inertia::render('Player/InterrogationChat', [
             'player' => $player->revealCredentials(),
+            'game' => $player->game,
             'slug' => $slug,
             'suspect' => $suspect,
             'session' => $session ?? [

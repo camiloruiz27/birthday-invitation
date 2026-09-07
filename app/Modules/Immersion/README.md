@@ -23,7 +23,7 @@ El caso por defecto de las partidas nuevas se elige con
 En `.env` (ver `.env.example`):
 
 ```
-IMMERSION_GM_PASSWORD=...           # contrasena compartida del Game Master
+IMMERSION_DEFAULT_CASE=steve-jacobs # caso por defecto de las partidas nuevas
 IMMERSION_AI_SERVICE_URL=http://localhost:3001
 IMMERSION_AI_PROJECT_ID=mystery-case
 IMMERSION_AI_INTERNAL_API_KEY=...   # debe coincidir con MYSTERY_CASE_INTERNAL_API_KEY en el .env del gateway
@@ -48,7 +48,13 @@ steve-jacobs: 8 entradas, minutos 10 a 75).
 
 1. Recomendado para pruebas: pon `MAIL_MAILER=log` en `.env` para ver los
    correos en `storage/logs/laravel.log` en vez de intentar enviarlos de verdad.
-2. Entra a `/gm/login` con `IMMERSION_GM_PASSWORD`.
+2. Crea tu cuenta en `/registro` y dale acceso al caso:
+   ```
+   php artisan platform:sync-cases
+   php artisan platform:grant-access tu@correo.com steve-jacobs
+   ```
+   Sin ese acceso el panel no te deja crear partidas (ver
+   [Platform/README.md](../Platform/README.md)).
 3. En el dashboard, abre la partida sembrada y pulsa "Iniciar caso".
 4. Para no esperar los minutos reales, corre manualmente:
    ```

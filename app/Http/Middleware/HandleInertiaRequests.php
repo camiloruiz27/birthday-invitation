@@ -36,6 +36,14 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
+            // Only the fields the UI actually renders. The User model hides
+            // password and remember_token, but there is no reason to ship
+            // timestamps and verification state to every page either.
+            'auth' => [
+                'user' => fn () => $request->user()
+                    ? $request->user()->only(['id', 'name', 'email'])
+                    : null,
+            ],
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],

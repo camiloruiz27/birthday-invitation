@@ -62,6 +62,11 @@ class MysteryCase extends Model
         return $this->hasMany(Game::class, 'case_slug', 'slug');
     }
 
+    public function entitlements(): HasMany
+    {
+        return $this->hasMany(Entitlement::class);
+    }
+
     /**
      * The playable case behind this product. Throws when the catalog row
      * points at a manifest that is not deployed — that is a deployment error,

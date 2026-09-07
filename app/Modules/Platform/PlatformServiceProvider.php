@@ -2,7 +2,10 @@
 
 namespace App\Modules\Platform;
 
+use App\Modules\Platform\Console\Commands\ClaimGames;
+use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -20,9 +23,15 @@ class PlatformServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
 
+        Route::middleware('web')->group(function () {
+            $this->loadRoutesFrom(__DIR__.'/routes/web.php');
+        });
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncMysteryCases::class,
+                GrantCaseAccessCommand::class,
+                ClaimGames::class,
             ]);
         }
     }

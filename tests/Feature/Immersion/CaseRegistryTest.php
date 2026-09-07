@@ -6,11 +6,12 @@ use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use RuntimeException;
+use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
 
 class CaseRegistryTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesGameMasters, RefreshDatabase;
 
     private function registry(): CaseRegistry
     {
@@ -91,15 +92,16 @@ class CaseRegistryTest extends TestCase
 
     public function test_creating_a_game_attaches_the_cases_timeline(): void
     {
-        $this->withSession(['immersion_gm_ok' => true]);
+        $user = $this->gameMaster();
 
-        $this->post(route('immersion.gm.games.store'), [
+        $this->actingAs($user)->post(route('immersion.gm.games.store'), [
             'name' => 'Partida nueva',
             'players' => [['name' => 'Ana', 'email' => 'ana@example.com']],
         ])->assertRedirect(route('immersion.gm.dashboard'));
 
         $game = Game::firstWhere('name', 'Partida nueva');
 
+        $this->assertSame($user->id, $game->user_id);
         $this->assertSame('steve-jacobs', $game->case_slug);
         $this->assertSame('1.0', $game->case_version);
         $this->assertSame(8, $game->timelineEvents()->count());
@@ -107,14 +109,24 @@ class CaseRegistryTest extends TestCase
 
     public function test_creating_a_game_rejects_an_unknown_case(): void
     {
-        $this->withSession(['immersion_gm_ok' => true]);
-
-        $this->post(route('immersion.gm.games.store'), [
+        $this->actingAs($this->gameMaster())->post(route('immersion.gm.games.store'), [
             'name' => 'Partida invalida',
             'case_slug' => 'not-a-case',
             'players' => [['name' => 'Ana', 'email' => 'ana@example.com']],
         ])->assertSessionHasErrors('case_slug');
 
         $this->assertDatabaseMissing('immersion_games', ['name' => 'Partida invalida']);
+    }
+
+    public function test_creating_a_game_requires_owning_the_case(): void
+    {
+        // A real, installed case — but this account does not own it.
+        $this->actingAs($this->userWithoutAccess())->post(route('immersion.gm.games.store'), [
+            'name' => 'Partida sin licencia',
+            'case_slug' => 'steve-jacobs',
+            'players' => [['name' => 'Ana', 'email' => 'ana@example.com']],
+        ])->assertSessionHasErrors('case_slug');
+
+        $this->assertDatabaseMissing('immersion_games', ['name' => 'Partida sin licencia']);
     }
 }

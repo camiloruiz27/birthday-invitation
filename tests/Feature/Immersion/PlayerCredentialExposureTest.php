@@ -5,6 +5,7 @@ namespace Tests\Feature\Immersion;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
 
 /**
@@ -15,11 +16,12 @@ use Tests\TestCase;
  */
 class PlayerCredentialExposureTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesGameMasters, RefreshDatabase;
 
     private function makeGameWithTwoPlayers(): array
     {
         $game = Game::create([
+            'user_id' => $this->gameMaster()->id,
             'name' => 'Test Game',
             'status' => 'running',
             'interrogation_enabled' => true,
@@ -84,10 +86,11 @@ class PlayerCredentialExposureTest extends TestCase
 
     public function test_game_master_still_sees_player_tokens_and_emails(): void
     {
-        $this->withSession(['immersion_gm_ok' => true]);
         [$game] = $this->makeGameWithTwoPlayers();
 
-        $response = $this->get(route('immersion.gm.game.show', $game))->assertOk();
+        $response = $this->actingAs($game->owner)
+            ->get(route('immersion.gm.game.show', $game))
+            ->assertOk();
 
         // The Game Master panel is what hands out the per-player inbox links.
         $this->assertStringContainsString('token-a', $response->content());

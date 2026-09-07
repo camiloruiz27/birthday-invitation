@@ -1,14 +1,23 @@
-const VARIANTS = {
-    neutral: 'bg-paper text-ink border-border-soft',
-    success: 'bg-green-100 text-green-900 border-green-800',
-    warning: 'bg-yellow-100 text-yellow-900 border-yellow-800',
-    danger: 'bg-red-100 text-red-900 border-red-800',
+const TONES = {
+    neutral: 'bg-surface-sunken text-ink-muted border-line',
+    accent: 'bg-accent-dim text-accent-strong border-accent-dim',
+    success: 'bg-success-dim text-success border-success-dim',
+    danger: 'bg-danger-dim text-danger border-danger-dim',
+    warning: 'bg-accent-dim text-warning border-accent-dim',
 };
 
-export default function Badge({ variant = 'neutral', children }) {
+/** Maps a game's status to a tone, so the same state never reads two ways. */
+export const GAME_STATUS_TONE = {
+    draft: 'neutral',
+    running: 'success',
+    paused: 'warning',
+    finished: 'accent',
+};
+
+export default function Badge({ tone = 'neutral', className = '', children }) {
     return (
         <span
-            className={`inline-block border px-2 py-0.5 text-xs uppercase tracking-wide ${VARIANTS[variant]}`}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${TONES[tone]} ${className}`}
         >
             {children}
         </span>

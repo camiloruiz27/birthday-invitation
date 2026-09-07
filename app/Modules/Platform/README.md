@@ -51,11 +51,97 @@ centavos en la práctica, así que para `currency = COP` son pesos enteros
 > manifiesto. Ajústalo antes de vender, en la base de datos o en el manifiesto
 > con `--prices`.
 
+## Cuentas y acceso
+
+Hay dos tipos de participante y **no** se mezclan:
+
+| | Identidad | Puede |
+|---|---|---|
+| **`User`** | Cuenta con correo y contraseña | Comprar casos, crear y dirigir partidas |
+| **`Player`** | Solo un `access_token` en la URL | Jugar la partida a la que fue invitado |
+
+Un jugador nunca necesita cuenta. Por eso las rutas de `/jugador/{token}` no
+piden `auth`, y las de `/gm` sí.
+
+### Acceso a un caso
+
+El acceso se lee **siempre** de `Entitlement`, nunca de una orden ni de un
+pago. Una compra, un regalo manual y una futura suscripción todos terminan
+escribiendo un entitlement, así que el modelo comercial puede cambiar sin
+tocar una sola verificación de permisos.
+
+`GrantCaseAccess` es la única puerta que escribe entitlements. Es idempotente:
+reintentar un webhook de compra no crea un segundo derecho.
+
+```bash
+php artisan platform:grant-access tu@correo.com steve-jacobs
+php artisan platform:grant-access tu@correo.com steve-jacobs --revoke
+```
+
+Crear una cuenta **no** incluye ningún caso.
+
+### Propiedad de partidas
+
+Una partida pertenece a la cuenta que la creó (`immersion_games.user_id`).
+`GamePolicy` lo verifica en el servidor, declarado en las rutas con
+`can:view,game` / `can:control,game` para que una acción nueva no pueda
+publicarse sin autorización por descuido.
+
+Las partidas creadas antes de que existieran las cuentas tienen `user_id`
+nulo y **no son alcanzables por web** — la policy niega las partidas sin
+dueño en vez de dejar que se las quede el primero que abra la URL. Se
+asignan a mano, que es un paso deliberado y auditable:
+
+```bash
+php artisan platform:claim-games tu@correo.com --dry-run
+php artisan platform:claim-games tu@correo.com
+```
+
+## Páginas públicas
+
+`/` (landing), `/casos`, `/casos/{slug}`, `/mecanicas`,
+`/inteligencia-artificial`, `/precios`.
+
+Son públicas de verdad: un usuario con sesión iniciada que navega el catálogo
+se queda en ellas, no se le rebota al panel. `PublicLayout` cambia solo sus
+llamados a la acción.
+
+El catálogo solo muestra casos publicados — un caso sin publicar da 404 aunque
+exista la fila. Lo que cruza al navegador se arma en `CaseCardData`, con la
+lista de campos explícita (no se serializa el modelo), porque estas páginas son
+públicas.
+
+### Mecánicas
+
+`Support/Mechanics` es el vocabulario: qué significa `interrogation`, qué hace,
+y si usa IA. Vive en la plataforma y no en un caso porque una mecánica es una
+capacidad del motor a la que los casos se **suscriben** — la misma mecánica
+tiene que significar lo mismo en la página de todos los casos.
+
+Un caso declara sus mecánicas como slugs en su manifiesto; `Mechanics::describe()`
+los resuelve e **ignora los que no conoce**, para que un slug nuevo no rompa una
+página de catálogo.
+
+## Adquisición simulada
+
+Todavía no hay pasarela de pagos. Mientras `platform.simulated_checkout` esté
+encendido, un usuario con sesión puede meter un caso en su biblioteca desde la
+página del caso sin pagar, para poder recorrer el embudo completo.
+
+- **Apagado en producción por defecto**: un sitio desplegado no debe regalar
+  casos. Con la simulación apagada la ruta da 404.
+- No pide ni un solo dato de pago.
+- Escribe un entitlement normal con `source = grant`, así que un acceso
+  simulado siempre se distingue de una compra real en los datos.
+- La interfaz lo dice explícitamente. Nunca debe parecer una compra de verdad.
+
 ## Estado
 
-Implementado: catálogo (`mystery_cases`, `MysteryCase`, sync).
+Implementado: catálogo (`mystery_cases`, sync), cuentas (registro, ingreso,
+recuperación de contraseña, perfil), `Entitlement`, propiedad de partidas,
+páginas públicas y adquisición simulada.
 
-Pendiente: cuentas (`User`), `Entitlement` (acceso permanente por caso),
-`Order`/`Payment` como conceptos, y la integración de pagos con Bold. El acceso
-a un caso se resolverá contra `Entitlement`, **nunca** contra una transacción de
-pago, para que el modelo comercial pueda cambiar sin tocar el acceso.
+Pendiente: `Order`/`Payment` como conceptos, checkout real, y la integración de
+pagos con Bold. Cuando llegue, lo único que tiene que hacer es llamar a
+`GrantCaseAccess` con `source = purchase`; ninguna verificación de acceso
+cambia.

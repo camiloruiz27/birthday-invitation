@@ -2,65 +2,47 @@
 
 namespace Tests\Feature\Immersion;
 
-use App\Modules\Immersion\Models\Game;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
+use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
 
 class InertiaPagesTest extends TestCase
 {
-    use RefreshDatabase;
+    use CreatesGameMasters, RefreshDatabase;
 
-    private function actingAsGameMaster(): void
-    {
-        $this->withSession(['immersion_gm_ok' => true]);
-    }
-
-    private function makeGame(): Game
-    {
-        $game = Game::create(['name' => 'Test Game', 'status' => 'draft']);
-
-        $game->players()->create([
-            'name' => 'Player One',
-            'email' => 'player@example.com',
-            'access_token' => 'test-token-1',
-        ]);
-
-        return $game;
-    }
-
-    public function test_gm_login_page_renders(): void
-    {
-        $this->get(route('immersion.gm.login'))
-            ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('GameMaster/Login'));
-    }
-
-    public function test_gm_login_requires_middleware_for_dashboard(): void
+    public function test_gm_dashboard_requires_authentication(): void
     {
         $this->get(route('immersion.gm.dashboard'))
-            ->assertRedirect(route('immersion.gm.login'));
+            ->assertRedirect(route('login'));
     }
 
-    public function test_gm_dashboard_renders(): void
+    public function test_gm_dashboard_renders_only_the_signed_in_masters_games(): void
     {
-        $this->actingAsGameMaster();
-        $this->makeGame();
+        $user = $this->gameMaster();
+        $this->gameOwnedBy($user);
 
-        $this->get(route('immersion.gm.dashboard'))
+        // Another master's game must not appear in this listing.
+        $other = $this->gameMaster(attributes: ['email' => 'other@example.com']);
+        $this->gameOwnedBy($other);
+
+        $this->actingAs($user)
+            ->get(route('immersion.gm.dashboard'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameMaster/Dashboard')
                 ->has('games', 1)
+                ->has('library', 1)
             );
     }
 
     public function test_gm_game_show_renders(): void
     {
-        $this->actingAsGameMaster();
-        $game = $this->makeGame();
+        $user = $this->gameMaster();
+        [$game] = $this->gameOwnedBy($user);
 
-        $this->get(route('immersion.gm.game.show', $game))
+        $this->actingAs($user)
+            ->get(route('immersion.gm.game.show', $game))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('GameMaster/Game')
@@ -71,28 +53,29 @@ class InertiaPagesTest extends TestCase
 
     public function test_gm_results_renders(): void
     {
-        $this->actingAsGameMaster();
-        $game = $this->makeGame();
+        $user = $this->gameMaster();
+        [$game] = $this->gameOwnedBy($user);
 
-        $this->get(route('immersion.gm.game.results', $game))
+        $this->actingAs($user)
+            ->get(route('immersion.gm.game.results', $game))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('GameMaster/Results'));
     }
 
     public function test_gm_interrogations_renders(): void
     {
-        $this->actingAsGameMaster();
-        $game = $this->makeGame();
+        $user = $this->gameMaster();
+        [$game] = $this->gameOwnedBy($user);
 
-        $this->get(route('immersion.gm.game.interrogations', $game))
+        $this->actingAs($user)
+            ->get(route('immersion.gm.game.interrogations', $game))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('GameMaster/Interrogations'));
     }
 
     public function test_player_inbox_renders(): void
     {
-        $game = $this->makeGame();
-        $player = $game->players()->first();
+        [, $player] = $this->gameOwnedBy($this->gameMaster());
 
         $this->get(route('immersion.player.inbox', $player->access_token))
             ->assertOk()
@@ -104,8 +87,7 @@ class InertiaPagesTest extends TestCase
 
     public function test_player_accusation_renders(): void
     {
-        $game = $this->makeGame();
-        $player = $game->players()->first();
+        [, $player] = $this->gameOwnedBy($this->gameMaster());
 
         $this->get(route('immersion.player.accusation', $player->access_token))
             ->assertOk()
@@ -117,8 +99,7 @@ class InertiaPagesTest extends TestCase
 
     public function test_player_interrogation_index_requires_enabled_flag(): void
     {
-        $game = $this->makeGame();
-        $player = $game->players()->first();
+        [, $player] = $this->gameOwnedBy($this->gameMaster());
 
         $this->get(route('immersion.player.interrogation.index', $player->access_token))
             ->assertForbidden();
@@ -126,9 +107,8 @@ class InertiaPagesTest extends TestCase
 
     public function test_player_interrogation_index_renders_when_enabled(): void
     {
-        $game = $this->makeGame();
+        [$game, $player] = $this->gameOwnedBy($this->gameMaster());
         $game->update(['interrogation_enabled' => true]);
-        $player = $game->players()->first();
 
         $this->get(route('immersion.player.interrogation.index', $player->access_token))
             ->assertOk()
@@ -137,9 +117,8 @@ class InertiaPagesTest extends TestCase
 
     public function test_player_interrogation_chat_renders(): void
     {
-        $game = $this->makeGame();
+        [$game, $player] = $this->gameOwnedBy($this->gameMaster());
         $game->update(['interrogation_enabled' => true]);
-        $player = $game->players()->first();
 
         $this->get(route('immersion.player.interrogation.show', [$player->access_token, 'elizabeth-foster']))
             ->assertOk()

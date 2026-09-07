@@ -4,19 +4,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Game Master access
-    |--------------------------------------------------------------------------
-    |
-    | Shared password for the Game Master panel. Read through config (not
-    | env() at runtime) so that `php artisan config:cache` does not silently
-    | turn it into null and lock the Game Master out in production.
-    |
-    */
-
-    'game_master_password' => env('IMMERSION_GM_PASSWORD', ''),
-
-    /*
-    |--------------------------------------------------------------------------
     | Default mystery case
     |--------------------------------------------------------------------------
     |
@@ -69,14 +56,14 @@ return [
     | Rate limits
     |--------------------------------------------------------------------------
     |
-    | attempts,minutes pairs for Laravel's throttle middleware. The Game
-    | Master password is shared and long-lived, so login must be throttled;
-    | asking a suspect costs a real AI call, so it must be throttled too.
+    | attempts,minutes pairs for Laravel's throttle middleware. Asking a
+    | suspect costs a real AI call, so it is capped per token regardless of
+    | the per-session question budget. Account rate limits live in
+    | config/platform.php.
     |
     */
 
     'rate_limits' => [
-        'game_master_login' => env('IMMERSION_THROTTLE_GM_LOGIN', '10,1'),
         'interrogation_ask' => env('IMMERSION_THROTTLE_ASK', '20,1'),
     ],
 

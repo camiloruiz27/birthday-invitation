@@ -2,9 +2,11 @@
 
 namespace App\Modules\Immersion\Models;
 
+use App\Models\User;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -13,6 +15,7 @@ class Game extends Model
     protected $table = 'immersion_games';
 
     protected $fillable = [
+        'user_id',
         'name',
         'case_slug',
         'case_version',
@@ -62,6 +65,15 @@ class Game extends Model
         return app(CaseRegistry::class)->get(
             $this->case_slug ?: (string) config('immersion.default_case')
         );
+    }
+
+    /**
+     * The Game Master account that owns this run. Null for games created
+     * before accounts existed; those are claimable, never web-reachable.
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function players(): HasMany

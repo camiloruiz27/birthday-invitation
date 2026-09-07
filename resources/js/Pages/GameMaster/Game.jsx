@@ -1,137 +1,200 @@
-import { Link, router } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
+import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import GameMasterLayout from '../../Layouts/GameMasterLayout';
+import Card, { CardHeader } from '../../components/ui/Card';
+import Button from '../../components/ui/Button';
+import Badge from '../../components/ui/Badge';
+import Alert from '../../components/ui/Alert';
+import EmptyState from '../../components/ui/EmptyState';
+import { ConfirmModal } from '../../components/ui/Modal';
 import TimelineEventRow from '../../components/game-master/TimelineEventRow';
 import usePoll from '../../hooks/usePoll';
 
-function post(url) {
-    router.post(url, {}, { preserveScroll: true });
+function PlayerLink({ player }) {
+    const url = route('immersion.player.inbox', player.access_token);
+    const [copied, setCopied] = useState(false);
+
+    async function copy() {
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Clipboard is unavailable outside a secure context; the link is
+            // shown in full below so it can still be copied by hand.
+            setCopied(false);
+        }
+    }
+
+    return (
+        <li className="border-b border-line py-3 last:border-0">
+            <p className="text-sm font-medium text-ink">{player.name}</p>
+            <p className="truncate text-xs text-ink-muted">{player.email}</p>
+
+            <div className="mt-2 flex items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded-control bg-surface-sunken px-2 py-1.5 text-xs text-ink-muted">
+                    {url}
+                </code>
+                <Button variant="secondary" size="sm" onClick={copy}>
+                    {copied ? 'Copiado' : 'Copiar'}
+                </Button>
+            </div>
+        </li>
+    );
 }
 
 export default function Game({ game }) {
+    // The clock and the timeline advance on the server, so a running game
+    // refreshes itself; a draft or paused game has nothing to poll for.
     usePoll(['game'], { interval: 5000, enabled: game.status === 'running' });
 
-    return (
-        <ImmersionLayout
-            title={game.name}
-            headerActions={
-                <Link
-                    href={route('immersion.gm.dashboard')}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    &larr; Partidas
-                </Link>
-            }
-        >
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-2 border-ink bg-paper-card p-4">
-                <div>
-                    <p className="immersion-stamp text-xs uppercase tracking-[0.2em] text-muted">{game.status}</p>
-                    <h2 className="text-lg font-bold">{game.name}</h2>
-                    {game.started_at && (
-                        <p className="mt-1 text-sm">Reloj de la partida: {game.elapsed_minutes} min</p>
-                    )}
-                </div>
+    const [confirming, setConfirming] = useState(null);
+    const [processing, setProcessing] = useState(false);
 
-                <div className="flex flex-wrap gap-2">
+    function post(routeName, options = {}) {
+        setProcessing(true);
+        router.post(route(routeName, game.id), {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                setProcessing(false);
+                setConfirming(null);
+            },
+            ...options,
+        });
+    }
+
+    const hasTimeline = game.timeline_events.length > 0;
+    const pending = game.timeline_events.filter((event) => !event.sent_at).length;
+
+    return (
+        <GameMasterLayout
+            game={game}
+            tab="panel"
+            actions={
+                <>
                     {game.status === 'draft' && (
-                        <button
-                            onClick={() => post(route('immersion.gm.game.start', game.id))}
-                            className="border-2 border-ink bg-ink px-3 py-2 text-xs font-bold uppercase text-paper"
-                        >
+                        <Button onClick={() => setConfirming('start')} disabled={!hasTimeline}>
                             Iniciar caso
-                        </button>
+                        </Button>
                     )}
 
                     {game.status === 'running' && (
-                        <button
-                            onClick={() => post(route('immersion.gm.game.pause', game.id))}
-                            className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                        >
+                        <Button variant="secondary" onClick={() => post('immersion.gm.game.pause')}>
                             Pausar
-                        </button>
+                        </Button>
                     )}
 
                     {game.status === 'paused' && (
-                        <button
-                            onClick={() => post(route('immersion.gm.game.resume', game.id))}
-                            className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                        >
-                            Reanudar
-                        </button>
+                        <Button onClick={() => post('immersion.gm.game.resume')}>Reanudar</Button>
                     )}
+                </>
+            }
+        >
+            <Head title={game.name} />
 
-                    {(game.status === 'running' || game.status === 'paused') && (
-                        <button
-                            onClick={() => post(route('immersion.gm.game.force-next', game.id))}
-                            className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                        >
-                            Forzar siguiente evento
-                        </button>
+            <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+                <Card as="section">
+                    <CardHeader
+                        title="Línea de tiempo"
+                        description={
+                            hasTimeline
+                                ? `${pending} evento(s) pendiente(s) de ${game.timeline_events.length}.`
+                                : undefined
+                        }
+                        actions={
+                            hasTimeline &&
+                            game.status !== 'draft' && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => setConfirming('force')}
+                                    disabled={pending === 0}
+                                >
+                                    Forzar siguiente
+                                </Button>
+                            )
+                        }
+                    />
+
+                    {!hasTimeline ? (
+                        <>
+                            <Alert variant="warning" title="Esta partida no tiene línea de tiempo">
+                                Ocurre con partidas creadas antes de un arreglo anterior. Sin
+                                línea de tiempo no se enviará ningún correo.
+                            </Alert>
+                            <Button onClick={() => post('immersion.gm.game.load-default-timeline')}>
+                                Cargar línea de tiempo del caso
+                            </Button>
+                        </>
+                    ) : (
+                        <ul>
+                            {game.timeline_events.map((event) => (
+                                <TimelineEventRow key={event.id} game={game} event={event} />
+                            ))}
+                        </ul>
                     )}
+                </Card>
 
-                    <Link
-                        href={route('immersion.gm.game.results', game.id)}
-                        className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                    >
-                        Ver acusaciones
-                    </Link>
+                <div className="space-y-6">
+                    <Card as="section">
+                        <CardHeader
+                            title="Interrogatorio"
+                            description="Mecánica de preguntas a los sospechosos por IA."
+                        />
 
-                    <button
-                        onClick={() => post(route('immersion.gm.game.toggle-interrogation', game.id))}
-                        className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                    >
-                        {game.interrogation_enabled ? 'Deshabilitar' : 'Habilitar'} interrogatorio (Mec. 7)
-                    </button>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <Badge tone={game.interrogation_enabled ? 'success' : 'neutral'}>
+                                {game.interrogation_enabled ? 'Habilitado' : 'Deshabilitado'}
+                            </Badge>
 
-                    <Link
-                        href={route('immersion.gm.game.interrogations', game.id)}
-                        className="border-2 border-ink px-3 py-2 text-xs font-bold uppercase"
-                    >
-                        Ver interrogatorios
-                    </Link>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => post('immersion.gm.game.toggle-interrogation')}
+                            >
+                                {game.interrogation_enabled ? 'Deshabilitar' : 'Habilitar'}
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card as="section">
+                        <CardHeader
+                            title="Jugadores"
+                            description={`${game.players.length} en esta partida.`}
+                        />
+
+                        {game.players.length === 0 ? (
+                            <EmptyState title="Esta partida no tiene jugadores" />
+                        ) : (
+                            <ul>
+                                {game.players.map((player) => (
+                                    <PlayerLink key={player.id} player={player} />
+                                ))}
+                            </ul>
+                        )}
+                    </Card>
                 </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-                <section className="border-2 border-ink bg-paper-card p-4">
-                    <h3 className="immersion-stamp text-xs uppercase tracking-[0.2em] text-muted">Línea de tiempo</h3>
+            <ConfirmModal
+                open={confirming === 'start'}
+                onClose={() => setConfirming(null)}
+                onConfirm={() => post('immersion.gm.game.start')}
+                processing={processing}
+                title="¿Iniciar el caso?"
+                description="Arranca el reloj y los correos empezarán a salir solos según la línea de tiempo. El reloj no se puede reiniciar después."
+                confirmLabel="Iniciar"
+            />
 
-                    {game.timeline_events.length === 0 && (
-                        <div className="mt-3 border-2 border-dashed border-red-800 bg-red-50 p-4 text-sm text-red-900">
-                            <p className="font-bold">Esta partida no tiene linea de tiempo cargada.</p>
-                            <p className="mt-1">
-                                Esto pasa con partidas creadas antes de este arreglo. &quot;Forzar siguiente evento&quot; no hara nada hasta que cargues la linea de tiempo.
-                            </p>
-                            <button
-                                onClick={() => post(route('immersion.gm.game.load-default-timeline', game.id))}
-                                className="mt-3 border-2 border-red-900 bg-red-900 px-3 py-2 text-xs font-bold uppercase text-white"
-                            >
-                                Cargar linea de tiempo por defecto
-                            </button>
-                        </div>
-                    )}
-
-                    <ul className="mt-3 space-y-2">
-                        {game.timeline_events.map((event) => (
-                            <TimelineEventRow key={event.id} game={game} event={event} />
-                        ))}
-                    </ul>
-                </section>
-
-                <section className="border-2 border-ink bg-paper-card p-4">
-                    <h3 className="immersion-stamp text-xs uppercase tracking-[0.2em] text-muted">Jugadores</h3>
-                    <ul className="mt-3 space-y-3 text-sm">
-                        {game.players.map((player) => (
-                            <li key={player.id} className="border-b border-dashed border-border-soft pb-2">
-                                <p className="font-bold">{player.name}</p>
-                                <p className="text-xs text-muted">{player.email}</p>
-                                <p className="mt-1 break-all text-xs">
-                                    {route('immersion.player.inbox', player.access_token)}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            </div>
-        </ImmersionLayout>
+            <ConfirmModal
+                open={confirming === 'force'}
+                onClose={() => setConfirming(null)}
+                onConfirm={() => post('immersion.gm.game.force-next')}
+                processing={processing}
+                title="¿Forzar el siguiente evento?"
+                description="Envía ya el próximo evento pendiente sin esperar su minuto. Si es un audio puede tardar hasta un minuto en generarse."
+                confirmLabel="Forzar evento"
+            />
+        </GameMasterLayout>
     );
 }

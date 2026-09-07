@@ -1,39 +1,53 @@
 <?php
 
-use App\Modules\Immersion\Http\Controllers\GameMaster\AuthController;
 use App\Modules\Immersion\Http\Controllers\GameMaster\GameMasterController;
 use App\Modules\Immersion\Http\Controllers\Player\AccusationController;
 use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
-use App\Modules\Immersion\Http\Middleware\EnsureGameMaster;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('gm')->name('immersion.gm.')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+/*
+|--------------------------------------------------------------------------
+| Game Master
+|--------------------------------------------------------------------------
+|
+| Authorization is declared here rather than inside the controllers so that a
+| new action cannot quietly ship without it: `auth` proves who you are and
+| `can:` proves the game is yours (see GamePolicy). Route model binding on
+| its own would hand over any game by id.
+|
+*/
 
-    // The Game Master password is shared and long-lived, so the only thing
-    // standing between an attacker and every game is this rate limit.
-    Route::post('/login', [AuthController::class, 'login'])
-        ->middleware('throttle:'.config('immersion.rate_limits.game_master_login'))
-        ->name('login.attempt');
+Route::prefix('gm')->name('immersion.gm.')->middleware('auth')->group(function () {
+    Route::get('/', [GameMasterController::class, 'index'])->name('dashboard');
+    Route::post('/games', [GameMasterController::class, 'store'])->name('games.store');
 
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-    Route::middleware(EnsureGameMaster::class)->group(function () {
-        Route::get('/', [GameMasterController::class, 'index'])->name('dashboard');
-        Route::post('/games', [GameMasterController::class, 'store'])->name('games.store');
+    Route::middleware('can:view,game')->group(function () {
         Route::get('/games/{game}', [GameMasterController::class, 'show'])->name('game.show');
+        Route::get('/games/{game}/results', [GameMasterController::class, 'results'])->name('game.results');
+        Route::get('/games/{game}/interrogatorios', [GameMasterController::class, 'interrogations'])->name('game.interrogations');
+    });
+
+    Route::middleware('can:control,game')->group(function () {
         Route::post('/games/{game}/start', [GameMasterController::class, 'start'])->name('game.start');
         Route::post('/games/{game}/pause', [GameMasterController::class, 'pause'])->name('game.pause');
         Route::post('/games/{game}/resume', [GameMasterController::class, 'resume'])->name('game.resume');
         Route::post('/games/{game}/force-next', [GameMasterController::class, 'forceNext'])->name('game.force-next');
         Route::post('/games/{game}/load-default-timeline', [GameMasterController::class, 'loadDefaultTimeline'])->name('game.load-default-timeline');
         Route::post('/games/{game}/events/{event}/retry-audio', [GameMasterController::class, 'retryAudio'])->name('game.event.retry-audio');
-        Route::get('/games/{game}/results', [GameMasterController::class, 'results'])->name('game.results');
         Route::post('/games/{game}/toggle-interrogation', [GameMasterController::class, 'toggleInterrogation'])->name('game.toggle-interrogation');
-        Route::get('/games/{game}/interrogatorios', [GameMasterController::class, 'interrogations'])->name('game.interrogations');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Players
+|--------------------------------------------------------------------------
+|
+| Players are guests: they hold no account, and the access token in the URL is
+| their whole credential. Nothing here requires auth by design.
+|
+*/
 
 Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () {
     Route::get('/', [InboxController::class, 'show'])->name('inbox');
@@ -42,6 +56,7 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
     Route::get('/interrogatorio', [InterrogationController::class, 'index'])->name('interrogation.index');
     Route::get('/interrogatorio/{slug}', [InterrogationController::class, 'show'])->name('interrogation.show');
+
     // Every question is a billable AI call, so cap how fast one token can
     // spend them regardless of the per-session budget.
     Route::post('/interrogatorio/{slug}/preguntar', [InterrogationController::class, 'ask'])

@@ -1,49 +1,61 @@
-import { Link } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
+import { Head } from '@inertiajs/react';
+import GameMasterLayout from '../../Layouts/GameMasterLayout';
 import Accordion from '../../components/ui/Accordion';
+import Badge from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
+
+function Transcript({ messages }) {
+    return (
+        <div className="space-y-3">
+            {messages.map((message) => (
+                <div key={message.id}>
+                    <p className="text-xs font-medium uppercase tracking-wide text-ink-subtle">
+                        {message.role === 'player' ? 'Jugador' : 'Sospechoso'}
+                    </p>
+                    <p className="mt-0.5 text-sm text-ink">{message.content}</p>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 export default function Interrogations({ game, sessions }) {
     return (
-        <ImmersionLayout
-            title="Interrogatorios (Mecanica 7)"
-            headerActions={
-                <Link
-                    href={route('immersion.gm.game.show', game.id)}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    &larr; {game.name}
-                </Link>
-            }
-        >
-            <h2 className="immersion-stamp text-sm uppercase tracking-[0.2em] text-muted">Interrogatorios (Mecanica 7)</h2>
+        <GameMasterLayout game={game} tab="interrogations" title={game.name}>
+            <Head title={`Interrogatorios — ${game.name}`} />
 
-            {sessions.length === 0 && (
-                <p className="mt-3 text-sm text-muted">Todavía no hay ningún interrogatorio iniciado.</p>
-            )}
-
-            <div className="mt-4 space-y-4">
-                {sessions.map((session) => (
-                    <Accordion
-                        key={session.id}
-                        summary={
-                            <>
-                                {session.player.name} &rarr; {session.suspect_slug}
-                                <span className="ml-2 text-xs font-normal uppercase text-muted">
-                                    {session.questions_used}/{session.max_questions} {session.closed_at ? '— cerrado' : ''}
+            {sessions.length === 0 ? (
+                <EmptyState
+                    title="Todavía no hay ningún interrogatorio"
+                    description={
+                        game.interrogation_enabled
+                            ? 'Aparecerán aquí en cuanto un jugador haga su primera pregunta a un sospechoso.'
+                            : 'La mecánica de interrogatorio está deshabilitada para esta partida.'
+                    }
+                />
+            ) : (
+                <div className="space-y-3">
+                    {sessions.map((session) => (
+                        <Accordion
+                            key={session.id}
+                            summary={
+                                <span className="flex flex-wrap items-center gap-2">
+                                    <span className="font-medium">{session.suspect_slug}</span>
+                                    <span className="text-ink-muted">
+                                        · {session.player.name}
+                                    </span>
+                                    <Badge tone={session.closed_at ? 'accent' : 'success'}>
+                                        {session.questions_used}/{session.max_questions}
+                                        {session.closed_at ? ' · cerrado' : ''}
+                                    </Badge>
                                 </span>
-                            </>
-                        }
-                    >
-                        <div className="space-y-2">
-                            {session.messages.map((message) => (
-                                <p key={message.id}>
-                                    <strong>{message.role === 'player' ? 'Jugador' : 'Sospechoso'}:</strong> {message.content}
-                                </p>
-                            ))}
-                        </div>
-                    </Accordion>
-                ))}
-            </div>
-        </ImmersionLayout>
+                            }
+                        >
+                            <Transcript messages={session.messages} />
+                        </Accordion>
+                    ))}
+                </div>
+            )}
+        </GameMasterLayout>
     );
 }

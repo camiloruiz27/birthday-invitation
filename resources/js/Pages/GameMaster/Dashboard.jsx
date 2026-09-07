@@ -1,56 +1,81 @@
-import { Link, router } from '@inertiajs/react';
-import ImmersionLayout from '../../Layouts/ImmersionLayout';
-import Card from '../../components/ui/Card';
+import { Head, Link } from '@inertiajs/react';
+import AppLayout from '../../Layouts/AppLayout';
+import Card, { CardHeader } from '../../components/ui/Card';
+import Badge, { GAME_STATUS_TONE } from '../../components/ui/Badge';
+import EmptyState from '../../components/ui/EmptyState';
 import NewGameForm from '../../components/game-master/NewGameForm';
 import { formatDateTime } from '../../lib/format';
 
-export default function Dashboard({ games }) {
-    function logout() {
-        router.post(route('immersion.gm.logout'));
-    }
+const STATUS_LABELS = {
+    draft: 'Sin iniciar',
+    running: 'En curso',
+    paused: 'Pausada',
+    finished: 'Terminada',
+};
 
+function GameRow({ game }) {
     return (
-        <ImmersionLayout
-            title="Panel del Game Master"
-            headerActions={
-                <button
-                    onClick={logout}
-                    className="border-2 border-paper px-3 py-1 text-xs uppercase tracking-wide hover:bg-paper hover:text-ink"
-                >
-                    Salir
-                </button>
-            }
+        <Link
+            href={route('immersion.gm.game.show', game.id)}
+            className="block rounded-card border border-line bg-surface-raised p-4 transition-colors hover:border-line-strong hover:bg-surface-overlay"
         >
-            <section className="mb-10">
-                <h2 className="immersion-stamp text-sm uppercase tracking-[0.2em] text-muted">Partidas</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="min-w-0 truncate font-medium text-ink">{game.name}</span>
+                <Badge tone={GAME_STATUS_TONE[game.status] || 'neutral'}>
+                    {STATUS_LABELS[game.status] || game.status}
+                </Badge>
+            </div>
 
-                {games.length === 0 ? (
-                    <p className="mt-3 text-sm text-muted">Todavía no hay ninguna partida creada.</p>
-                ) : (
-                    <div className="mt-3 space-y-3">
-                        {games.map((game) => (
-                            <Link
-                                key={game.id}
-                                href={route('immersion.gm.game.show', game.id)}
-                                className="block border-2 border-ink bg-paper-card px-4 py-3 hover:bg-[#efe6ce]"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="font-bold">{game.name}</span>
-                                    <span className="text-xs uppercase tracking-wide">{game.status}</span>
-                                </div>
-                                {game.started_at && (
-                                    <p className="mt-1 text-xs text-muted">Iniciada: {formatDateTime(game.started_at)}</p>
-                                )}
-                            </Link>
-                        ))}
-                    </div>
-                )}
-            </section>
+            <p className="mt-1.5 text-xs text-ink-muted">
+                {game.started_at
+                    ? `Iniciada ${formatDateTime(game.started_at)}`
+                    : 'Todavía no se ha iniciado'}
+            </p>
+        </Link>
+    );
+}
 
-            <Card>
-                <h2 className="immersion-stamp text-sm uppercase tracking-[0.2em] text-muted">Nueva partida</h2>
-                <NewGameForm />
-            </Card>
-        </ImmersionLayout>
+export default function Dashboard({ games, library }) {
+    return (
+        <AppLayout kicker="Game Master" title="Tus partidas">
+            <Head title="Panel del Game Master" />
+
+            <div className="space-y-8">
+                <section>
+                    {games.length === 0 ? (
+                        <EmptyState
+                            title="Todavía no has creado ninguna partida"
+                            description={
+                                library.length > 0
+                                    ? 'Crea una abajo, invita a tus jugadores y dirige el caso.'
+                                    : 'Cuando tengas un caso en tu biblioteca podrás crear tu primera partida.'
+                            }
+                        />
+                    ) : (
+                        <div className="space-y-3">
+                            {games.map((game) => (
+                                <GameRow key={game.id} game={game} />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <Card as="section">
+                    <CardHeader
+                        title="Nueva partida"
+                        description="Elige el caso, agrega a tus jugadores y cada uno recibirá su propio enlace."
+                    />
+
+                    {library.length === 0 ? (
+                        <EmptyState
+                            title="Tu biblioteca está vacía"
+                            description="Necesitas al menos un caso para crear partidas. Los casos que adquieras aparecerán aquí."
+                        />
+                    ) : (
+                        <NewGameForm library={library} />
+                    )}
+                </Card>
+            </div>
+        </AppLayout>
     );
 }
