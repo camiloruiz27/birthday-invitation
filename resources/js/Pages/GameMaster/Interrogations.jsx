@@ -29,7 +29,7 @@ export default function Interrogations({ game, sessions }) {
                             <>
                                 {session.player.name} &rarr; {session.suspect_slug}
                                 <span className="ml-2 text-xs font-normal uppercase text-muted">
-                                    {session.questions_used}/5 {session.closed_at ? '— cerrado' : ''}
+                                    {session.questions_used}/{session.max_questions} {session.closed_at ? '— cerrado' : ''}
                                 </span>
                             </>
                         }

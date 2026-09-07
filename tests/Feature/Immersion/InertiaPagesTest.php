@@ -3,7 +3,6 @@
 namespace Tests\Feature\Immersion;
 
 use App\Modules\Immersion\Models\Game;
-use App\Modules\Immersion\Models\Player;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;

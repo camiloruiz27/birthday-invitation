@@ -3,14 +3,13 @@
 namespace App\Modules\Immersion\Http\Controllers\GameMaster;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Mail\CaseTimelineMail;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
-use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Services\GeminiAudioService;
-use App\Modules\Immersion\Support\DefaultTimeline;
 use App\Modules\Immersion\Support\TimelineRecipients;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +18,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,17 +31,22 @@ class GameMasterController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CaseRegistry $cases): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'case_slug' => ['nullable', 'string', Rule::in($cases->slugs())],
             'players' => ['required', 'array', 'min:1'],
             'players.*.name' => ['required', 'string', 'max:255'],
             'players.*.email' => ['required', 'email'],
         ]);
 
+        $case = $cases->get($data['case_slug'] ?? (string) config('immersion.default_case'));
+
         $game = Game::create([
             'name' => $data['name'],
+            'case_slug' => $case->slug,
+            'case_version' => $case->version(),
             'status' => 'draft',
         ]);
 
@@ -53,7 +58,7 @@ class GameMasterController extends Controller
             ]);
         }
 
-        foreach (DefaultTimeline::events() as $event) {
+        foreach ($case->timeline() as $event) {
             $game->timelineEvents()->create($event);
         }
 
@@ -68,7 +73,7 @@ class GameMasterController extends Controller
             return back()->with('status', 'Esta partida ya tiene una linea de tiempo.');
         }
 
-        foreach (DefaultTimeline::events() as $event) {
+        foreach ($game->caseDefinition()->timeline() as $event) {
             $game->timelineEvents()->create($event);
         }
 
@@ -78,12 +83,26 @@ class GameMasterController extends Controller
     public function show(Game $game): Response
     {
         return Inertia::render('GameMaster/Game', [
-            'game' => fn () => tap($game)->load(['players', 'timelineEvents.deliveredToPlayer', 'accusations.player']),
+            'game' => function () use ($game) {
+                $game->load(['players', 'timelineEvents.deliveredToPlayer', 'accusations.player']);
+
+                // The Game Master panel hands out the per-player inbox links,
+                // so it is the one place that needs their tokens and emails.
+                $game->players->each->revealCredentials();
+
+                return $game;
+            },
         ]);
     }
 
     public function start(Game $game): RedirectResponse
     {
+        // Starting an already-started game would reset the clock and desync
+        // the timeline from the events it has already sent.
+        if ($game->started_at) {
+            return back()->with('status', 'Esta partida ya fue iniciada.');
+        }
+
         $game->update([
             'status' => 'running',
             'started_at' => Carbon::now(),
@@ -196,7 +215,7 @@ class GameMasterController extends Controller
         return Inertia::render('GameMaster/Interrogations', [
             'game' => $game,
             'sessions' => fn () => InterrogationSession::where('game_id', $game->id)
-                ->with(['player', 'messages'])
+                ->with(['player:id,name', 'messages'])
                 ->orderBy('suspect_slug')
                 ->get(),
         ]);

@@ -23,9 +23,9 @@ class GeminiAudioService
             return $relativePath;
         }
 
-        $baseUrl = rtrim((string) env('IMMERSION_AI_SERVICE_URL', ''), '/');
-        $projectId = (string) env('IMMERSION_AI_PROJECT_ID', 'mystery-case');
-        $apiKey = (string) env('IMMERSION_AI_INTERNAL_API_KEY', '');
+        $baseUrl = rtrim((string) config('immersion.ai.base_url'), '/');
+        $projectId = (string) config('immersion.ai.project_id');
+        $apiKey = (string) config('immersion.ai.api_key');
 
         if ($baseUrl === '' || $apiKey === '' || str_starts_with($apiKey, 'CHANGE_ME')) {
             Log::warning('immersion_tts_not_configured', ['event_id' => $eventId]);
@@ -34,7 +34,7 @@ class GeminiAudioService
         }
 
         try {
-            $response = Http::timeout(60)
+            $response = Http::timeout((int) config('immersion.ai.tts_timeout'))
                 ->withHeaders([
                     'x-project-id' => $projectId,
                     'x-internal-api-key' => $apiKey,

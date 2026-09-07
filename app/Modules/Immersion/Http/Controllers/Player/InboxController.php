@@ -4,8 +4,6 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
-use App\Modules\Immersion\Support\CaseFileReader;
-use App\Modules\Immersion\Support\CaseGallery;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -15,21 +13,25 @@ class InboxController extends Controller
 {
     public function show(Player $player): InertiaResponse
     {
+        $case = $player->game->caseDefinition();
+
         return Inertia::render('Player/Inbox', [
-            'player' => $player,
+            'player' => $player->revealCredentials(),
             'game' => $player->game,
-            'items' => fn () => $player->inboxEvents()->map(function ($event) {
+            'case' => [
+                'name' => $case->name(),
+                'code' => $case->code(),
+            ],
+            'items' => fn () => $player->inboxEvents()->map(function ($event) use ($case) {
                 return [
-                    'event' => $event,
-                    'body_html' => $event->source_file
-                        ? CaseFileReader::renderFileExcludingSections(
-                            $event->source_file,
-                            CaseGallery::excludedHeadings($event->source_file)
-                        )
-                        : CaseFileReader::renderMarkdown((string) $event->body_markdown),
-                    'gallery' => $event->source_file
-                        ? CaseGallery::forSourceFile($event->source_file)
-                        : [],
+                    // The audio script is what the player is meant to HEAR and
+                    // the source file is an internal path; neither belongs in
+                    // the payload.
+                    'event' => $event->only([
+                        'id', 'type', 'title', 'sent_at', 'cta_interrogation',
+                    ]),
+                    'body_html' => $case->renderEventBody($event->source_file, $event->body_markdown),
+                    'gallery' => $case->galleryFor($event->source_file),
                 ];
             })->values(),
         ]);

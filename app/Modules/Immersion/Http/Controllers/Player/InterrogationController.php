@@ -7,8 +7,6 @@ use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Services\SuspectInterrogationService;
-use App\Modules\Immersion\Support\CaseFileReader;
-use App\Modules\Immersion\Support\CaseSuspects;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,29 +21,35 @@ class InterrogationController extends Controller
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
 
+        // Only the claiming player's NAME is shown to the others, so the
+        // related player is serialized with its credentials still hidden.
         $sessions = InterrogationSession::where('game_id', $player->game_id)
-            ->with('player')
+            ->with('player:id,name')
             ->get()
             ->keyBy('suspect_slug');
 
+        $case = $player->game->caseDefinition();
+
         return Inertia::render('Player/InterrogationIndex', [
-            'player' => $player,
-            'suspects' => CaseSuspects::all(),
-            'victim' => CaseSuspects::victim(),
+            'player' => $player->revealCredentials(),
+            'suspects' => $case->suspects(),
+            'victim' => $case->victim(),
             'sessions' => $sessions,
-            'maxQuestions' => InterrogationSession::MAX_QUESTIONS,
+            'maxQuestions' => $case->interrogationQuestions(),
         ]);
     }
 
     public function show(Player $player, string $slug): Response
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
-        $suspect = CaseSuspects::find($slug);
+
+        $case = $player->game->caseDefinition();
+        $suspect = $case->suspect($slug);
         abort_if(! $suspect, 404);
 
         $session = InterrogationSession::where('game_id', $player->game_id)
             ->where('suspect_slug', $slug)
-            ->with(['messages', 'player'])
+            ->with(['messages', 'player:id,name'])
             ->first();
 
         $lockedBy = null;
@@ -59,19 +63,20 @@ class InterrogationController extends Controller
         }
 
         return Inertia::render('Player/InterrogationChat', [
-            'player' => $player,
+            'player' => $player->revealCredentials(),
             'slug' => $slug,
             'suspect' => $suspect,
             'session' => $session ?? [
                 'id' => null,
                 'player_id' => null,
                 'questions_used' => 0,
+                'max_questions' => $case->interrogationQuestions(),
                 'closed_at' => null,
                 'messages' => [],
             ],
             'lockedBy' => $lockedBy,
             'originalTestimonyHtml' => $revealTestimony
-                ? CaseFileReader::renderFile($suspect['file'])
+                ? $case->content()->renderFile($suspect['file'])
                 : null,
         ]);
     }
@@ -79,14 +84,16 @@ class InterrogationController extends Controller
     public function ask(Request $request, Player $player, string $slug): JsonResponse
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
-        $suspect = CaseSuspects::find($slug);
+
+        $case = $player->game->caseDefinition();
+        $suspect = $case->suspect($slug);
         abort_if(! $suspect, 404);
 
         $data = $request->validate([
             'question' => ['required', 'string', 'max:600'],
         ]);
 
-        $session = $this->claimOrFindSession($player, $slug);
+        $session = $this->claimOrFindSession($player, $slug, $case->interrogationQuestions());
 
         if (! $session->isOwnedBy($player)) {
             return response()->json([
@@ -96,9 +103,14 @@ class InterrogationController extends Controller
             ], 403);
         }
 
-        if ($session->isClosed()) {
+        // Reserve the question slot BEFORE spending an AI call. A single
+        // conditional UPDATE is what actually enforces the budget: two
+        // concurrent asks from the same player (double click, two tabs) would
+        // otherwise both read the same questions_used and both write the same
+        // increment, letting the player exceed the limit.
+        if (! $session->reserveQuestion()) {
             return response()->json([
-                'message' => 'Ya usaste tus 5 preguntas con esta persona.',
+                'message' => "Ya usaste tus {$session->max_questions} preguntas con esta persona.",
                 'closed' => true,
             ], 422);
         }
@@ -117,23 +129,21 @@ class InterrogationController extends Controller
             'content' => $reply,
         ]);
 
-        $session->questions_used++;
-
-        if ($session->questions_used >= InterrogationSession::MAX_QUESTIONS) {
+        if ($session->questionsRemaining() === 0 && ! $session->isClosed()) {
             $session->closed_at = Carbon::now();
             $session->transcript_revealed = true;
+            $session->save();
         }
-
-        $session->save();
 
         return response()->json([
             'player_message' => $playerMessage,
             'suspect_message' => $suspectMessage,
             'questions_used' => $session->questions_used,
             'questions_remaining' => $session->questionsRemaining(),
+            'max_questions' => $session->max_questions,
             'closed' => $session->isClosed(),
             'original_testimony_html' => $session->isClosed()
-                ? CaseFileReader::renderFile($suspect['file'])
+                ? $case->content()->renderFile($suspect['file'])
                 : null,
         ]);
     }
@@ -145,10 +155,10 @@ class InterrogationController extends Controller
      * lockForUpdate) para que dos jugadores preguntando casi al mismo tiempo
      * a un sospechoso nunca antes tocado no puedan reclamarlo ambos.
      */
-    private function claimOrFindSession(Player $player, string $slug): InterrogationSession
+    private function claimOrFindSession(Player $player, string $slug, int $maxQuestions): InterrogationSession
     {
         try {
-            return DB::transaction(function () use ($player, $slug) {
+            return DB::transaction(function () use ($player, $slug, $maxQuestions) {
                 $session = InterrogationSession::where('game_id', $player->game_id)
                     ->where('suspect_slug', $slug)
                     ->lockForUpdate()
@@ -163,6 +173,9 @@ class InterrogationController extends Controller
                     'player_id' => $player->id,
                     'suspect_slug' => $slug,
                     'started_at' => Carbon::now(),
+                    // Anchor the case's budget on the session so that editing
+                    // the case never alters a game in progress.
+                    'max_questions' => $maxQuestions,
                 ]);
             });
         } catch (QueryException $exception) {

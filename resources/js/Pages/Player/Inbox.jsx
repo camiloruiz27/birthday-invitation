@@ -3,7 +3,7 @@ import ImmersionLayout from '../../Layouts/ImmersionLayout';
 import InboxItem from '../../components/player/InboxItem';
 import usePoll from '../../hooks/usePoll';
 
-export default function Inbox({ player, game, items }) {
+export default function Inbox({ player, game, items, case: mysteryCase }) {
     usePoll(['items'], { interval: 15000 });
 
     return (
@@ -31,7 +31,7 @@ export default function Inbox({ player, game, items }) {
             <Head title={`Bandeja de ${player.name}`} />
 
             <p className="mb-6 text-sm text-muted">
-                Hola {player.name}. Estos son los mensajes que has recibido sobre el caso SF 554301.
+                Hola {player.name}. Estos son los mensajes que has recibido sobre el caso {mysteryCase.code}.
             </p>
 
             {items.length === 0 && (

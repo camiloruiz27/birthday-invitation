@@ -2,18 +2,16 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     *
-     * @return void
-     */
-    public function run()
+    public function run(): void
     {
-        //
+        // The catalog is derived from the installed case manifests rather than
+        // hand-written seed data, so there is one source of truth. Same
+        // command the deploy runs.
+        Artisan::call('platform:sync-cases');
     }
 }

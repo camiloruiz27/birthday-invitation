@@ -2,22 +2,26 @@
 
 namespace App\Modules\Immersion\Database\Seeders;
 
+use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Models\Game;
-use App\Modules\Immersion\Support\DefaultTimeline;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Partida de ejemplo para probar la linea de tiempo localmente. Usa la misma
- * linea de tiempo por defecto (ver App\Modules\Immersion\Support\DefaultTimeline)
- * que se adjunta automaticamente a cualquier partida creada desde el panel del GM.
+ * Sample game for exercising the timeline locally. It uses the same case
+ * manifest that any game created from the Game Master panel uses, so the demo
+ * cannot drift from the real thing.
  */
 class ImmersionDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        $case = app(CaseRegistry::class)->default();
+
         $game = Game::create([
-            'name' => 'Partida de prueba - Steve Jacobs',
+            'name' => 'Partida de prueba - '.$case->name(),
+            'case_slug' => $case->slug,
+            'case_version' => $case->version(),
             'status' => 'draft',
         ]);
 
@@ -29,7 +33,7 @@ class ImmersionDemoSeeder extends Seeder
             ]);
         }
 
-        foreach (DefaultTimeline::events() as $event) {
+        foreach ($case->timeline() as $event) {
             $game->timelineEvents()->create($event);
         }
     }

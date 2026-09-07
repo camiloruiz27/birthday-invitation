@@ -2,6 +2,7 @@
 
 namespace App\Modules\Immersion;
 
+use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Console\Commands\ProcessImmersionTimeline;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +19,9 @@ class ImmersionServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Case manifests are plain arrays that never change during a request,
+        // so discovery and parsing happen once.
+        $this->app->singleton(CaseRegistry::class);
     }
 
     public function boot(): void

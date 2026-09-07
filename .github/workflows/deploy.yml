@@ -61,6 +61,10 @@ jobs:
             git reset --hard origin/main
             composer install --no-dev --optimize-autoloader --no-interaction
             php artisan migrate --force
+            # Idempotent: publishes newly installed case manifests into the
+            # catalog and refreshes their content fields. Prices and
+            # publication state set in the database are left untouched.
+            php artisan platform:sync-cases
             php artisan optimize:clear
             ls -la public/build/manifest.json
 

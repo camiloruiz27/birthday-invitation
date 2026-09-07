@@ -10,14 +10,13 @@ class InterrogationSession extends Model
 {
     protected $table = 'immersion_interrogation_sessions';
 
-    public const MAX_QUESTIONS = 5;
-
     protected $fillable = [
         'game_id',
         'player_id',
         'suspect_slug',
         'started_at',
         'questions_used',
+        'max_questions',
         'closed_at',
         'transcript_revealed',
     ];
@@ -26,10 +25,20 @@ class InterrogationSession extends Model
         'game_id' => 'integer',
         'player_id' => 'integer',
         'questions_used' => 'integer',
+        'max_questions' => 'integer',
         'started_at' => 'datetime',
         'closed_at' => 'datetime',
         'transcript_revealed' => 'boolean',
     ];
+
+    /**
+     * Budget for sessions created from now on. Existing sessions keep the
+     * limit stored on their own row.
+     */
+    public static function defaultMaxQuestions(): int
+    {
+        return (int) config('immersion.interrogation.max_questions', 5);
+    }
 
     public function isOwnedBy(Player $player): bool
     {
@@ -58,6 +67,31 @@ class InterrogationSession extends Model
 
     public function questionsRemaining(): int
     {
-        return max(0, self::MAX_QUESTIONS - $this->questions_used);
+        return max(0, $this->max_questions - $this->questions_used);
+    }
+
+    /**
+     * Atomically consume one question from this session's budget. Returns
+     * false when the budget is already spent or the session is closed, in
+     * which case nothing was written and no AI call should be made.
+     *
+     * The WHERE clause is the enforcement point: a read-modify-write in PHP
+     * would let two concurrent requests spend the same slot twice.
+     */
+    public function reserveQuestion(): bool
+    {
+        $reserved = static::query()
+            ->whereKey($this->getKey())
+            ->whereNull('closed_at')
+            ->whereColumn('questions_used', '<', 'max_questions')
+            ->increment('questions_used');
+
+        if ($reserved === 0) {
+            return false;
+        }
+
+        $this->refresh();
+
+        return true;
     }
 }

@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('gm')->name('immersion.gm.')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
+
+    // The Game Master password is shared and long-lived, so the only thing
+    // standing between an attacker and every game is this rate limit.
+    Route::post('/login', [AuthController::class, 'login'])
+        ->middleware('throttle:'.config('immersion.rate_limits.game_master_login'))
+        ->name('login.attempt');
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::middleware(EnsureGameMaster::class)->group(function () {
@@ -36,5 +42,9 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
     Route::get('/interrogatorio', [InterrogationController::class, 'index'])->name('interrogation.index');
     Route::get('/interrogatorio/{slug}', [InterrogationController::class, 'show'])->name('interrogation.show');
-    Route::post('/interrogatorio/{slug}/preguntar', [InterrogationController::class, 'ask'])->name('interrogation.ask');
+    // Every question is a billable AI call, so cap how fast one token can
+    // spend them regardless of the per-session budget.
+    Route::post('/interrogatorio/{slug}/preguntar', [InterrogationController::class, 'ask'])
+        ->middleware('throttle:'.config('immersion.rate_limits.interrogation_ask'))
+        ->name('interrogation.ask');
 });

@@ -1,15 +1,22 @@
-# Immersion - "¿Que le sucedio a Steve Jacobs?"
+# Immersion - motor de juegos de misterio
 
-Modulo aditivo y autocontenido (nada del juego base -invitacion ni
-"aniversario en Cartagena"- se toca). Para desactivarlo por completo: borra
-esta carpeta y quita la linea `App\Modules\Immersion\ImmersionServiceProvider::class`
-de `config/app.php`.
+Modulo aditivo y autocontenido: es el **motor de juego** (partidas, jugadores,
+linea de tiempo, interrogatorios, acusaciones). No conoce ningun caso en
+concreto. Para desactivarlo por completo: borra esta carpeta y quita la linea
+`App\Modules\Immersion\ImmersionServiceProvider::class` de `config/app.php`.
 
 ## 1. Contenido del caso
 
-Coloca los archivos `.md` del caso en `data/` siguiendo `data/README.md`
-(nombres exactos). Sin esos archivos, los correos que citan un "Sobre"
-simplemente saldran vacios; el resto de la mecanica funciona igual.
+Cada caso es una carpeta bajo `Cases/` con un `case.php` y su `content/`.
+El caso actual es `Cases/steve-jacobs/` ("¿Que le sucedio a Steve Jacobs?").
+Ver **[Cases/README.md](Cases/README.md)** para la estructura y para crear un
+caso nuevo.
+
+Un archivo `.md` que falte se renderiza vacio a proposito: ese mensaje sale en
+blanco en vez de romper el resto de la linea de tiempo.
+
+El caso por defecto de las partidas nuevas se elige con
+`IMMERSION_DEFAULT_CASE` en `.env`.
 
 ## 2. Variables de entorno
 
@@ -33,8 +40,9 @@ php artisan migrate
 php artisan db:seed --class="App\Modules\Immersion\Database\Seeders\ImmersionDemoSeeder"
 ```
 
-Esto crea una partida ("Partida de prueba - Steve Jacobs") con 6 jugadores
-de ejemplo y las 8 entradas de linea de tiempo (minutos 10 a 75).
+Esto crea una partida de prueba del caso por defecto con 6 jugadores de
+ejemplo y la linea de tiempo declarada en el manifiesto de ese caso (para
+steve-jacobs: 8 entradas, minutos 10 a 75).
 
 ## 4. Probar el flujo completo en local
 
@@ -82,9 +90,12 @@ vez llama a Gemini (`gemini-2.5-flash-preview-tts`) y devuelve un `.wav`
 
 ## 6. Mecanica 7 - Interrogatorio por IA
 
-Cada jugador puede interrogar a cualquiera de las 9 personas en
-`data/suspects/` (8 sospechosos + el testigo Jeremy Burt), maximo 5
-preguntas por persona. El modelo (`gemini-3.6-flash` por defecto, ver
+Cada jugador puede interrogar a las personas que declare el manifiesto del
+caso (para steve-jacobs: 9 en `Cases/steve-jacobs/content/suspects/`, 8
+sospechosos + el testigo Jeremy Burt). El presupuesto de preguntas por persona
+lo fija el caso (`limits.interrogation_questions`, 5 en steve-jacobs) y queda
+grabado en cada sesion al crearse, asi que editarlo no altera partidas en
+curso. El modelo (`gemini-3.6-flash` por defecto, ver
 `MYSTERY_CASE_CHAT_MODEL` en el `.env` del gateway) solo recibe el
 testimonio verbatim de ESA persona (nunca la solucion del caso ni el
 testimonio de otros), y tiene instrucciones estrictas de no inventar

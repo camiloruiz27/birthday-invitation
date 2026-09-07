@@ -17,7 +17,7 @@ class AccusationController extends Controller
         $player->load('accusation');
 
         return Inertia::render('Player/Accusation', [
-            'player' => $player,
+            'player' => $player->revealCredentials(),
             'game' => $player->game,
             'unlocked' => $player->game->accusationsUnlocked(),
         ]);

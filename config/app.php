@@ -196,10 +196,17 @@ return [
         App\Providers\RouteServiceProvider::class,
 
         /*
-         * Immersion module (juego "Que le sucedio a Steve Jacobs?")...
+         * Immersion module: the game engine (games, players, timeline,
+         * interrogations, accusations). Knows case slugs, not the catalog.
          * Quitar esta linea + borrar app/Modules/Immersion desactiva el modulo.
          */
         App\Modules\Immersion\ImmersionServiceProvider::class,
+
+        /*
+         * Platform module: catalog, ownership and commerce around the engine.
+         * Depends on Immersion (reads case manifests); never the other way.
+         */
+        App\Modules\Platform\PlatformServiceProvider::class,
 
     ],
 

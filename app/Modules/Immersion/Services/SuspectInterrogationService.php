@@ -3,8 +3,6 @@
 namespace App\Modules\Immersion\Services;
 
 use App\Modules\Immersion\Models\InterrogationSession;
-use App\Modules\Immersion\Support\CaseFileReader;
-use App\Modules\Immersion\Support\CaseSuspects;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,15 +18,16 @@ class SuspectInterrogationService
 
     public function ask(InterrogationSession $session, string $question): string
     {
-        $suspect = CaseSuspects::find($session->suspect_slug);
+        $case = $session->game->caseDefinition();
+        $suspect = $case->suspect($session->suspect_slug);
 
         if (! $suspect) {
             return self::FALLBACK_REPLY;
         }
 
-        $baseUrl = rtrim((string) env('IMMERSION_AI_SERVICE_URL', ''), '/');
-        $projectId = (string) env('IMMERSION_AI_PROJECT_ID', 'mystery-case');
-        $apiKey = (string) env('IMMERSION_AI_INTERNAL_API_KEY', '');
+        $baseUrl = rtrim((string) config('immersion.ai.base_url'), '/');
+        $projectId = (string) config('immersion.ai.project_id');
+        $apiKey = (string) config('immersion.ai.api_key');
 
         if ($baseUrl === '' || $apiKey === '' || str_starts_with($apiKey, 'CHANGE_ME')) {
             Log::warning('immersion_interrogation_not_configured', ['session_id' => $session->id]);
@@ -46,7 +45,7 @@ class SuspectInterrogationService
             ->all();
 
         try {
-            $response = Http::timeout(35)
+            $response = Http::timeout((int) config('immersion.ai.interrogation_timeout'))
                 ->withHeaders([
                     'x-project-id' => $projectId,
                     'x-internal-api-key' => $apiKey,
@@ -54,7 +53,7 @@ class SuspectInterrogationService
                 ->post("{$baseUrl}/api/projects/{$projectId}/interrogate", [
                     'suspect_name' => $suspect['name'],
                     'suspect_role' => $suspect['role'],
-                    'testimony' => CaseFileReader::raw($suspect['file']),
+                    'testimony' => $case->content()->raw($suspect['file']),
                     'history' => $history,
                     'question' => $question,
                 ]);

@@ -21,7 +21,7 @@ export default function InterrogationIndex({ player, suspects, victim, sessions,
 
             <div className="mb-6 flex items-center gap-4 border-2 border-ink bg-ink p-4 text-paper">
                 <img
-                    src={`/immersion/photos/${victim.photo}`}
+                    src={victim.photo_url}
                     alt={victim.name}
                     className="h-16 w-16 shrink-0 rounded border-2 border-paper object-cover"
                 />

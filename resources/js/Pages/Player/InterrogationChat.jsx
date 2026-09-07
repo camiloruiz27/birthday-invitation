@@ -11,6 +11,7 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
     const [messages, setMessages] = useState(session.messages);
     const [closed, setClosed] = useState(session.closed_at !== null);
     const [questionsUsed, setQuestionsUsed] = useState(session.questions_used);
+    const [maxQuestions, setMaxQuestions] = useState(session.max_questions);
     const [testimonyHtml, setTestimonyHtml] = useState(originalTestimonyHtml);
     const [sending, setSending] = useState(false);
     const [lastQuestion, setLastQuestion] = useState(null);
@@ -49,6 +50,7 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
                 data.suspect_message,
             ]);
             setQuestionsUsed(data.questions_used);
+            setMaxQuestions(data.max_questions);
             setClosed(data.closed);
             if (data.original_testimony_html) setTestimonyHtml(data.original_testimony_html);
             setLastQuestion(null);
@@ -94,7 +96,7 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-2 border-ink bg-paper-card px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
                     <img
-                        src={`/immersion/photos/${suspect.photo}`}
+                        src={suspect.photo_url}
                         alt={suspect.name}
                         className="h-14 w-14 shrink-0 rounded border border-border-soft object-cover"
                     />
@@ -103,7 +105,11 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
                         <h2 className="text-lg font-bold">{suspect.name}</h2>
                     </div>
                 </div>
-                {!effectiveLockedBy && <span className="shrink-0 text-sm font-bold">Preguntas: {questionsUsed}/5</span>}
+                {!effectiveLockedBy && (
+                    <span className="shrink-0 text-sm font-bold">
+                        Preguntas: {questionsUsed}/{maxQuestions}
+                    </span>
+                )}
             </div>
 
             {messages.length > 0 && (
@@ -126,13 +132,13 @@ export default function InterrogationChat({ player, slug, suspect, session, orig
             )}
 
             {!closed && !effectiveLockedBy ? (
-                <ChatComposer onSend={handleSend} sending={sending} remaining={5 - questionsUsed} />
+                <ChatComposer onSend={handleSend} sending={sending} remaining={maxQuestions - questionsUsed} />
             ) : (
                 <>
                     <div className="border-2 border-dashed border-border-soft p-4 text-center text-sm text-muted">
                         {effectiveLockedBy
                             ? `Ya fue interrogado por ${effectiveLockedBy}. Aquí tienes lo que se preguntó y su declaración oficial.`
-                            : `Ya usaste tus 5 preguntas con ${suspect.name}. Abajo tienes su declaración oficial completa.`}
+                            : `Ya usaste tus ${maxQuestions} preguntas con ${suspect.name}. Abajo tienes su declaración oficial completa.`}
                     </div>
 
                     <div className="mt-4 border-2 border-ink bg-paper-card p-4">

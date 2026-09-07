@@ -9,7 +9,7 @@ export default function SuspectCard({ playerToken, slug, suspect, session, maxQu
             className="flex items-start gap-3 border-2 border-ink bg-paper-card p-3 hover:bg-[#efe6ce]"
         >
             <img
-                src={`/immersion/photos/${suspect.photo}`}
+                src={suspect.photo_url}
                 alt={suspect.name}
                 className="h-16 w-16 shrink-0 rounded border border-border-soft object-cover"
             />

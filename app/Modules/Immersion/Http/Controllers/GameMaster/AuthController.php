@@ -21,7 +21,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $expected = (string) env('IMMERSION_GM_PASSWORD', '');
+        $expected = (string) config('immersion.game_master_password');
 
         if ($expected === '' || ! hash_equals($expected, $data['password'])) {
             return back()->withErrors(['password' => 'Contrasena incorrecta.']);
