@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
 use App\Modules\Platform\Http\Controllers\Auth\PasswordResetLinkController;
@@ -10,6 +11,7 @@ use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
+use App\Modules\Platform\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -80,4 +82,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/panel', DashboardController::class)->name('dashboard');
     Route::get('/biblioteca', LibraryController::class)->name('library');
+
+    // Platform administration. Granted only from the console
+    // (php artisan platform:make-admin), never through a screen.
+    Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', AdminDashboardController::class)->name('dashboard');
+    });
 });

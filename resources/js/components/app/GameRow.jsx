@@ -13,11 +13,11 @@ export const STATUS_LABELS = {
  * One game in a listing. Shared by the dashboard and the games section so a
  * game never reads two different ways depending on where you saw it.
  */
-export default function GameRow({ game }) {
+export default function GameRow({ game, className = '' }) {
     return (
         <Link
             href={route('immersion.gm.game.show', game.id)}
-            className="block rounded-card border border-line bg-surface-raised p-4 transition-colors hover:border-line-strong hover:bg-surface-overlay"
+            className={`block min-w-0 rounded-card border border-line bg-surface-raised p-4 transition-colors hover:border-line-strong hover:bg-surface-overlay ${className}`}
         >
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="min-w-0 truncate font-medium text-ink">{game.name}</span>

@@ -29,6 +29,17 @@ class GamePolicy
     }
 
     /**
+     * Deleting a game, which is how a slot is freed against the quota.
+     *
+     * Allowed in both modes and at any point in a run: it is the owner's data,
+     * and the confirmation in the interface is what makes it deliberate.
+     */
+    public function delete(User $user, Game $game): bool
+    {
+        return $this->owns($user, $game);
+    }
+
+    /**
      * Directing: forcing the next event and toggling mechanics by hand.
      *
      * Only in gm_led mode. In automatic mode the owner is a player, so

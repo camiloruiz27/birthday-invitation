@@ -4,6 +4,7 @@ namespace App\Modules\Platform\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Game;
+use App\Modules\Immersion\Support\GameQuota;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -17,11 +18,19 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, GameQuota $quota): Response
     {
         $user = $request->user();
 
         return Inertia::render('Dashboard', [
+            // The quota is per case, so there is no single number for it here.
+            // The dashboard only needs to know whether creating is possible at
+            // all; the library shows the per-case detail.
+            'canCreate' => fn () => $quota->hasRoomForAny(
+                $user,
+                $user->library()->pluck('slug')
+            ),
+
             'stats' => fn () => [
                 'cases' => $user->entitlements()->active()->count(),
                 'games' => $user->games()->count(),

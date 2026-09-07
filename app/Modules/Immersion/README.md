@@ -91,6 +91,32 @@ esa marca; no hace falta schema nuevo.
 Cerrar el caso (`finish`) detiene el reloj, corta el envio de material y es lo
 que revela los spoilers al dueno que estuvo jugando.
 
+## 4.2.1 Cupo de partidas
+
+El cupo es **por caso**, no por cuenta: `IMMERSION_MAX_GAMES_PER_CASE` partidas
+de cada caso (6 por defecto). Quien tenga 4 casos puede llegar a 24 partidas
+—6 de cada uno— y llenarse en uno no afecta a los demas.
+
+**Cuentan todas, en cualquier estado**: una partida terminada sigue ocupando
+cupo. La unica forma de liberar uno es **eliminar una partida de ese mismo
+caso**; borrar una de otro caso no sirve.
+
+El limite se aplica en el servidor dentro de una transaccion con lock sobre la
+fila del dueno: contar y luego insertar es un read-modify-write, y dos
+peticiones simultaneas verian ambas cinco partidas y crearian una sexta cada
+una.
+
+`Support/GameQuota` es la unica fuente de verdad. `forCases()` resuelve toda la
+biblioteca en una sola query agrupada, para que el formulario de creacion y la
+biblioteca no hagan una consulta por caso.
+
+Eliminar una partida borra en cascada sus jugadores, eventos, interrogatorios y
+acusaciones, y ademas limpia a mano los `.wav` en `storage/app/audio` — el audio
+vive en disco, asi que ninguna cascada de base de datos lo alcanza.
+
+Subir el limite es seguro. Bajarlo **no borra nada**: las cuentas por encima del
+nuevo tope simplemente no pueden crear hasta volver por debajo.
+
 ## 4.3 Cola
 
 `QUEUE_CONNECTION=database` (tabla `jobs`). El trabajo lento — generar el

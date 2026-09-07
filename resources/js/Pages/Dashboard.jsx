@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import Card, { CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import GameRow from '../components/app/GameRow';
 
@@ -14,7 +15,7 @@ function Stat({ label, value }) {
     );
 }
 
-export default function Dashboard({ stats, activeGames, draftGames, library }) {
+export default function Dashboard({ stats, activeGames, draftGames, library, canCreate }) {
     const { auth } = usePage().props;
     const firstName = auth.user.name.split(' ')[0];
     const hasLibrary = library.length > 0;
@@ -25,7 +26,14 @@ export default function Dashboard({ stats, activeGames, draftGames, library }) {
             kicker="Central de operaciones"
             title={`Hola, ${firstName}`}
             actions={
-                hasLibrary && <Button href={route('immersion.gm.games.create')}>Nueva partida</Button>
+                hasLibrary &&
+                (canCreate ? (
+                    <Button href={route('immersion.gm.games.create')}>Nueva partida</Button>
+                ) : (
+                    <Button disabled title="Todos tus casos llegaron a su máximo de partidas">
+                        Nueva partida
+                    </Button>
+                ))
             }
         >
             <Head title="Panel" />
@@ -43,6 +51,13 @@ export default function Dashboard({ stats, activeGames, draftGames, library }) {
                         <Stat label={stats.games === 1 ? 'Partida' : 'Partidas'} value={stats.games} />
                         <Stat label="En curso" value={stats.running} />
                     </div>
+
+                    {!canCreate && (
+                        <Alert variant="warning" title="Todos tus casos llegaron a su máximo">
+                            El cupo de partidas es por caso. Elimina una partida del caso que
+                            quieras volver a jugar; en tu biblioteca ves el detalle de cada uno.
+                        </Alert>
+                    )}
 
                     {/* A running game is why you opened this page, so it goes
                         first and never gets folded into a generic list. */}
@@ -73,9 +88,11 @@ export default function Dashboard({ stats, activeGames, draftGames, library }) {
                             title="Todavía no has creado ninguna partida"
                             description="Elige un caso de tu biblioteca, agrega a tus jugadores y cada uno recibirá su propio enlace."
                             action={
-                                <Button href={route('immersion.gm.games.create')}>
-                                    Crear mi primera partida
-                                </Button>
+                                canCreate && (
+                                    <Button href={route('immersion.gm.games.create')}>
+                                        Crear mi primera partida
+                                    </Button>
+                                )
                             }
                         />
                     )}

@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Button from '../../components/ui/Button';
+import Alert from '../../components/ui/Alert';
 import EmptyState from '../../components/ui/EmptyState';
 import GameRow, { STATUS_LABELS } from '../../components/app/GameRow';
+import DeleteGameButton from '../../components/game-master/DeleteGameButton';
 
 const FILTERS = [
     { key: 'all', label: 'Todas' },
@@ -11,7 +13,7 @@ const FILTERS = [
     { key: 'draft', label: 'Sin iniciar', statuses: ['draft'] },
 ];
 
-export default function Games({ games, hasLibrary }) {
+export default function Games({ games, hasLibrary, canCreate }) {
     const [filter, setFilter] = useState('all');
 
     const active = FILTERS.find((item) => item.key === filter);
@@ -25,10 +27,28 @@ export default function Games({ games, hasLibrary }) {
             kicker="Game Master"
             title="Partidas"
             actions={
-                hasLibrary && <Button href={route('immersion.gm.games.create')}>Nueva partida</Button>
+                hasLibrary &&
+                (canCreate ? (
+                    <Button href={route('immersion.gm.games.create')}>Nueva partida</Button>
+                ) : (
+                    <Button disabled title="Todos tus casos llegaron a su máximo de partidas">
+                        Nueva partida
+                    </Button>
+                ))
             }
         >
             <Head title="Partidas" />
+
+            {hasLibrary && !canCreate && (
+                <Alert variant="warning" title="Todos tus casos llegaron a su máximo">
+                    El cupo es por caso. Elimina una partida del caso que quieras volver a
+                    jugar, o mira el detalle en tu{' '}
+                    <Link href={route('library')} className="underline">
+                        biblioteca
+                    </Link>
+                    .
+                </Alert>
+            )}
 
             {games.length === 0 ? (
                 <EmptyState
@@ -39,13 +59,13 @@ export default function Games({ games, hasLibrary }) {
                             : 'Necesitas un caso en tu biblioteca antes de poder crear partidas.'
                     }
                     action={
-                        hasLibrary ? (
+                        hasLibrary && canCreate ? (
                             <Button href={route('immersion.gm.games.create')}>
                                 Crear mi primera partida
                             </Button>
-                        ) : (
+                        ) : !hasLibrary ? (
                             <Button href={route('cases.index')}>Ver los casos disponibles</Button>
-                        )
+                        ) : null
                     }
                 />
             ) : (
@@ -87,7 +107,10 @@ export default function Games({ games, hasLibrary }) {
                     ) : (
                         <div className="space-y-3">
                             {visible.map((game) => (
-                                <GameRow key={game.id} game={game} />
+                                <div key={game.id} className="flex items-start gap-3">
+                                    <GameRow game={game} className="flex-1" />
+                                    <DeleteGameButton game={game} size="sm" variant="ghost" />
+                                </div>
                             ))}
                         </div>
                     )}

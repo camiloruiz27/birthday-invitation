@@ -17,6 +17,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Games
+    |--------------------------------------------------------------------------
+    |
+    | How many games one account may keep OF EACH CASE. Someone who owns four
+    | cases can have six games of each; filling up on one says nothing about
+    | the others.
+    |
+    | Every game counts, in any state — a finished one still occupies a slot.
+    | Freeing a slot means deleting a game of that same case, which is why
+    | deletion exists at all.
+    |
+    | Raising this is safe. Lowering it never deletes anything: accounts over
+    | the new limit simply cannot create until they come back under it.
+    |
+    */
+
+    'games' => [
+        'max_per_case' => (int) env('IMMERSION_MAX_GAMES_PER_CASE', 6),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | AI gateway
     |--------------------------------------------------------------------------
     |

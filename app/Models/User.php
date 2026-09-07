@@ -23,6 +23,13 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
+    /**
+     * `is_admin` is deliberately absent: administrator is granted only from
+     * the console (php artisan platform:make-admin), so no form or API payload
+     * can ever set it by mass assignment.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -48,6 +55,7 @@ class User extends Authenticatable
     // is hashed explicitly at every write site.
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_admin' => 'boolean',
     ];
 
     /**

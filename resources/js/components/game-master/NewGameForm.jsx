@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import Button from '../ui/Button';
+import Alert from '../ui/Alert';
 import { TextField, SelectField } from '../ui/Field';
+import QuotaMeter from '../app/QuotaMeter';
 import PlayerRow from './PlayerRow';
 
 function emptyPlayer() {
@@ -61,14 +63,22 @@ function ModePicker({ value, onChange }) {
 
 export default function NewGameForm({ library }) {
     const [players, setPlayers] = useState(() => Array.from({ length: 6 }, emptyPlayer));
+
+    // Start on a case that still has room, so the form does not open already
+    // blocked when only one of several cases is full.
+    const firstWithRoom = library.find((item) => !item.quota.full) || library[0];
+
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        case_slug: library[0]?.slug || '',
+        case_slug: firstWithRoom?.slug || '',
         mode: 'gm_led',
         players,
     });
 
     const isAutomatic = data.mode === 'automatic';
+    const selectedCase = library.find((item) => item.slug === data.case_slug);
+    const quota = selectedCase?.quota;
+    const caseIsFull = Boolean(quota?.full);
 
     function updatePlayers(next) {
         setPlayers(next);
@@ -95,16 +105,38 @@ export default function NewGameForm({ library }) {
             />
 
             {/* Only cases in the library are offered. The server re-checks the
-                entitlement: this select is convenience, not security. */}
-            <SelectField
-                id="case_slug"
-                label="Caso"
-                value={data.case_slug}
-                onChange={(value) => setData('case_slug', value)}
-                error={errors.case_slug}
-                disabled={library.length === 1}
-                options={library.map((item) => ({ value: item.slug, label: item.name }))}
-            />
+                entitlement and the quota: this select is convenience, not
+                security. */}
+            <div>
+                <SelectField
+                    id="case_slug"
+                    label="Caso"
+                    value={data.case_slug}
+                    onChange={(value) => setData('case_slug', value)}
+                    error={errors.case_slug}
+                    disabled={library.length === 1}
+                    options={library.map((item) => ({
+                        value: item.slug,
+                        // The count is in the option itself, so a full case is
+                        // obvious before it is picked.
+                        label: item.quota.full
+                            ? `${item.name} — sin cupo (${item.quota.used}/${item.quota.limit})`
+                            : `${item.name} (${item.quota.used}/${item.quota.limit})`,
+                    }))}
+                />
+
+                {quota && !caseIsFull && (
+                    <QuotaMeter quota={quota} className="mt-3 max-w-xs" />
+                )}
+            </div>
+
+            {caseIsFull && (
+                <Alert variant="warning" title="Este caso no tiene cupo">
+                    Ya tienes {quota.limit} partidas de {selectedCase.name}. Elimina una
+                    partida <strong>de este mismo caso</strong> para crear otra, o elige otro
+                    caso de tu biblioteca.
+                </Alert>
+            )}
 
             <ModePicker value={data.mode} onChange={(value) => setData('mode', value)} />
 
@@ -146,7 +178,7 @@ export default function NewGameForm({ library }) {
                 </Button>
             </fieldset>
 
-            <Button type="submit" loading={processing} fullWidth>
+            <Button type="submit" loading={processing} disabled={caseIsFull} fullWidth>
                 {processing ? 'Creando…' : 'Crear partida'}
             </Button>
         </form>

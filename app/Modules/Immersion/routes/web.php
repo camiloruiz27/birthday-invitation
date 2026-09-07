@@ -29,6 +29,12 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         Route::get('/{game}', [GameMasterController::class, 'show'])->name('game.show');
     });
 
+    // Frees a quota slot. Destructive, so it has its own ability.
+    Route::delete('/{game}', [GameMasterController::class, 'destroy'])
+        ->middleware('can:delete,game')
+        ->whereNumber('game')
+        ->name('game.destroy');
+
     // Run controls: both modes need someone to say when the case starts and
     // ends.
     Route::middleware('can:control,game')->whereNumber('game')->group(function () {

@@ -6,6 +6,10 @@ import EmptyState from '../../components/ui/EmptyState';
 import NewGameForm from '../../components/game-master/NewGameForm';
 
 export default function CreateGame({ library }) {
+    // The quota is per case, so this page only blocks when every case is full;
+    // otherwise the form lets the Game Master pick one that still has room.
+    const allFull = library.length > 0 && library.every((item) => item.quota.full);
+
     return (
         <AppLayout
             current="immersion.gm.games.index"
@@ -25,6 +29,17 @@ export default function CreateGame({ library }) {
                     title="Tu biblioteca está vacía"
                     description="Necesitas al menos un caso para crear partidas."
                     action={<Button href={route('cases.index')}>Ver los casos disponibles</Button>}
+                />
+            ) : allFull ? (
+                // Told here rather than after filling in the whole form.
+                <EmptyState
+                    title="Todos tus casos llegaron a su máximo"
+                    description={`Puedes tener hasta ${library[0].quota.limit} partidas de cada caso. Elimina una partida del caso que quieras volver a jugar.`}
+                    action={
+                        <Button href={route('immersion.gm.games.index')}>
+                            Ver mis partidas
+                        </Button>
+                    }
                 />
             ) : (
                 <Card>

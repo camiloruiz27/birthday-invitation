@@ -64,7 +64,7 @@ class PrivateAreaTest extends TestCase
             );
     }
 
-    public function test_the_library_lists_owned_cases_with_their_game_counts(): void
+    public function test_the_library_lists_owned_cases_with_their_game_quota(): void
     {
         $user = $this->gameMaster();
         $this->gameOwnedBy($user);
@@ -79,7 +79,8 @@ class PrivateAreaTest extends TestCase
                 ->component('Library')
                 ->has('cases', 1)
                 ->where('cases.0.slug', 'steve-jacobs')
-                ->where('cases.0.games_count', 2)
+                // The quota is per case, so it belongs on the case itself.
+                ->where('cases.0.quota.used', 2)
                 ->where('cases.0.playable', true)
             );
     }

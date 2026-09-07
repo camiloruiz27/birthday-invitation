@@ -4,6 +4,7 @@ namespace App\Modules\Platform;
 
 use App\Modules\Platform\Console\Commands\ClaimGames;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
+use App\Modules\Platform\Console\Commands\MakeAdmin;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +33,7 @@ class PlatformServiceProvider extends ServiceProvider
                 SyncMysteryCases::class,
                 GrantCaseAccessCommand::class,
                 ClaimGames::class,
+                MakeAdmin::class,
             ]);
         }
     }

@@ -69,8 +69,8 @@ export default function AppLayout({
                                 <span className="hidden sm:inline">Central de investigación</span>
                             </Link>
 
-                            {/* Only three sections, so they fit on a phone
-                                without needing a drawer. */}
+                            {/* Only a handful of sections, so they fit on a
+                                phone without needing a drawer. */}
                             <nav aria-label="Principal" className="flex items-center gap-5">
                                 {NAV.map((item) => (
                                     <NavLink
@@ -79,6 +79,14 @@ export default function AppLayout({
                                         active={current === item.route}
                                     />
                                 ))}
+
+                                {user?.is_admin && (
+                                    <NavLink
+                                        item={{ name: 'Admin', route: 'admin.dashboard' }}
+                                        active={current === 'admin.dashboard'}
+                                        className="text-accent hover:text-accent-strong"
+                                    />
+                                )}
                             </nav>
                         </div>
 

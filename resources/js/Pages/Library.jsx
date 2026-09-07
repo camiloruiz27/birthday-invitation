@@ -22,12 +22,9 @@ function LibraryCase({ mysteryCase }) {
             <div className="flex min-w-0 flex-1 flex-col">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <h2 className="font-semibold text-ink">{mysteryCase.name}</h2>
-                    {mysteryCase.games_count > 0 && (
-                        <Badge>
-                            {mysteryCase.games_count}{' '}
-                            {mysteryCase.games_count === 1 ? 'partida' : 'partidas'}
-                        </Badge>
-                    )}
+                    <Badge tone={mysteryCase.quota.full ? 'danger' : 'neutral'}>
+                        {mysteryCase.quota.used}/{mysteryCase.quota.limit} partidas
+                    </Badge>
                 </div>
 
                 {mysteryCase.tagline && (
@@ -42,18 +39,32 @@ function LibraryCase({ mysteryCase }) {
                         pueden crear partidas. Sigue siendo tuyo.
                     </Alert>
                 ) : (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                        <Button href={route('immersion.gm.games.create')} size="sm">
-                            Crear partida
-                        </Button>
-                        <Button
-                            href={route('cases.show', mysteryCase.slug)}
-                            variant="secondary"
-                            size="sm"
-                        >
-                            Ver el caso
-                        </Button>
-                    </div>
+                    <>
+                        {mysteryCase.quota.full && (
+                            <p className="mt-3 text-xs text-danger">
+                                Sin cupo. Elimina una partida de este caso para crear otra.
+                            </p>
+                        )}
+
+                        <div className="mt-5 flex flex-wrap gap-2">
+                            {mysteryCase.quota.full ? (
+                                <Button size="sm" disabled title="Sin cupo para este caso">
+                                    Crear partida
+                                </Button>
+                            ) : (
+                                <Button href={route('immersion.gm.games.create')} size="sm">
+                                    Crear partida
+                                </Button>
+                            )}
+                            <Button
+                                href={route('cases.show', mysteryCase.slug)}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Ver el caso
+                            </Button>
+                        </div>
+                    </>
                 )}
             </div>
         </Card>
@@ -88,7 +99,14 @@ export default function Library({ cases }) {
                 </div>
             )}
 
-            <p className="mt-8 text-sm text-ink-muted">
+            {cases.length > 0 && (
+                <p className="mt-8 text-sm text-ink-muted">
+                    Puedes tener hasta {cases[0].quota.limit} partidas de cada caso. El cupo es
+                    independiente por caso: llenar uno no afecta a los demás.
+                </p>
+            )}
+
+            <p className="mt-3 text-sm text-ink-muted">
                 ¿Buscas otro misterio?{' '}
                 <Link href={route('cases.index')} className="text-accent underline">
                     Mira el catálogo completo

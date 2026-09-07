@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
             // timestamps and verification state to every page either.
             'auth' => [
                 'user' => fn () => $request->user()
-                    ? $request->user()->only(['id', 'name', 'email'])
+                    ? $request->user()->only(['id', 'name', 'email', 'is_admin'])
                     : null,
             ],
             'flash' => [

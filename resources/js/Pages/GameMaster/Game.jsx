@@ -8,6 +8,7 @@ import Alert from '../../components/ui/Alert';
 import EmptyState from '../../components/ui/EmptyState';
 import { ConfirmModal } from '../../components/ui/Modal';
 import TimelineEventRow from '../../components/game-master/TimelineEventRow';
+import DeleteGameButton from '../../components/game-master/DeleteGameButton';
 import usePoll from '../../hooks/usePoll';
 
 function PlayerLink({ player }) {
@@ -98,10 +99,12 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken }) {
                     )}
 
                     {(game.status === 'running' || game.status === 'paused') && (
-                        <Button variant="danger" onClick={() => setConfirming('finish')}>
+                        <Button variant="secondary" onClick={() => setConfirming('finish')}>
                             Cerrar caso
                         </Button>
                     )}
+
+                    <DeleteGameButton game={game} variant="ghost" />
                 </>
             }
         >

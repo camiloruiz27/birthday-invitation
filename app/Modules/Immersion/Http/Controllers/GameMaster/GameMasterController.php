@@ -3,16 +3,19 @@
 namespace App\Modules\Immersion\Http\Controllers\GameMaster;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Jobs\GenerateEventAudio;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\TimelineEvent;
+use App\Modules\Immersion\Support\GameQuota;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -28,9 +31,17 @@ class GameMasterController extends Controller
      * GamePolicy. Route model binding alone would happily hand over someone
      * else's game.
      */
-    public function index(Request $request): Response
+    public function index(Request $request, GameQuota $quota): Response
     {
+        $user = $request->user();
+
         return Inertia::render('GameMaster/Games', [
+            // Whether "new game" is offered at all: full on one case is not
+            // full on the library.
+            'canCreate' => fn () => $quota->hasRoomForAny(
+                $user,
+                $user->library()->pluck('slug')
+            ),
             'games' => fn () => $request->user()->games()
                 ->withCount('players')
                 ->latest()
@@ -45,25 +56,30 @@ class GameMasterController extends Controller
                     'created_at' => $game->created_at,
                 ])
                 ->values(),
-            'hasLibrary' => fn () => $request->user()->entitlements()->active()->exists(),
+            'hasLibrary' => fn () => $user->entitlements()->active()->exists(),
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request, GameQuota $quota): Response
     {
-        $library = $request->user()->library();
+        $user = $request->user();
+        $library = $user->library();
+        $quotas = $quota->forCases($user, $library->pluck('slug'));
 
         return Inertia::render('GameMaster/CreateGame', [
+            // Each case carries its own quota, so the form can react as the
+            // Game Master switches between them.
             'library' => $library->map(fn ($case) => [
                 'slug' => $case->slug,
                 'name' => $case->name,
                 'min_players' => $case->min_players,
                 'max_players' => $case->max_players,
+                'quota' => $quotas[$case->slug],
             ])->values(),
         ]);
     }
 
-    public function store(Request $request, CaseRegistry $cases): RedirectResponse
+    public function store(Request $request, CaseRegistry $cases, GameQuota $quota): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -87,37 +103,56 @@ class GameMasterController extends Controller
         $user = $request->user();
         $mode = $data['mode'] ?? Game::MODE_GM_LED;
 
-        $game = Game::create([
-            'user_id' => $user->id,
-            'name' => $data['name'],
-            'case_slug' => $case->slug,
-            'case_version' => $case->version(),
-            'mode' => $mode,
-            'status' => 'draft',
-        ]);
+        // The whole creation runs under a lock on the owner's row: counting
+        // games and then inserting one is a read-modify-write, and two
+        // requests arriving together would otherwise both see five games and
+        // both create a sixth.
+        $game = DB::transaction(function () use ($user, $data, $case, $mode, $quota) {
+            User::whereKey($user->id)->lockForUpdate()->first();
 
-        // In automatic mode the owner plays too, so they need a player row and
-        // an inbox of their own, like everyone else at the table.
-        if ($mode === Game::MODE_AUTOMATIC) {
-            $game->players()->create([
-                'name' => $user->name,
-                'email' => $user->email,
-                'access_token' => Str::uuid(),
-                'is_owner' => true,
+            // The quota is per case: being full on this one says nothing about
+            // the rest of the library. Throwing rolls the transaction back, so
+            // a rejected creation leaves nothing behind.
+            if ($quota->isFull($user, $case->slug)) {
+                throw ValidationException::withMessages([
+                    'case_slug' => "Ya tienes {$quota->limit()} partidas de este caso. Borra una de este caso para crear otra.",
+                ]);
+            }
+
+            $game = Game::create([
+                'user_id' => $user->id,
+                'name' => $data['name'],
+                'case_slug' => $case->slug,
+                'case_version' => $case->version(),
+                'mode' => $mode,
+                'status' => 'draft',
             ]);
-        }
 
-        foreach ($data['players'] as $playerData) {
-            $game->players()->create([
-                'name' => $playerData['name'],
-                'email' => $playerData['email'],
-                'access_token' => Str::uuid(),
-            ]);
-        }
+            // In automatic mode the owner plays too, so they need a player row
+            // and an inbox of their own, like everyone else.
+            if ($mode === Game::MODE_AUTOMATIC) {
+                $game->players()->create([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'access_token' => Str::uuid(),
+                    'is_owner' => true,
+                ]);
+            }
 
-        foreach ($case->timeline() as $event) {
-            $game->timelineEvents()->create($event);
-        }
+            foreach ($data['players'] as $playerData) {
+                $game->players()->create([
+                    'name' => $playerData['name'],
+                    'email' => $playerData['email'],
+                    'access_token' => Str::uuid(),
+                ]);
+            }
+
+            foreach ($case->timeline() as $event) {
+                $game->timelineEvents()->create($event);
+            }
+
+            return $game;
+        });
 
         // Straight into the new game's console: creating a game is a step
         // towards running it, not an end in itself.
@@ -191,6 +226,35 @@ class GameMasterController extends Controller
         ]);
 
         return back()->with('status', 'Caso iniciado. La linea de tiempo empezara a correr sola.');
+    }
+
+    /**
+     * Deletes a game and everything under it.
+     *
+     * This is how a Game Master frees a slot against the quota, so it has to
+     * really remove things: players, their inbox events, interrogations and
+     * accusations all go via cascade. The generated audio lives on disk rather
+     * than in a table, so it is cleaned up by hand — otherwise every deleted
+     * game would leave megabytes of orphaned WAVs behind.
+     */
+    public function destroy(Game $game): RedirectResponse
+    {
+        $name = $game->name;
+
+        $audioPaths = $game->timelineEvents()
+            ->whereNotNull('audio_path')
+            ->pluck('audio_path')
+            ->all();
+
+        $game->delete();
+
+        foreach ($audioPaths as $path) {
+            Storage::disk('local')->delete($path);
+        }
+
+        return redirect()
+            ->route('immersion.gm.games.index')
+            ->with('status', "Partida \"{$name}\" eliminada. Los enlaces de sus jugadores dejaron de funcionar.");
     }
 
     public function finish(Game $game): RedirectResponse
