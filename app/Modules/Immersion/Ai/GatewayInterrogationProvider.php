@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Modules\Immersion\Services;
+namespace App\Modules\Immersion\Ai;
 
+use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Models\InterrogationSession;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -12,9 +13,11 @@ use Illuminate\Support\Facades\Log;
  * la solucion del caso ni el testimonio de otros) para que el modelo no
  * pueda inventar ni mezclar hechos de otros personajes.
  */
-class SuspectInterrogationService
+class GatewayInterrogationProvider implements InterrogationProvider
 {
-    private const FALLBACK_REPLY = 'Ya dije todo lo que se sobre eso. No tengo nada mas que agregar a lo que ya declare.';
+    // Same words the no-AI provider uses, so a failed turn is indistinguishable
+    // from a suspect who simply refuses to add anything.
+    private const FALLBACK_REPLY = NullInterrogationProvider::REPLY;
 
     public function ask(InterrogationSession $session, string $question): string
     {

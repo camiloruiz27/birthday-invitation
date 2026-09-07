@@ -36,7 +36,7 @@ class CheckoutController extends Controller
         $access->grant($request->user(), $case, Entitlement::SOURCE_GRANT);
 
         return redirect()
-            ->route('immersion.gm.dashboard')
+            ->route('dashboard')
             ->with('status', "\"{$case->name}\" está en tu biblioteca. Ya puedes crear una partida.");
     }
 }

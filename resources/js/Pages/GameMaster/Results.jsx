@@ -9,7 +9,13 @@ export default function Results({ game }) {
     const submitted = game.players.filter((player) => player.accusation);
 
     return (
-        <GameMasterLayout game={game} tab="results" title={game.name}>
+        // Reaching this page means the policy already allowed spoilers.
+        <GameMasterLayout
+            game={game}
+            tab="results"
+            title={game.name}
+            can={{ viewSpoilers: true }}
+        >
             <Head title={`Acusaciones — ${game.name}`} />
 
             <Card as="section" padded={false}>

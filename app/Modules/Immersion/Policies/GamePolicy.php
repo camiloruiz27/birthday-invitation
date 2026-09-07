@@ -12,7 +12,7 @@ use App\Modules\Immersion\Models\Game;
 class GamePolicy
 {
     /**
-     * Viewing a game's control panel, its results and its interrogations.
+     * Viewing a game's console.
      */
     public function view(User $user, Game $game): bool
     {
@@ -20,12 +20,40 @@ class GamePolicy
     }
 
     /**
-     * Starting, pausing, resuming, forcing events, toggling mechanics —
-     * anything that changes the run.
+     * Starting, pausing, resuming, ending — the controls that exist in both
+     * modes because someone still has to say when the case begins and ends.
      */
     public function control(User $user, Game $game): bool
     {
         return $this->owns($user, $game);
+    }
+
+    /**
+     * Directing: forcing the next event and toggling mechanics by hand.
+     *
+     * Only in gm_led mode. In automatic mode the owner is a player, so
+     * reaching into the timeline would be peeking at — and rewriting — their
+     * own game.
+     */
+    public function direct(User $user, Game $game): bool
+    {
+        return $this->owns($user, $game) && ! $game->isAutomatic();
+    }
+
+    /**
+     * Reading the interrogation transcripts and everyone's accusations.
+     *
+     * These are the two things that give the case away. A directing Game
+     * Master is meant to see them; an owner who is playing may not, until the
+     * case is over.
+     */
+    public function viewSpoilers(User $user, Game $game): bool
+    {
+        if (! $this->owns($user, $game)) {
+            return false;
+        }
+
+        return ! $game->isAutomatic() || $game->isFinished();
     }
 
     /**

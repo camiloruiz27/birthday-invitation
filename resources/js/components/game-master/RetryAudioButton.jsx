@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import Button from '../ui/Button';
+import Spinner from '../ui/Spinner';
 import useAxiosState from '../../hooks/useAxiosState';
 
 /**
- * Regenerates a timeline event's missing audio and resends its email.
+ * Asks for a timeline event's missing audio to be generated.
  *
- * The call goes through the AI gateway's text-to-speech, which can take most
- * of a minute, so the button says so while it waits rather than looking stuck.
+ * Generation happens on the queue, so this returns immediately and the event's
+ * audio_status carries the outcome. The console is already polling a running
+ * game; this nudges a reload so a paused or finished one updates too.
  */
 export default function RetryAudioButton({ game, event }) {
     const { loading, run } = useAxiosState();
     const [message, setMessage] = useState(null);
     const [failed, setFailed] = useState(false);
+
+    const queued = event.audio_status === 'pending';
 
     async function retry() {
         setMessage(null);
@@ -24,19 +28,24 @@ export default function RetryAudioButton({ game, event }) {
                 url: route('immersion.gm.game.event.retry-audio', [game.id, event.id]),
             });
 
-            // The endpoint answers 200 with status:error when the gateway is
-            // reachable but could not synthesise — that is still a failure to
-            // report, not a success.
-            setFailed(result.status === 'error');
             setMessage(result.message);
             router.reload({ only: ['game'] });
         } catch (error) {
             setFailed(true);
             setMessage(
                 error.response?.data?.message ||
-                    'No se pudo generar el audio. Revisa el servicio de IA e intenta de nuevo.'
+                    'No se pudo encolar la generación del audio. Intenta de nuevo.'
             );
         }
+    }
+
+    if (queued) {
+        return (
+            <span className="flex items-center gap-2 text-xs text-ink-muted">
+                <Spinner size="sm" label={null} />
+                Generando audio…
+            </span>
+        );
     }
 
     return (
@@ -48,12 +57,8 @@ export default function RetryAudioButton({ game, event }) {
                 loading={loading}
                 title="El correo salió sin el audio adjunto: genera el audio y reenvía el correo"
             >
-                {loading ? 'Generando audio…' : 'Reintentar audio'}
+                Reintentar audio
             </Button>
-
-            {loading && (
-                <p className="text-xs text-ink-subtle">Puede tardar hasta un minuto.</p>
-            )}
 
             {message && (
                 <p

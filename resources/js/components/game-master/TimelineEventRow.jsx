@@ -14,9 +14,10 @@ const DELIVERY_LABELS = {
 };
 
 export default function TimelineEventRow({ game, event }) {
-    // The email went out but the TTS never produced a file, so the attachment
-    // is missing and the Game Master can retry it.
-    const needsAudioRetry = event.type === 'audio_email' && event.sent_at && !event.audio_path;
+    // The email went out but there is no recording attached, so the Game
+    // Master can ask for it again. `pending` means one is already queued.
+    const missingAudio =
+        event.type === 'audio_email' && event.sent_at && !event.audio_path;
     const sent = Boolean(event.sent_at);
 
     return (
@@ -44,7 +45,7 @@ export default function TimelineEventRow({ game, event }) {
             </div>
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
-                {needsAudioRetry && <RetryAudioButton game={game} event={event} />}
+                {missingAudio && <RetryAudioButton game={game} event={event} />}
                 <Badge tone={sent ? 'success' : 'neutral'}>
                     {sent ? 'Enviado' : 'Pendiente'}
                 </Badge>

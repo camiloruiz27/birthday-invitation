@@ -16,6 +16,11 @@ class Player extends Model
         'email',
         'access_token',
         'role_slug',
+        'is_owner',
+    ];
+
+    protected $casts = [
+        'is_owner' => 'boolean',
     ];
 
     /**

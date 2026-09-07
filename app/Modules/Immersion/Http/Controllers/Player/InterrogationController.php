@@ -3,10 +3,10 @@
 namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
-use App\Modules\Immersion\Services\SuspectInterrogationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -123,7 +123,7 @@ class InterrogationController extends Controller
             'content' => $data['question'],
         ]);
 
-        $reply = app(SuspectInterrogationService::class)->ask($session, $data['question']);
+        $reply = app(InterrogationProvider::class)->ask($session, $data['question']);
 
         $suspectMessage = InterrogationMessage::create([
             'session_id' => $session->id,

@@ -69,6 +69,45 @@ steve-jacobs: 8 entradas, minutos 10 a 75).
    acusacion en `/jugador/{access_token}/acusacion`.
 7. El GM ve el resumen comparativo en "Ver acusaciones".
 
+## 4.2 Modos de partida
+
+Una partida se crea en uno de dos modos, y **ambos corren sobre el mismo
+motor**: lo que cambia es quien puede ver y tocar que.
+
+| | `gm_led` | `automatic` |
+|---|---|---|
+| Quien dirige | Una persona | El sistema |
+| El dueno juega | No | **Si** (tiene su propio `Player`, `is_owner = true`) |
+| Iniciar / pausar / cerrar | Si | Si |
+| Forzar evento, habilitar mecanicas a mano | Si | **No** (`GamePolicy::direct`) |
+| Ver interrogatorios y acusaciones | Si | **Solo al cerrar el caso** (`GamePolicy::viewSpoilers`) |
+| Ver la linea de tiempo en la consola | Si | Solo el progreso (los titulos son spoilers) |
+
+En modo automatico el interrogatorio se habilita solo: el evento marcado con
+`cta_interrogation` en el manifiesto del caso es, por definicion, el momento en
+que se apunta a los sospechosos. El autor del caso controla el momento moviendo
+esa marca; no hace falta schema nuevo.
+
+Cerrar el caso (`finish`) detiene el reloj, corta el envio de material y es lo
+que revela los spoilers al dueno que estuvo jugando.
+
+## 4.3 Cola
+
+`QUEUE_CONNECTION=database` (tabla `jobs`). El trabajo lento — generar el
+audio con TTS y enviar los correos — corre en la cola, no dentro del cron ni
+de la request del navegador.
+
+No hace falta un daemon: el propio scheduler lanza un worker corto cada
+minuto (`queue:work --stop-when-empty --max-time=50`), que vacia la cola y
+termina antes del siguiente tick. Ese worker **solo se programa si la cola no
+es `sync`**.
+
+> El cron del scheduler (ver abajo) es ahora todavia mas importante: sin el no
+> corre ni la linea de tiempo ni el worker, y los correos no salen.
+
+Con `QUEUE_CONNECTION=sync` todo vuelve a ejecutarse inline. Sigue
+funcionando, pero el cron de cada minuto puede tardar mas de un minuto.
+
 ## 4.1 Cron en produccion (Hostinger)
 
 Sin esto, los correos SOLO salen al forzar el evento manualmente desde el
@@ -85,6 +124,22 @@ hosting compartido, asi que hay que agregarlo **una sola vez** a mano:
    ```
    (ajusta la ruta del binario de PHP si hPanel te ofrece un selector de
    version en vez de la ruta completa; usar PHP 8.2).
+
+## 4.4 IA: se puede apagar
+
+Las dos capacidades de IA estan detras de contratos
+(`Ai/Contracts/InterrogationProvider`, `Ai/Contracts/SpeechProvider`) con dos
+implementaciones reales cada una: el gateway y una **null**.
+
+```
+IMMERSION_AI_INTERROGATION=false   # los sospechosos responden en personaje, sin agregar nada
+IMMERSION_AI_SPEECH=false          # los correos de voz salen sin grabacion
+```
+
+Si el gateway no esta configurado (sin URL, sin key, o con la key de ejemplo
+`CHANGE_ME...`), se usan los proveedores null aunque las banderas esten
+encendidas. El caso sigue siendo jugable: los sobres, la evidencia y los
+testimonios escritos no dependen de ningun modelo.
 
 ## 5. Audio (TTS)
 

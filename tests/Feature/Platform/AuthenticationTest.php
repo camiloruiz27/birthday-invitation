@@ -157,18 +157,11 @@ class AuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard'));
     }
 
-    public function test_the_dashboard_route_lands_on_the_game_master_panel(): void
+    public function test_the_private_area_requires_authentication(): void
     {
-        // `dashboard` is where sign-in and registration send people; the real
-        // operations centre replaces this redirect in a later phase.
-        $this->actingAs($this->user())
-            ->get(route('dashboard'))
-            ->assertRedirect(route('immersion.gm.dashboard'));
-    }
-
-    public function test_the_dashboard_route_requires_authentication(): void
-    {
-        $this->get(route('dashboard'))->assertRedirect(route('login'));
+        foreach (['dashboard', 'library', 'immersion.gm.games.index', 'immersion.gm.games.create', 'profile.edit'] as $routeName) {
+            $this->get(route($routeName))->assertRedirect(route('login'));
+        }
     }
 
     public function test_password_reset_request_does_not_reveal_whether_the_account_exists(): void

@@ -33,19 +33,29 @@ function GameTab({ href, active, children }) {
  * `tab` picks the active tab; omit `game` for pages that are not scoped to a
  * single run (the games list).
  */
-export default function GameMasterLayout({ game, tab, title, actions, children }) {
+export default function GameMasterLayout({ game, tab, title, actions, can = {}, children }) {
     return (
         <AppLayout
+            current="immersion.gm.games.index"
             kicker="Game Master"
             title={title || game?.name}
             actions={actions}
         >
             {game && (
                 <div className="mb-6">
-                    <div className="flex flex-wrap items-center gap-3">
+                    <Link
+                        href={route('immersion.gm.games.index')}
+                        className="text-sm text-ink-muted hover:text-ink"
+                    >
+                        ← Todas las partidas
+                    </Link>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
                         <Badge tone={GAME_STATUS_TONE[game.status] || 'neutral'}>
                             {STATUS_LABELS[game.status] || game.status}
                         </Badge>
+
+                        {game.mode === 'automatic' && <Badge tone="accent">Automática</Badge>}
 
                         {game.started_at && (
                             <span className="tabular text-sm text-ink-muted">
@@ -66,18 +76,25 @@ export default function GameMasterLayout({ game, tab, title, actions, children }
                         >
                             Panel
                         </GameTab>
-                        <GameTab
-                            href={route('immersion.gm.game.interrogations', game.id)}
-                            active={tab === 'interrogations'}
-                        >
-                            Interrogatorios
-                        </GameTab>
-                        <GameTab
-                            href={route('immersion.gm.game.results', game.id)}
-                            active={tab === 'results'}
-                        >
-                            Acusaciones
-                        </GameTab>
+                        {/* Hidden, not just disabled: in automatic mode these
+                            two views would spoil the owner's own game, and the
+                            routes deny them anyway. */}
+                        {can.viewSpoilers && (
+                            <>
+                                <GameTab
+                                    href={route('immersion.gm.game.interrogations', game.id)}
+                                    active={tab === 'interrogations'}
+                                >
+                                    Interrogatorios
+                                </GameTab>
+                                <GameTab
+                                    href={route('immersion.gm.game.results', game.id)}
+                                    active={tab === 'results'}
+                                >
+                                    Acusaciones
+                                </GameTab>
+                            </>
+                        )}
                     </nav>
                 </div>
             )}

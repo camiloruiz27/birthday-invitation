@@ -31,7 +31,7 @@ function PurchasePanel({ mysteryCase, owned, canSimulatePurchase }) {
                     <>
                         <Badge tone="success">En tu biblioteca</Badge>
                         <Button
-                            href={route('immersion.gm.dashboard')}
+                            href={route('dashboard')}
                             fullWidth
                             className="mt-4"
                         >

@@ -5,17 +5,14 @@ namespace App\Modules\Immersion\Http\Controllers\GameMaster;
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
-use App\Modules\Immersion\Mail\CaseTimelineMail;
+use App\Modules\Immersion\Jobs\GenerateEventAudio;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\TimelineEvent;
-use App\Modules\Immersion\Services\GeminiAudioService;
-use App\Modules\Immersion\Support\TimelineRecipients;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -33,11 +30,35 @@ class GameMasterController extends Controller
      */
     public function index(Request $request): Response
     {
-        return Inertia::render('GameMaster/Dashboard', [
-            'games' => fn () => $request->user()->games()->latest()->get(),
-            'library' => fn () => $request->user()->library()->map(fn ($case) => [
+        return Inertia::render('GameMaster/Games', [
+            'games' => fn () => $request->user()->games()
+                ->withCount('players')
+                ->latest()
+                ->get()
+                ->map(fn (Game $game) => [
+                    'id' => $game->id,
+                    'name' => $game->name,
+                    'status' => $game->status,
+                    'case_slug' => $game->case_slug,
+                    'players_count' => $game->players_count,
+                    'started_at' => $game->started_at,
+                    'created_at' => $game->created_at,
+                ])
+                ->values(),
+            'hasLibrary' => fn () => $request->user()->entitlements()->active()->exists(),
+        ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        $library = $request->user()->library();
+
+        return Inertia::render('GameMaster/CreateGame', [
+            'library' => $library->map(fn ($case) => [
                 'slug' => $case->slug,
                 'name' => $case->name,
+                'min_players' => $case->min_players,
+                'max_players' => $case->max_players,
             ])->values(),
         ]);
     }
@@ -47,6 +68,7 @@ class GameMasterController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'case_slug' => ['nullable', 'string', Rule::in($cases->slugs())],
+            'mode' => ['nullable', Rule::in([Game::MODE_GM_LED, Game::MODE_AUTOMATIC])],
             'players' => ['required', 'array', 'min:1'],
             'players.*.name' => ['required', 'string', 'max:255'],
             'players.*.email' => ['required', 'email'],
@@ -62,13 +84,28 @@ class GameMasterController extends Controller
             ]);
         }
 
+        $user = $request->user();
+        $mode = $data['mode'] ?? Game::MODE_GM_LED;
+
         $game = Game::create([
-            'user_id' => $request->user()->id,
+            'user_id' => $user->id,
             'name' => $data['name'],
             'case_slug' => $case->slug,
             'case_version' => $case->version(),
+            'mode' => $mode,
             'status' => 'draft',
         ]);
+
+        // In automatic mode the owner plays too, so they need a player row and
+        // an inbox of their own, like everyone else at the table.
+        if ($mode === Game::MODE_AUTOMATIC) {
+            $game->players()->create([
+                'name' => $user->name,
+                'email' => $user->email,
+                'access_token' => Str::uuid(),
+                'is_owner' => true,
+            ]);
+        }
 
         foreach ($data['players'] as $playerData) {
             $game->players()->create([
@@ -82,9 +119,11 @@ class GameMasterController extends Controller
             $game->timelineEvents()->create($event);
         }
 
+        // Straight into the new game's console: creating a game is a step
+        // towards running it, not an end in itself.
         return redirect()
-            ->route('immersion.gm.dashboard')
-            ->with('status', "Partida \"{$game->name}\" creada con {$game->players()->count()} jugadores y su linea de tiempo.");
+            ->route('immersion.gm.game.show', $game->id)
+            ->with('status', "Partida creada con {$game->players()->count()} jugadores. Copia los enlaces y compártelos con tu equipo.");
     }
 
     public function loadDefaultTimeline(Game $game): RedirectResponse
@@ -100,18 +139,40 @@ class GameMasterController extends Controller
         return back()->with('status', 'Linea de tiempo por defecto cargada.');
     }
 
-    public function show(Game $game): Response
+    public function show(Request $request, Game $game): Response
     {
-        return Inertia::render('GameMaster/Game', [
-            'game' => function () use ($game) {
-                $game->load(['players', 'timelineEvents.deliveredToPlayer', 'accusations.player']);
+        $spoilersAllowed = $request->user()->can('viewSpoilers', $game);
 
-                // The Game Master panel hands out the per-player inbox links,
-                // so it is the one place that needs their tokens and emails.
+        return Inertia::render('GameMaster/Game', [
+            'game' => function () use ($game, $spoilersAllowed) {
+                $game->load('players');
+
+                // The console hands out the per-player inbox links, so it is
+                // the one place that needs their tokens and emails.
                 $game->players->each->revealCredentials();
+
+                // Event titles are themselves spoilers ("Sobre 3 — Redes,
+                // teorías y recibos"), so an owner who is playing gets counts
+                // instead of the timeline.
+                if ($spoilersAllowed) {
+                    $game->load('timelineEvents.deliveredToPlayer');
+                }
 
                 return $game;
             },
+
+            'timelineSummary' => fn () => [
+                'total' => $game->timelineEvents()->count(),
+                'sent' => $game->timelineEvents()->whereNotNull('sent_at')->count(),
+            ],
+
+            'can' => [
+                'direct' => $request->user()->can('direct', $game),
+                'viewSpoilers' => $spoilersAllowed,
+            ],
+
+            // In automatic mode the owner plays from their own inbox.
+            'ownerPlayerToken' => fn () => $game->ownerPlayer()?->access_token,
         ]);
     }
 
@@ -130,6 +191,17 @@ class GameMasterController extends Controller
         ]);
 
         return back()->with('status', 'Caso iniciado. La linea de tiempo empezara a correr sola.');
+    }
+
+    public function finish(Game $game): RedirectResponse
+    {
+        if ($game->isFinished()) {
+            return back()->with('status', 'Esta partida ya estaba terminada.');
+        }
+
+        $game->finish();
+
+        return back()->with('status', 'Caso cerrado. Ya puedes revisar los interrogatorios y las acusaciones.');
     }
 
     public function pause(Game $game): RedirectResponse
@@ -165,52 +237,41 @@ class GameMasterController extends Controller
             return back()->with('status', 'No hay mas eventos pendientes.');
         }
 
-        DispatchTimelineEvent::dispatchSync($event->id);
+        // Queued, not dispatchSync: this event may carry text-to-speech and a
+        // round of SMTP, which must not run inside the browser request.
+        DispatchTimelineEvent::dispatch($event->id);
 
-        return back()->with('status', "Evento \"{$event->title}\" disparado manualmente.");
+        return back()->with('status', "Evento \"{$event->title}\" en camino. Puede tardar un momento en salir.");
     }
 
+    /**
+     * Queues audio generation instead of doing it here.
+     *
+     * Text-to-speech can take most of a minute; holding the browser open for
+     * that was the reason this action felt broken. The console polls the
+     * event's audio_status for the outcome.
+     */
     public function retryAudio(Game $game, TimelineEvent $event): JsonResponse
     {
         abort_if((int) $event->game_id !== (int) $game->id, 404);
         abort_unless($event->isAudio(), 400);
 
         if ($event->audio_path && Storage::disk('local')->exists($event->audio_path)) {
+            $event->update(['audio_status' => TimelineEvent::AUDIO_READY]);
+
             return response()->json([
-                'status' => 'ok',
+                'status' => 'ready',
                 'message' => 'Este evento ya tiene su audio guardado.',
-                'event' => $event,
             ]);
         }
 
-        $audioPath = app(GeminiAudioService::class)->synthesize($event->id, (string) $event->audio_script);
+        $event->update(['audio_status' => TimelineEvent::AUDIO_PENDING]);
 
-        if (! $audioPath) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'El servicio de audio sigue sin responder. Revisa que lawxora-ai-service (npm start) este corriendo e intenta de nuevo.',
-                'event' => $event,
-            ]);
-        }
-
-        $event->audio_path = $audioPath;
-        $event->save();
-
-        $sent = 0;
-
-        foreach (TimelineRecipients::resolve($event) as $recipient) {
-            try {
-                Mail::to($recipient->email)->send(new CaseTimelineMail($event, $recipient));
-                $sent++;
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
-        }
+        GenerateEventAudio::dispatch($event->id);
 
         return response()->json([
-            'status' => 'ok',
-            'message' => "Audio generado. Correo reenviado (con el audio) a {$sent} destinatario(s).",
-            'event' => $event,
+            'status' => 'pending',
+            'message' => 'Generando el audio. Puede tardar un minuto; el correo se reenvía solo cuando esté listo.',
         ]);
     }
 

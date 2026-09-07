@@ -33,6 +33,12 @@ return [
         'api_key' => env('IMMERSION_AI_INTERNAL_API_KEY', ''),
         'interrogation_timeout' => (int) env('IMMERSION_AI_INTERROGATION_TIMEOUT', 35),
         'tts_timeout' => (int) env('IMMERSION_AI_TTS_TIMEOUT', 60),
+
+        // Each capability can be switched off on its own. Off means the null
+        // provider: suspects deflect in character, and voice-note emails go
+        // out without a recording. The case stays playable either way.
+        'interrogation_enabled' => (bool) env('IMMERSION_AI_INTERROGATION', true),
+        'speech_enabled' => (bool) env('IMMERSION_AI_SPEECH', true),
     ],
 
     /*

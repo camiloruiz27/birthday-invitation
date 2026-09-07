@@ -21,7 +21,13 @@ function Transcript({ messages }) {
 
 export default function Interrogations({ game, sessions }) {
     return (
-        <GameMasterLayout game={game} tab="interrogations" title={game.name}>
+        // Reaching this page means the policy already allowed spoilers.
+        <GameMasterLayout
+            game={game}
+            tab="interrogations"
+            title={game.name}
+            can={{ viewSpoilers: true }}
+        >
             <Head title={`Interrogatorios — ${game.name}`} />
 
             {sessions.length === 0 ? (

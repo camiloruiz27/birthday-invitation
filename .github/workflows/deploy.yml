@@ -66,6 +66,9 @@ jobs:
             # publication state set in the database are left untouched.
             php artisan platform:sync-cases
             php artisan optimize:clear
+            # Workers hold the old code in memory; this tells the ones the
+            # scheduler starts to pick up this release.
+            php artisan queue:restart
             ls -la public/build/manifest.json
 
       # NOTA: no se puede gestionar el cron por SSH en este hosting compartido

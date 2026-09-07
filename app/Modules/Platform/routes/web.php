@@ -6,7 +6,9 @@ use App\Modules\Platform\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Modules\Platform\Http\Controllers\Auth\RegisteredUserController;
 use App\Modules\Platform\Http\Controllers\CatalogController;
 use App\Modules\Platform\Http\Controllers\CheckoutController;
+use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
+use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -76,7 +78,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/perfil/clave', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::delete('/perfil', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // The operations centre proper is built in a later phase; for now the
-    // Game Master panel is the landing spot after signing in.
-    Route::redirect('/panel', '/gm')->name('dashboard');
+    Route::get('/panel', DashboardController::class)->name('dashboard');
+    Route::get('/biblioteca', LibraryController::class)->name('library');
 });

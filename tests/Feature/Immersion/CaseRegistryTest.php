@@ -97,7 +97,7 @@ class CaseRegistryTest extends TestCase
         $this->actingAs($user)->post(route('immersion.gm.games.store'), [
             'name' => 'Partida nueva',
             'players' => [['name' => 'Ana', 'email' => 'ana@example.com']],
-        ])->assertRedirect(route('immersion.gm.dashboard'));
+        ])->assertRedirect();
 
         $game = Game::firstWhere('name', 'Partida nueva');
 

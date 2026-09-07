@@ -11,13 +11,13 @@ class InertiaPagesTest extends TestCase
 {
     use CreatesGameMasters, RefreshDatabase;
 
-    public function test_gm_dashboard_requires_authentication(): void
+    public function test_the_games_section_requires_authentication(): void
     {
-        $this->get(route('immersion.gm.dashboard'))
+        $this->get(route('immersion.gm.games.index'))
             ->assertRedirect(route('login'));
     }
 
-    public function test_gm_dashboard_renders_only_the_signed_in_masters_games(): void
+    public function test_the_games_section_lists_only_the_signed_in_masters_games(): void
     {
         $user = $this->gameMaster();
         $this->gameOwnedBy($user);
@@ -27,12 +27,11 @@ class InertiaPagesTest extends TestCase
         $this->gameOwnedBy($other);
 
         $this->actingAs($user)
-            ->get(route('immersion.gm.dashboard'))
+            ->get(route('immersion.gm.games.index'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('GameMaster/Dashboard')
+                ->component('GameMaster/Games')
                 ->has('games', 1)
-                ->has('library', 1)
             );
     }
 

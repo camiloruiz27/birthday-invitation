@@ -18,24 +18,39 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('gm')->name('immersion.gm.')->middleware('auth')->group(function () {
-    Route::get('/', [GameMasterController::class, 'index'])->name('dashboard');
-    Route::post('/games', [GameMasterController::class, 'store'])->name('games.store');
+Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(function () {
+    Route::get('/', [GameMasterController::class, 'index'])->name('games.index');
+    Route::get('/crear', [GameMasterController::class, 'create'])->name('games.create');
+    Route::post('/', [GameMasterController::class, 'store'])->name('games.store');
 
-    Route::middleware('can:view,game')->group(function () {
-        Route::get('/games/{game}', [GameMasterController::class, 'show'])->name('game.show');
-        Route::get('/games/{game}/results', [GameMasterController::class, 'results'])->name('game.results');
-        Route::get('/games/{game}/interrogatorios', [GameMasterController::class, 'interrogations'])->name('game.interrogations');
+    // whereNumber keeps a game id from swallowing a literal path segment:
+    // without it /partidas/crear is a candidate match for /partidas/{game}.
+    Route::middleware('can:view,game')->whereNumber('game')->group(function () {
+        Route::get('/{game}', [GameMasterController::class, 'show'])->name('game.show');
     });
 
-    Route::middleware('can:control,game')->group(function () {
-        Route::post('/games/{game}/start', [GameMasterController::class, 'start'])->name('game.start');
-        Route::post('/games/{game}/pause', [GameMasterController::class, 'pause'])->name('game.pause');
-        Route::post('/games/{game}/resume', [GameMasterController::class, 'resume'])->name('game.resume');
-        Route::post('/games/{game}/force-next', [GameMasterController::class, 'forceNext'])->name('game.force-next');
-        Route::post('/games/{game}/load-default-timeline', [GameMasterController::class, 'loadDefaultTimeline'])->name('game.load-default-timeline');
-        Route::post('/games/{game}/events/{event}/retry-audio', [GameMasterController::class, 'retryAudio'])->name('game.event.retry-audio');
-        Route::post('/games/{game}/toggle-interrogation', [GameMasterController::class, 'toggleInterrogation'])->name('game.toggle-interrogation');
+    // Run controls: both modes need someone to say when the case starts and
+    // ends.
+    Route::middleware('can:control,game')->whereNumber('game')->group(function () {
+        Route::post('/{game}/start', [GameMasterController::class, 'start'])->name('game.start');
+        Route::post('/{game}/pause', [GameMasterController::class, 'pause'])->name('game.pause');
+        Route::post('/{game}/resume', [GameMasterController::class, 'resume'])->name('game.resume');
+        Route::post('/{game}/finish', [GameMasterController::class, 'finish'])->name('game.finish');
+        Route::post('/{game}/load-default-timeline', [GameMasterController::class, 'loadDefaultTimeline'])->name('game.load-default-timeline');
+        Route::post('/{game}/events/{event}/retry-audio', [GameMasterController::class, 'retryAudio'])->name('game.event.retry-audio');
+    });
+
+    // Directing: reaching into the timeline. Denied in automatic mode, where
+    // the owner is a player and this would be rewriting their own game.
+    Route::middleware('can:direct,game')->whereNumber('game')->group(function () {
+        Route::post('/{game}/force-next', [GameMasterController::class, 'forceNext'])->name('game.force-next');
+        Route::post('/{game}/toggle-interrogation', [GameMasterController::class, 'toggleInterrogation'])->name('game.toggle-interrogation');
+    });
+
+    // The two views that give the case away.
+    Route::middleware('can:viewSpoilers,game')->whereNumber('game')->group(function () {
+        Route::get('/{game}/results', [GameMasterController::class, 'results'])->name('game.results');
+        Route::get('/{game}/interrogatorios', [GameMasterController::class, 'interrogations'])->name('game.interrogations');
     });
 });
 

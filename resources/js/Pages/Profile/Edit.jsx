@@ -121,7 +121,7 @@ export default function Edit() {
     const { auth } = usePage().props;
 
     return (
-        <AppLayout kicker="Cuenta" title="Tu perfil" width="prose">
+        <AppLayout kicker="Cuenta" title="Tu perfil" width="prose" current="profile">
             <Head title="Tu perfil" />
 
             <div className="space-y-6">

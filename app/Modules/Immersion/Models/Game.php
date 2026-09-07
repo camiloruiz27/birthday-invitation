@@ -14,21 +14,30 @@ class Game extends Model
 {
     protected $table = 'immersion_games';
 
+    /** Someone directs the case and does not play. */
+    public const MODE_GM_LED = 'gm_led';
+
+    /** The system runs the timeline and the owner plays too. */
+    public const MODE_AUTOMATIC = 'automatic';
+
     protected $fillable = [
         'user_id',
         'name',
         'case_slug',
         'case_version',
+        'mode',
         'status',
         'started_at',
         'paused_at',
         'paused_seconds_total',
+        'finished_at',
         'interrogation_enabled',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'paused_at' => 'datetime',
+        'finished_at' => 'datetime',
         'interrogation_enabled' => 'boolean',
     ];
 
@@ -106,6 +115,46 @@ class Game extends Model
         return $this->status === 'paused';
     }
 
+    public function isFinished(): bool
+    {
+        return $this->status === 'finished';
+    }
+
+    /**
+     * In automatic mode the owner is also a player, which is why the console
+     * has to withhold anything that would spoil their own game.
+     */
+    public function isAutomatic(): bool
+    {
+        return $this->mode === self::MODE_AUTOMATIC;
+    }
+
+    /**
+     * The player row belonging to the owner, in automatic mode.
+     */
+    public function ownerPlayer(): ?Player
+    {
+        if (! $this->isAutomatic() || ! $this->user_id) {
+            return null;
+        }
+
+        return $this->players()->where('is_owner', true)->first();
+    }
+
+    /**
+     * Ends the case. Nothing else moves afterwards: pending events stop
+     * mattering and, in automatic mode, this is what finally lets the owner
+     * see the interrogations and the accusations.
+     */
+    public function finish(): void
+    {
+        $this->update([
+            'status' => 'finished',
+            'finished_at' => Carbon::now(),
+            'paused_at' => null,
+        ]);
+    }
+
     public function accusationsUnlocked(): bool
     {
         return $this->timelineEvents()
@@ -120,9 +169,13 @@ class Game extends Model
             return 0;
         }
 
-        $referenceNow = $this->isPaused() && $this->paused_at
-            ? $this->paused_at
-            : Carbon::now();
+        // The clock stops when the case ends and while it is paused; anything
+        // else would keep ticking against a game nobody is playing.
+        $referenceNow = match (true) {
+            $this->isFinished() && $this->finished_at !== null => $this->finished_at,
+            $this->isPaused() && $this->paused_at !== null => $this->paused_at,
+            default => Carbon::now(),
+        };
 
         $elapsedSeconds = $this->started_at->diffInSeconds($referenceNow) - $this->paused_seconds_total;
 

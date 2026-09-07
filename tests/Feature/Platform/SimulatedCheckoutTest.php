@@ -31,7 +31,7 @@ class SimulatedCheckoutTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('cases.acquire', 'steve-jacobs'))
-            ->assertRedirect(route('immersion.gm.dashboard'));
+            ->assertRedirect(route('dashboard'));
 
         $this->assertTrue($user->fresh()->ownsCase('steve-jacobs'));
     }

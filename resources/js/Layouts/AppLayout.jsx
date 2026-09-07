@@ -9,7 +9,34 @@ import UserMenu from '../components/ui/UserMenu';
  * Every authenticated page uses this, so flash messages and form errors are
  * surfaced in one place rather than being remembered per page.
  */
-export default function AppLayout({ title, kicker, actions, width = 'app', children }) {
+const NAV = [
+    { name: 'Panel', route: 'dashboard' },
+    { name: 'Biblioteca', route: 'library' },
+    { name: 'Partidas', route: 'immersion.gm.games.index' },
+];
+
+function NavLink({ item, active, className = '' }) {
+    return (
+        <Link
+            href={route(item.route)}
+            aria-current={active ? 'page' : undefined}
+            className={`text-sm transition-colors ${
+                active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'
+            } ${className}`}
+        >
+            {item.name}
+        </Link>
+    );
+}
+
+export default function AppLayout({
+    title,
+    kicker,
+    actions,
+    current,
+    width = 'app',
+    children,
+}) {
     const { props } = usePage();
     const user = props.auth?.user;
     const status = props.flash?.status;
@@ -29,17 +56,31 @@ export default function AppLayout({ title, kicker, actions, width = 'app', child
 
             <header className="sticky top-0 z-10 border-b border-line bg-surface/95 backdrop-blur">
                 <Container width={width}>
-                    <div className="flex h-16 items-center justify-between gap-4">
-                        <Link
-                            href={route('immersion.gm.dashboard')}
-                            className="flex items-center gap-2.5 text-sm font-semibold text-ink"
-                        >
-                            <span
-                                aria-hidden="true"
-                                className="h-2 w-2 shrink-0 rounded-full bg-accent"
-                            />
-                            Central de investigación
-                        </Link>
+                    <div className="flex h-16 items-center justify-between gap-6">
+                        <div className="flex min-w-0 items-center gap-8">
+                            <Link
+                                href={route('dashboard')}
+                                className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className="h-2 w-2 shrink-0 rounded-full bg-accent"
+                                />
+                                <span className="hidden sm:inline">Central de investigación</span>
+                            </Link>
+
+                            {/* Only three sections, so they fit on a phone
+                                without needing a drawer. */}
+                            <nav aria-label="Principal" className="flex items-center gap-5">
+                                {NAV.map((item) => (
+                                    <NavLink
+                                        key={item.route}
+                                        item={item}
+                                        active={current === item.route}
+                                    />
+                                ))}
+                            </nav>
+                        </div>
 
                         {user && <UserMenu user={user} />}
                     </div>

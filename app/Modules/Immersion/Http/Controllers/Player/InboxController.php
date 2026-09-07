@@ -4,10 +4,10 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class InboxController extends Controller
 {
@@ -37,15 +37,28 @@ class InboxController extends Controller
         ]);
     }
 
-    public function audio(Player $player, int $event): Response
+    /**
+     * Streams an event's recording.
+     *
+     * Served as a file rather than read into a string: a WAV is several
+     * megabytes, and BinaryFileResponse handles Range requests, which is what
+     * lets a phone seek within the audio instead of downloading all of it
+     * before playing.
+     */
+    public function audio(Player $player, int $event): BinaryFileResponse
     {
         $timelineEvent = $player->inboxEvents()->firstWhere('id', $event);
 
         abort_if(! $timelineEvent || ! $timelineEvent->audio_path, 404);
         abort_unless(Storage::disk('local')->exists($timelineEvent->audio_path), 404);
 
-        return response(Storage::disk('local')->get($timelineEvent->audio_path), 200, [
-            'Content-Type' => 'audio/wav',
-        ]);
+        return response()
+            ->file(Storage::disk('local')->path($timelineEvent->audio_path), [
+                'Content-Type' => 'audio/wav',
+                // The recording for an event never changes, and it is only
+                // reachable with the player's own token.
+                'Cache-Control' => 'private, max-age=86400',
+            ])
+            ->setAutoLastModified();
     }
 }

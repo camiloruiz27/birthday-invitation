@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Modules\Immersion\Services;
+namespace App\Modules\Immersion\Ai;
 
+use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 /**
  * Genera (y cachea) el audio TTS de un evento de la linea de tiempo llamando
- * al proyecto "mystery-case" del gateway lawxora-ai-service, con el mismo
- * patron defensivo que App\Services\CoupleAiService: si el gateway no esta
- * configurado o falla, el correo simplemente sale sin audio adjunto en vez
- * de romper el envio de la linea de tiempo.
+ * al proyecto "mystery-case" del gateway lawxora-ai-service. Si el gateway no
+ * esta configurado o falla, devuelve null y el correo sale sin audio adjunto
+ * en vez de romper el envio de la linea de tiempo.
  */
-class GeminiAudioService
+class GatewaySpeechProvider implements SpeechProvider
 {
     public function synthesize(int $eventId, string $script): ?string
     {

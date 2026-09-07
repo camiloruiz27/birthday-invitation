@@ -10,6 +10,15 @@ class TimelineEvent extends Model
 {
     protected $table = 'immersion_timeline_events';
 
+    /** Audio is being generated on the queue. */
+    public const AUDIO_PENDING = 'pending';
+
+    /** There is a file on disk. */
+    public const AUDIO_READY = 'ready';
+
+    /** Generation gave up; the Game Master can retry. */
+    public const AUDIO_FAILED = 'failed';
+
     protected $fillable = [
         'game_id',
         'type',
@@ -19,6 +28,7 @@ class TimelineEvent extends Model
         'body_markdown',
         'audio_script',
         'audio_path',
+        'audio_status',
         'delivery_mode',
         'cta_interrogation',
         'target_role_slug',
@@ -66,5 +76,17 @@ class TimelineEvent extends Model
     public function isSent(): bool
     {
         return ! is_null($this->sent_at);
+    }
+
+    /**
+     * An audio event that went out without its recording and is not currently
+     * being generated: the one case the Game Master can act on.
+     */
+    public function needsAudioRetry(): bool
+    {
+        return $this->isAudio()
+            && $this->isSent()
+            && ! $this->audio_path
+            && $this->audio_status !== self::AUDIO_PENDING;
     }
 }

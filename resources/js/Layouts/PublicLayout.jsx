@@ -74,7 +74,7 @@ export default function PublicLayout({ current, children }) {
 
                         <div className="hidden items-center gap-3 lg:flex">
                             {user ? (
-                                <Button href={route('immersion.gm.dashboard')} size="sm">
+                                <Button href={route('dashboard')} size="sm">
                                     Mi panel
                                 </Button>
                             ) : (
@@ -140,7 +140,7 @@ export default function PublicLayout({ current, children }) {
 
                             <div className="flex flex-col gap-2 border-t border-line py-4">
                                 {user ? (
-                                    <Button href={route('immersion.gm.dashboard')} fullWidth>
+                                    <Button href={route('dashboard')} fullWidth>
                                         Mi panel
                                     </Button>
                                 ) : (
