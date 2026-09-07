@@ -36,5 +36,5 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
     Route::get('/interrogatorio', [InterrogationController::class, 'index'])->name('interrogation.index');
     Route::get('/interrogatorio/{slug}', [InterrogationController::class, 'show'])->name('interrogation.show');
-    Route::post('/interrogatorio/{slug}', [InterrogationController::class, 'store'])->name('interrogation.store');
+    Route::post('/interrogatorio/{slug}/preguntar', [InterrogationController::class, 'ask'])->name('interrogation.ask');
 });

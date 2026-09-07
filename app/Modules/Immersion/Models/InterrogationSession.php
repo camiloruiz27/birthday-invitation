@@ -23,10 +23,18 @@ class InterrogationSession extends Model
     ];
 
     protected $casts = [
+        'game_id' => 'integer',
+        'player_id' => 'integer',
+        'questions_used' => 'integer',
         'started_at' => 'datetime',
         'closed_at' => 'datetime',
         'transcript_revealed' => 'boolean',
     ];
+
+    public function isOwnedBy(Player $player): bool
+    {
+        return $this->player_id === $player->id;
+    }
 
     public function game(): BelongsTo
     {

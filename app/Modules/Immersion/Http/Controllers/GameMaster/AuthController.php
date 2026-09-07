@@ -3,15 +3,16 @@
 namespace App\Modules\Immersion\Http\Controllers\GameMaster;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AuthController extends Controller
 {
-    public function showLogin(): View
+    public function showLogin(): Response
     {
-        return view('immersion::game-master.login');
+        return Inertia::render('GameMaster/Login');
     }
 
     public function login(Request $request): RedirectResponse

@@ -25,6 +25,13 @@ class Game extends Model
         'interrogation_enabled' => 'boolean',
     ];
 
+    protected $appends = ['elapsed_minutes'];
+
+    public function getElapsedMinutesAttribute(): int
+    {
+        return $this->elapsedMinutes();
+    }
+
     public function players(): HasMany
     {
         return $this->hasMany(Player::class);

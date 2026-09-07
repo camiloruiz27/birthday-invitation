@@ -4,18 +4,19 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class AccusationController extends Controller
 {
-    public function show(Player $player): View
+    public function show(Player $player): Response
     {
         $player->load('accusation');
 
-        return view('immersion::player.accusation', [
+        return Inertia::render('Player/Accusation', [
             'player' => $player,
             'game' => $player->game,
             'unlocked' => $player->game->accusationsUnlocked(),

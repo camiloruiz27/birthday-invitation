@@ -1,19 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-    --font-romantic: "Cormorant Garamond", serif;
-    --font-sans: "Montserrat", sans-serif;
+    --font-display: "Special Elite", cursive;
+    --font-body: "Courier Prime", ui-monospace, monospace;
 
-    --color-romantic-50: #fff8fa;
-    --color-romantic-100: #ffeef3;
-    --color-romantic-200: #ffdce7;
-    --color-romantic-300: #ffb9cf;
-    --color-romantic-400: #ff86ad;
-    --color-romantic-500: #f94f88;
-    --color-romantic-600: #e72868;
-    --color-romantic-700: #c41950;
-    --color-romantic-800: #a41945;
-    --color-romantic-900: #891a3d;
+    --color-ink: #241f14;
+    --color-paper: #e9e2d0;
+    --color-paper-card: #f5efe0;
+    --color-accent: #c9b98a;
+    --color-muted: #5c5236;
+    --color-border-soft: #8a7b57;
 }
 
 html {
@@ -23,12 +19,15 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
-    overflow-x: hidden;
-    font-family: var(--font-sans);
-    background: #fff8fa;
-    color: #3f1727;
+    font-family: var(--font-body);
+    background: var(--color-paper);
+    color: var(--color-ink);
 }
 
-[x-cloak] {
-    display: none !important;
+.immersion-typewriter {
+    font-family: var(--font-body);
+}
+
+.immersion-stamp {
+    font-family: var(--font-display);
 }

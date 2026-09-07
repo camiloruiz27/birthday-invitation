@@ -12,20 +12,22 @@ use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Services\GeminiAudioService;
 use App\Modules\Immersion\Support\DefaultTimeline;
 use App\Modules\Immersion\Support\TimelineRecipients;
-use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class GameMasterController extends Controller
 {
-    public function index(): View
+    public function index(): Response
     {
-        return view('immersion::game-master.dashboard', [
-            'games' => Game::query()->latest()->get(),
+        return Inertia::render('GameMaster/Dashboard', [
+            'games' => fn () => Game::query()->latest()->get(),
         ]);
     }
 
@@ -73,12 +75,10 @@ class GameMasterController extends Controller
         return back()->with('status', 'Linea de tiempo por defecto cargada.');
     }
 
-    public function show(Game $game): View
+    public function show(Game $game): Response
     {
-        $game->load(['players', 'timelineEvents.deliveredToPlayer', 'accusations.player']);
-
-        return view('immersion::game-master.game', [
-            'game' => $game,
+        return Inertia::render('GameMaster/Game', [
+            'game' => fn () => tap($game)->load(['players', 'timelineEvents.deliveredToPlayer', 'accusations.player']),
         ]);
     }
 
@@ -131,19 +131,27 @@ class GameMasterController extends Controller
         return back()->with('status', "Evento \"{$event->title}\" disparado manualmente.");
     }
 
-    public function retryAudio(Game $game, TimelineEvent $event): RedirectResponse
+    public function retryAudio(Game $game, TimelineEvent $event): JsonResponse
     {
-        abort_if($event->game_id !== $game->id, 404);
+        abort_if((int) $event->game_id !== (int) $game->id, 404);
         abort_unless($event->isAudio(), 400);
 
         if ($event->audio_path && Storage::disk('local')->exists($event->audio_path)) {
-            return back()->with('status', 'Este evento ya tiene su audio guardado.');
+            return response()->json([
+                'status' => 'ok',
+                'message' => 'Este evento ya tiene su audio guardado.',
+                'event' => $event,
+            ]);
         }
 
         $audioPath = app(GeminiAudioService::class)->synthesize($event->id, (string) $event->audio_script);
 
         if (! $audioPath) {
-            return back()->with('status', 'El servicio de audio sigue sin responder. Revisa que lawxora-ai-service (npm start) este corriendo e intenta de nuevo.');
+            return response()->json([
+                'status' => 'error',
+                'message' => 'El servicio de audio sigue sin responder. Revisa que lawxora-ai-service (npm start) este corriendo e intenta de nuevo.',
+                'event' => $event,
+            ]);
         }
 
         $event->audio_path = $audioPath;
@@ -160,15 +168,17 @@ class GameMasterController extends Controller
             }
         }
 
-        return back()->with('status', "Audio generado. Correo reenviado (con el audio) a {$sent} destinatario(s).");
+        return response()->json([
+            'status' => 'ok',
+            'message' => "Audio generado. Correo reenviado (con el audio) a {$sent} destinatario(s).",
+            'event' => $event,
+        ]);
     }
 
-    public function results(Game $game): View
+    public function results(Game $game): Response
     {
-        $game->load(['accusations.player', 'players']);
-
-        return view('immersion::game-master.results', [
-            'game' => $game,
+        return Inertia::render('GameMaster/Results', [
+            'game' => fn () => tap($game)->load(['accusations.player', 'players']),
         ]);
     }
 
@@ -181,16 +191,14 @@ class GameMasterController extends Controller
             : 'Interrogatorio (Mecanica 7) deshabilitado.');
     }
 
-    public function interrogations(Game $game): View
+    public function interrogations(Game $game): Response
     {
-        $sessions = InterrogationSession::where('game_id', $game->id)
-            ->with(['player', 'messages'])
-            ->orderBy('suspect_slug')
-            ->get();
-
-        return view('immersion::game-master.interrogations', [
+        return Inertia::render('GameMaster/Interrogations', [
             'game' => $game,
-            'sessions' => $sessions,
+            'sessions' => fn () => InterrogationSession::where('game_id', $game->id)
+                ->with(['player', 'messages'])
+                ->orderBy('suspect_slug')
+                ->get(),
         ]);
     }
 }
