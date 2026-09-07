@@ -96,6 +96,32 @@ esa marca; no hace falta schema nuevo.
 Cerrar el caso (`finish`) detiene el reloj, corta el envio de material y es lo
 que revela los spoilers al dueno que estuvo jugando.
 
+## 4.2.2 El final del caso
+
+El GM elige el tipo de final **al crear la partida** (`ending_type`), porque los
+finales avanzados reservan capacidad de IA. Hoy solo existe `classic`;
+`epilogue` y `confession_audio` estan declarados pero deshabilitados.
+
+**Final clasico:** cuando **todos** los jugadores han acusado, el sistema revela
+la solucion solo. Cuentan todos los jugadores, incluido el jugador-dueno en modo
+automatico. Si alguien no va a acusar, el GM puede forzar la revelacion desde el
+panel de la partida.
+
+Al revelar:
+- Los jugadores ven la solucion en `/jugador/{token}/solucion`, y en la barra de
+  navegacion "Acusacion" se sustituye por "Solucion".
+- Las acusaciones se **bloquean** — con la respuesta en pantalla, poder editarla
+  seria regalar el marcador.
+- El veredicto de cada acusacion se **congela** en la fila (`was_correct`), para
+  que editar el manifiesto despues no recalcule una partida ya terminada.
+
+**Revelar no cierra la partida.** Son dos acciones distintas: el final premium
+le entrega al GM un audio para reproducir en la mesa *antes* de cerrar el caso.
+
+El interrogatorio tambien se elige al crear y ya no se puede encender a mitad de
+partida, por la misma razon: encenderlo despues seria consumo de IA no
+reservado.
+
 ## 4.2.1 Cupo de partidas
 
 El cupo es **por caso**, no por cuenta: `IMMERSION_MAX_GAMES_PER_CASE` partidas

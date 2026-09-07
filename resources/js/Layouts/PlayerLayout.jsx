@@ -15,6 +15,7 @@ const SECTION_LABELS = {
     inbox: 'Bandeja',
     interrogation: 'Personas',
     accusation: 'Acusación',
+    solution: 'Solución',
 };
 
 function sectionsFor(player, game) {
@@ -29,10 +30,14 @@ function sectionsFor(player, game) {
         });
     }
 
-    sections.push({
-        key: 'accusation',
-        href: route('immersion.player.accusation', player.access_token),
-    });
+    // Once the ending is out, "Solución" REPLACES "Acusación" rather than
+    // joining it: the form is locked anyway, and a fourth tab does not fit
+    // legibly in the mobile bottom bar.
+    sections.push(
+        game?.ending_revealed_at
+            ? { key: 'solution', href: route('immersion.player.solution', player.access_token) }
+            : { key: 'accusation', href: route('immersion.player.accusation', player.access_token) }
+    );
 
     return sections;
 }

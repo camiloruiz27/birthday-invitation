@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import Button from '../ui/Button';
 import Alert from '../ui/Alert';
-import { TextField, SelectField } from '../ui/Field';
+import { TextField, SelectField, CheckboxField } from '../ui/Field';
 import QuotaMeter from '../app/QuotaMeter';
 import PlayerRow from './PlayerRow';
 
@@ -61,6 +61,79 @@ function ModePicker({ value, onChange }) {
     );
 }
 
+const ENDINGS = [
+    {
+        value: 'classic',
+        title: 'Clásico',
+        description:
+            'Cuando todos acusen, el equipo ve quién fue, cómo y por qué — y quiénes acertaron.',
+        available: true,
+    },
+    {
+        value: 'epilogue',
+        title: 'Epílogo personalizado',
+        description:
+            'Cada jugador recibe un mensaje de la persona que acusó: si acertó, confiesa; si no, se defiende.',
+        available: false,
+    },
+    {
+        value: 'confession_audio',
+        title: 'Confesión en audio',
+        description:
+            'Recibes una grabación del culpable delatándose, para reproducirla en la mesa.',
+        available: false,
+    },
+];
+
+function EndingPicker({ value, onChange }) {
+    return (
+        <fieldset>
+            <legend className="text-sm font-medium text-ink">¿Cómo termina el caso?</legend>
+            <p className="mt-1 text-xs text-ink-muted">
+                Se elige ahora porque los finales avanzados reservan capacidad de IA.
+            </p>
+
+            <div className="mt-3 space-y-3">
+                {ENDINGS.map((ending) => (
+                    <label
+                        key={ending.value}
+                        className={`flex gap-3 rounded-card border p-4 transition-colors ${
+                            !ending.available
+                                ? 'cursor-not-allowed border-line opacity-50'
+                                : value === ending.value
+                                  ? 'cursor-pointer border-accent bg-accent-dim/30'
+                                  : 'cursor-pointer border-line hover:border-line-strong'
+                        }`}
+                    >
+                        <input
+                            type="radio"
+                            name="ending_type"
+                            value={ending.value}
+                            checked={value === ending.value}
+                            disabled={!ending.available}
+                            onChange={(event) => onChange(event.target.value)}
+                            className="mt-1 h-4 w-4 shrink-0"
+                        />
+                        <span className="min-w-0">
+                            <span className="block text-sm font-medium text-ink">
+                                {ending.title}
+                                {!ending.available && (
+                                    <span className="ml-2 text-xs font-normal text-ink-subtle">
+                                        Próximamente
+                                    </span>
+                                )}
+                            </span>
+                            <span className="mt-1 block text-sm text-ink-muted">
+                                {ending.description}
+                            </span>
+                        </span>
+                    </label>
+                ))}
+            </div>
+        </fieldset>
+    );
+}
+
 export default function NewGameForm({ library }) {
     const [players, setPlayers] = useState(() => Array.from({ length: 6 }, emptyPlayer));
 
@@ -72,6 +145,8 @@ export default function NewGameForm({ library }) {
         name: '',
         case_slug: firstWithRoom?.slug || '',
         mode: 'gm_led',
+        ending_type: 'classic',
+        interrogation_enabled: true,
         players,
     });
 
@@ -139,6 +214,19 @@ export default function NewGameForm({ library }) {
             )}
 
             <ModePicker value={data.mode} onChange={(value) => setData('mode', value)} />
+
+            <EndingPicker
+                value={data.ending_type}
+                onChange={(value) => setData('ending_type', value)}
+            />
+
+            <CheckboxField
+                id="interrogation_enabled"
+                label="Habilitar interrogatorios"
+                checked={data.interrogation_enabled}
+                onChange={(value) => setData('interrogation_enabled', value)}
+                hint="Los jugadores podrán preguntar a los sospechosos. Se elige ahora y no se puede cambiar una vez iniciado el caso."
+            />
 
             <fieldset>
                 <legend className="text-sm font-medium text-ink">

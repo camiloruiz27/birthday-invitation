@@ -20,17 +20,29 @@ class Game extends Model
     /** The system runs the timeline and the owner plays too. */
     public const MODE_AUTOMATIC = 'automatic';
 
+    /** Everyone sees the authored solution and who got it right. */
+    public const ENDING_CLASSIC = 'classic';
+
+    /** Each player gets a message from the suspect they accused. Later. */
+    public const ENDING_EPILOGUE = 'epilogue';
+
+    /** The Game Master gets an audio of the culprit confessing. Later. */
+    public const ENDING_CONFESSION_AUDIO = 'confession_audio';
+
     protected $fillable = [
         'user_id',
         'name',
         'case_slug',
         'case_version',
         'mode',
+        'ending_type',
         'status',
         'started_at',
         'paused_at',
         'paused_seconds_total',
         'finished_at',
+        'ending_revealed_at',
+        'ending_revealed_by',
         'interrogation_enabled',
     ];
 
@@ -38,6 +50,7 @@ class Game extends Model
         'started_at' => 'datetime',
         'paused_at' => 'datetime',
         'finished_at' => 'datetime',
+        'ending_revealed_at' => 'datetime',
         'interrogation_enabled' => 'boolean',
     ];
 
@@ -161,6 +174,40 @@ class Game extends Model
             ->where('type', 'unlock')
             ->whereNotNull('sent_at')
             ->exists();
+    }
+
+    public function endingRevealed(): bool
+    {
+        return $this->ending_revealed_at !== null;
+    }
+
+    /**
+     * Once the answer is on screen, an accusation can no longer be changed —
+     * otherwise anyone could "correct" theirs and walk away with a perfect
+     * score. Closing the case seals them too.
+     */
+    public function accusationsLocked(): bool
+    {
+        return $this->endingRevealed() || $this->isFinished();
+    }
+
+    public function pendingAccusationsCount(): int
+    {
+        return max(0, $this->players()->count() - $this->accusations()->count());
+    }
+
+    /**
+     * Has the whole table accused?
+     *
+     * Everyone counts, including the owner's own player row in automatic mode:
+     * leaving them out would reveal the answer before they had a chance to
+     * play, which is the exact thing automatic mode protects against.
+     */
+    public function everyoneAccused(): bool
+    {
+        $players = $this->players()->count();
+
+        return $players > 0 && $this->accusations()->count() >= $players;
     }
 
     public function elapsedMinutes(): int

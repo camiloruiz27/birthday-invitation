@@ -77,7 +77,8 @@ class RetryAudioTest extends TestCase
 
         (new GenerateEventAudio($event->id))->handle(app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class));
 
-        Storage::disk('local')->assertExists("audio/{$event->id}.wav");
+        // Namespaced by kind: not every recording belongs to a timeline event.
+        Storage::disk('local')->assertExists("audio/event-{$event->id}.wav");
         Mail::assertSent(CaseTimelineMail::class);
 
         $this->assertSame(TimelineEvent::AUDIO_READY, $event->fresh()->audio_status);

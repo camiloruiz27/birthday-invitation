@@ -50,6 +50,41 @@ Para que sea el caso por defecto de las partidas nuevas:
 | `timeline` | Eventos que se adjuntan a toda partida nueva del caso |
 | `gallery` | Imágenes que acompañan el texto de cada `source_file` |
 | `gallery_excluded_headings` | Secciones que ya se ven como imagen y se omiten del texto |
+| `solution` | El desenlace: quién fue, cómo, por qué (ver abajo) |
+
+## La solución
+
+El final de un caso es **contenido autorado**. La IA nunca decide quién fue —
+ni aquí, ni en el epílogo, ni en la confesión en audio: esas mecánicas solo
+ponen este material en boca de un personaje.
+
+```php
+'solution' => [
+    'culprit_slug' => 'kevin-huang',   // debe existir en 'suspects'
+    'headline'     => 'La frase que cierra el caso.',
+    'motive'       => 'Por qué lo hizo.',
+    'method'       => 'Cómo lo hizo.',
+    'key_evidence' => ['La prueba que lo señala.'],
+    'file'         => 'solucion.md',   // la revelación larga, verbatim
+
+    // Por qué CADA inocente no pudo ser. Lo usa el epílogo personalizado:
+    // sin una línea autorada por sospechoso, el modelo tendría que razonar
+    // el error del jugador, que es justo inventar el desenlace.
+    'exonerations' => ['elizabeth-foster' => '…'],
+
+    // Guion de confesión, escrito para reproducirse tal cual.
+    'confession_script' => null,
+],
+```
+
+**Mientras `culprit_slug` sea `PENDIENTE`, o nombre a alguien que no está en
+`suspects`, el caso se considera sin solución**: no se ofrece revelar nada. Es
+deliberado — una mesa nunca debe ver "PENDIENTE" como respuesta. Un slug mal
+escrito lo detecta el test de integridad del manifiesto, no los jugadores.
+
+> **`solucion.md` nunca debe llegar al servicio de IA.** Los testimonios de
+> `content/suspects/` sí se le envían verbatim durante los interrogatorios; la
+> solución no.
 
 No todos los casos necesitan todas las mecánicas ni todas las claves: lo que
 falte cae a un valor por defecto sensato (ver `CaseDefinition`).

@@ -10,7 +10,7 @@ use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
  */
 class NullSpeechProvider implements SpeechProvider
 {
-    public function synthesize(int $eventId, string $script): ?string
+    public function synthesize(string $key, string $script, ?string $voice = null): ?string
     {
         return null;
     }

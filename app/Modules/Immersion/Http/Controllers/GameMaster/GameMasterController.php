@@ -10,7 +10,9 @@ use App\Modules\Immersion\Jobs\GenerateEventAudio;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\TimelineEvent;
+use App\Modules\Immersion\Support\AccusationScoreboard;
 use App\Modules\Immersion\Support\GameQuota;
+use App\Modules\Immersion\Support\RevealEnding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -85,6 +87,13 @@ class GameMasterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'case_slug' => ['nullable', 'string', Rule::in($cases->slugs())],
             'mode' => ['nullable', Rule::in([Game::MODE_GM_LED, Game::MODE_AUTOMATIC])],
+
+            // Chosen up front, not toggled mid-run: the advanced endings and
+            // the interrogation cost AI capacity that has to be reserved
+            // before the case starts.
+            'ending_type' => ['nullable', Rule::in([Game::ENDING_CLASSIC])],
+            'interrogation_enabled' => ['nullable', 'boolean'],
+
             'players' => ['required', 'array', 'min:1'],
             'players.*.name' => ['required', 'string', 'max:255'],
             'players.*.email' => ['required', 'email'],
@@ -125,6 +134,8 @@ class GameMasterController extends Controller
                 'case_slug' => $case->slug,
                 'case_version' => $case->version(),
                 'mode' => $mode,
+                'ending_type' => $data['ending_type'] ?? Game::ENDING_CLASSIC,
+                'interrogation_enabled' => (bool) ($data['interrogation_enabled'] ?? false),
                 'status' => 'draft',
             ]);
 
@@ -204,6 +215,14 @@ class GameMasterController extends Controller
             'can' => [
                 'direct' => $request->user()->can('direct', $game),
                 'viewSpoilers' => $spoilersAllowed,
+                'reveal' => $request->user()->can('reveal', $game),
+            ],
+
+            'ending' => fn () => [
+                'type' => $game->ending_type,
+                'revealed_at' => $game->ending_revealed_at,
+                'pending_accusations' => $game->pendingAccusationsCount(),
+                'players' => $game->players()->count(),
             ],
 
             // In automatic mode the owner plays from their own inbox.
@@ -211,19 +230,27 @@ class GameMasterController extends Controller
         ]);
     }
 
+    /**
+     * Starts the run.
+     *
+     * A conditional UPDATE rather than check-then-write: starting twice would
+     * reset the clock and desync the timeline from what it already sent, and
+     * once starting also reserves AI credits a double click would debit twice.
+     */
     public function start(Game $game): RedirectResponse
     {
-        // Starting an already-started game would reset the clock and desync
-        // the timeline from the events it has already sent.
-        if ($game->started_at) {
+        $started = Game::query()
+            ->whereKey($game->getKey())
+            ->whereNull('started_at')
+            ->update([
+                'status' => 'running',
+                'started_at' => Carbon::now(),
+                'paused_seconds_total' => 0,
+            ]);
+
+        if ($started === 0) {
             return back()->with('status', 'Esta partida ya fue iniciada.');
         }
-
-        $game->update([
-            'status' => 'running',
-            'started_at' => Carbon::now(),
-            'paused_seconds_total' => 0,
-        ]);
 
         return back()->with('status', 'Caso iniciado. La linea de tiempo empezara a correr sola.');
     }
@@ -339,15 +366,66 @@ class GameMasterController extends Controller
         ]);
     }
 
-    public function results(Game $game): Response
+    public function results(Request $request, Game $game, AccusationScoreboard $scoreboard): Response
     {
+        $case = $game->caseDefinition();
+
         return Inertia::render('GameMaster/Results', [
-            'game' => fn () => tap($game)->load(['accusations.player', 'players']),
+            // players.accusation, not accusations.player: the page walks the
+            // roster and reads each player's accusation, so loading the
+            // sibling relation left every row looking unanswered.
+            'game' => fn () => tap($game)->load(['players.accusation']),
+
+            'scoreboard' => fn () => $scoreboard->for($game),
+
+            // The short version only. The Game Master comparing a table of
+            // accusations does not need the whole essay here.
+            'solution' => fn () => $case->hasSolution() ? [
+                'culprit_slug' => $case->culpritSlug(),
+                'culprit_name' => $case->suspect($case->culpritSlug())['name'],
+                'headline' => $case->solution()['headline'],
+                'weapon' => $case->solution()['method'],
+                'motive' => $case->solution()['motive'],
+            ] : null,
+
+            'reveal' => fn () => [
+                'revealed_at' => $game->ending_revealed_at,
+                'by' => $game->ending_revealed_by,
+                'pending' => $game->pendingAccusationsCount(),
+                'players' => $game->players()->count(),
+                'can' => $request->user()->can('reveal', $game),
+            ],
         ]);
     }
 
+    /**
+     * Publishes the ending to the whole table.
+     *
+     * Deliberately does not finish the game: the premium ending hands the Game
+     * Master an audio to play before they close the case, and finishing is
+     * where the AI credit hold will be released.
+     */
+    public function revealEnding(Game $game, RevealEnding $reveal): RedirectResponse
+    {
+        if (! $reveal->force($game)) {
+            return back()->with('status', 'La solucion ya estaba revelada.');
+        }
+
+        return back()->with('status', 'Solucion revelada. Todos los jugadores ya pueden verla.');
+    }
+
+    /**
+     * Only before the case starts.
+     *
+     * Turning the mechanic on mid-run would mean AI usage that was never
+     * reserved, which is why the choice moved to the creation form.
+     */
     public function toggleInterrogation(Game $game): RedirectResponse
     {
+        if ($game->started_at) {
+            return back()->with('status', 'El interrogatorio se elige antes de iniciar el caso.');
+        }
+
         $game->update(['interrogation_enabled' => ! $game->interrogation_enabled]);
 
         return back()->with('status', $game->interrogation_enabled

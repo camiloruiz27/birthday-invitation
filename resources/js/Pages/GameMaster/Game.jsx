@@ -47,7 +47,7 @@ function PlayerLink({ player }) {
     );
 }
 
-export default function Game({ game, timelineSummary, can, ownerPlayerToken }) {
+export default function Game({ game, timelineSummary, can, ownerPlayerToken, ending }) {
     // The clock and the timeline advance on the server, so a running game
     // refreshes itself; a draft, paused or finished game has nothing to poll.
     usePoll(['game', 'timelineSummary'], {
@@ -98,6 +98,10 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken }) {
                         <Button onClick={() => post('immersion.gm.game.resume')}>Reanudar</Button>
                     )}
 
+                    {can.reveal && (
+                        <Button onClick={() => setConfirming('reveal')}>Revelar solución</Button>
+                    )}
+
                     {(game.status === 'running' || game.status === 'paused') && (
                         <Button variant="secondary" onClick={() => setConfirming('finish')}>
                             Cerrar caso
@@ -127,6 +131,39 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken }) {
                         <p className="text-sm text-ink-muted">
                             Los interrogatorios y las acusaciones del resto quedan ocultos hasta
                             que cierres el caso, para no arruinarte la partida.
+                        </p>
+                    )}
+                </Card>
+            )}
+
+            {/* Where the run stands relative to its ending. */}
+            {game.status !== 'draft' && (
+                <Card className="mb-6">
+                    <CardHeader
+                        title="Final del caso"
+                        description={
+                            ending.revealed_at
+                                ? 'La solución ya está publicada para todo el equipo.'
+                                : `${ending.players - ending.pending_accusations} de ${ending.players} acusaciones recibidas.`
+                        }
+                        actions={
+                            ending.revealed_at && can.viewSpoilers ? (
+                                <Button
+                                    href={route('immersion.gm.game.results', game.id)}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    Ver acusaciones
+                                </Button>
+                            ) : null
+                        }
+                    />
+
+                    {!ending.revealed_at && (
+                        <p className="text-sm text-ink-muted">
+                            {ending.pending_accusations === 0
+                                ? 'Ya acusaron todos: la solución se revela sola.'
+                                : 'Cuando acusen todos, la solución se revela sola. También puedes revelarla tú si alguien no va a acusar.'}
                         </p>
                     )}
                 </Card>
@@ -272,6 +309,27 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken }) {
                 description="Envía ya el próximo evento pendiente sin esperar su minuto. Si es un audio puede tardar hasta un minuto en generarse."
                 confirmLabel="Forzar evento"
             />
+
+            <ConfirmModal
+                open={confirming === 'reveal'}
+                onClose={() => setConfirming(null)}
+                onConfirm={() => post('immersion.gm.game.reveal')}
+                processing={processing}
+                title="¿Revelar la solución?"
+                description={
+                    isAutomatic
+                        ? 'Le muestra el final a todo el equipo, incluido a ti. No se puede deshacer.'
+                        : 'Le muestra el final a todo el equipo y cierra las acusaciones. No se puede deshacer.'
+                }
+                confirmLabel="Revelar"
+            >
+                {ending.pending_accusations > 0 && (
+                    <p className="text-sm text-danger">
+                        Faltan {ending.pending_accusations} de {ending.players} acusaciones. Quien
+                        no haya acusado ya no podrá hacerlo.
+                    </p>
+                )}
+            </ConfirmModal>
 
             <ConfirmModal
                 open={confirming === 'finish'}

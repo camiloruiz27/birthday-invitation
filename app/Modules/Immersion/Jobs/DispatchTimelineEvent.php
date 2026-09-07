@@ -77,7 +77,7 @@ class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
         $recipients = TimelineRecipients::resolve($event);
 
         if ($event->isAudio() && $event->audio_script && ! $event->audio_path) {
-            $event->audio_path = $audio->synthesize($event->id, $event->audio_script);
+            $event->audio_path = $audio->synthesize("event-{$event->id}", $event->audio_script);
             $event->audio_status = $event->audio_path
                 ? TimelineEvent::AUDIO_READY
                 : TimelineEvent::AUDIO_FAILED;

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Immersion;
 
+use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -44,6 +45,52 @@ class CaseRegistryTest extends TestCase
         $this->assertSame(5, $case->interrogationQuestions());
         $this->assertTrue($case->hasMechanic('interrogation'));
         $this->assertFalse($case->hasMechanic('seance'));
+    }
+
+    public function test_a_written_culprit_must_exist_in_the_roster(): void
+    {
+        $problems = [];
+
+        foreach ($this->registry()->all() as $case) {
+            $declared = $case->declaredCulpritSlug();
+
+            // Null means "not written yet", which is fine. A slug that IS
+            // written but names nobody is a typo: the case would be unwinnable
+            // and the reveal would silently never appear.
+            if ($declared !== null && ! $case->suspect($declared)) {
+                $problems[] = "{$case->slug} → culprit \"{$declared}\" is not in suspects";
+            }
+        }
+
+        $this->assertSame([], $problems, implode("\n", $problems));
+    }
+
+    public function test_an_unwritten_solution_is_treated_as_absent(): void
+    {
+        // The placeholder must never be revealable: a table would be shown
+        // "PENDIENTE" as the answer.
+        $pending = new CaseDefinition('unwritten', '', [
+            'suspects' => ['alguien' => ['name' => 'Alguien']],
+            'solution' => ['culprit_slug' => CaseDefinition::PENDING],
+        ]);
+
+        $this->assertFalse($pending->hasSolution());
+        $this->assertNull($pending->culpritSlug());
+
+        // A slug that names nobody is equally unrevealable.
+        $typo = new CaseDefinition('typo', '', [
+            'suspects' => ['alguien' => ['name' => 'Alguien']],
+            'solution' => ['culprit_slug' => 'nadie'],
+        ]);
+
+        $this->assertFalse($typo->hasSolution());
+
+        // And a case with no solution block at all.
+        $none = new CaseDefinition('no-ending', '', []);
+
+        $this->assertFalse($none->hasSolution());
+        $this->assertNull($none->culpritSlug());
+        $this->assertSame('', $none->renderSolution());
     }
 
     public function test_asset_urls_are_namespaced_per_case(): void

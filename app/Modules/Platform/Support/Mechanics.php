@@ -52,9 +52,9 @@ class Mechanics
                 'ai' => true,
             ],
             'accusation' => [
-                'name' => 'Acusación final',
-                'summary' => 'Quién, con qué y por qué.',
-                'detail' => 'Al final cada jugador entrega su acusación. El Game Master ve todas juntas y las compara antes de revelar la solución.',
+                'name' => 'Acusación y desenlace',
+                'summary' => 'Quién, con qué y por qué — y después, la verdad.',
+                'detail' => 'Cada jugador señala a una persona y explica cómo y por qué. Cuando han acusado todos, el caso se resuelve solo: aparece quién fue realmente, cómo lo hizo, y quiénes del equipo acertaron.',
                 'ai' => false,
             ],
         ];

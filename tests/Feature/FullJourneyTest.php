@@ -110,6 +110,9 @@ class FullJourneyTest extends TestCase
             'name' => 'Mesa del sábado',
             'case_slug' => 'steve-jacobs',
             'mode' => Game::MODE_GM_LED,
+            'ending_type' => Game::ENDING_CLASSIC,
+            // Chosen up front: it can no longer be switched on mid-run.
+            'interrogation_enabled' => true,
             'players' => [
                 ['name' => 'Ana', 'email' => 'ana@example.com'],
                 ['name' => 'Beto', 'email' => 'beto@example.com'],
@@ -144,8 +147,10 @@ class FullJourneyTest extends TestCase
         $this->post(route('immersion.gm.game.force-next', $game))->assertRedirect();
         $this->assertSame(1, $game->timelineEvents()->whereNotNull('sent_at')->count());
 
-        $this->post(route('immersion.gm.game.toggle-interrogation', $game))->assertRedirect();
+        // Interrogation came on with the game's settings, not a mid-run toggle.
         $this->assertTrue($game->fresh()->interrogation_enabled);
+        $this->post(route('immersion.gm.game.toggle-interrogation', $game))->assertRedirect();
+        $this->assertTrue($game->fresh()->interrogation_enabled, 'A started game ignores the toggle.');
 
         /* ---------------------------------------------------------------
          | 6. Play as an invited player (no account)
@@ -180,7 +185,7 @@ class FullJourneyTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('unlocked', false));
 
         $this->post(route('immersion.player.accusation.store', $token), [
-            'suspect_name' => 'Alguien',
+            'suspect_slug' => 'daniel-blake',
             'weapon' => 'Algo',
             'motive' => 'Por algo',
         ])->assertForbidden();
@@ -205,12 +210,22 @@ class FullJourneyTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->where('unlocked', true));
 
         $this->post(route('immersion.player.accusation.store', $token), [
-            'suspect_name' => 'Daniel Blake',
+            'suspect_slug' => 'daniel-blake',
             'weapon' => 'Suplementos manipulados',
             'motive' => 'Desacuerdos laborales',
         ])->assertRedirect(route('immersion.player.accusation', $token));
 
-        $this->assertDatabaseHas('immersion_accusations', ['suspect_name' => 'Daniel Blake']);
+        // The name is denormalised from the manifest, so the row stays
+        // readable without re-resolving the case.
+        $this->assertDatabaseHas('immersion_accusations', [
+            'suspect_slug' => 'daniel-blake',
+            'suspect_name' => 'Daniel Blake',
+        ]);
+
+        // steve-jacobs has no culprit written yet, so there is nothing to
+        // reveal and the ending stays closed.
+        $this->assertFalse($game->fresh()->endingRevealed());
+        $this->get(route('immersion.player.solution', $token))->assertNotFound();
 
         /* ---------------------------------------------------------------
          | 8. Close the case and review it

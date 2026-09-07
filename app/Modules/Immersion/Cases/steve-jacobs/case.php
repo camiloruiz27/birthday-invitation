@@ -178,6 +178,64 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Solution
+    |--------------------------------------------------------------------------
+    |
+    | The ending, authored. The AI never decides who did it — not here and not
+    | in the epilogue or the confession audio, which only ever put THIS material
+    | into a suspect's mouth.
+    |
+    | `content/solucion.md` must never reach the AI gateway. Suspect testimonies
+    | are sent verbatim during interrogations; the solution is not.
+    |
+    | >>> PENDIENTE: contenido por escribir. <<<
+    | Hasta que se llene, la revelacion muestra este texto de plantilla. Lo que
+    | se decida aqui tiene que ser coherente con los 9 testimonios ya escritos
+    | en content/suspects/.
+    |
+    */
+
+    'solution' => [
+        // Must be a key of 'suspects' above.
+        'culprit_slug' => 'PENDIENTE',
+
+        'headline' => 'PENDIENTE: la frase que cierra el caso.',
+        'motive' => 'PENDIENTE: por que lo hizo.',
+        'method' => 'PENDIENTE: como lo hizo.',
+        'key_evidence' => [
+            'PENDIENTE: la prueba que lo señala.',
+        ],
+
+        // The long reveal, rendered verbatim like any other case content.
+        'file' => 'solucion.md',
+
+        /*
+         * Used by the personalised epilogue (later delivery): why THIS innocent
+         * suspect could not have done it. Without an authored line per suspect,
+         * the model would have to reason out the mistake — which is exactly
+         * "inventing the ending".
+         *
+         * One entry per suspect that is not the culprit.
+         */
+        'exonerations' => [
+            'elizabeth-foster' => 'PENDIENTE',
+            'sofia-reyes' => 'PENDIENTE',
+            'lucas-jacobs' => 'PENDIENTE',
+            'rachel-miller' => 'PENDIENTE',
+            'emily-johnson' => 'PENDIENTE',
+            'kevin-huang' => 'PENDIENTE',
+            'daniel-blake' => 'PENDIENTE',
+            'sarah-collins' => 'PENDIENTE',
+            'jeremy-burt-testigo' => 'PENDIENTE',
+        ],
+
+        // Used by the confession audio (later delivery). Written to be played
+        // as-is, so the table still gets an ending if the AI is unavailable.
+        'confession_script' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
     |

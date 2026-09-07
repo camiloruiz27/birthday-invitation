@@ -4,6 +4,7 @@ use App\Modules\Immersion\Http\Controllers\GameMaster\GameMasterController;
 use App\Modules\Immersion\Http\Controllers\Player\AccusationController;
 use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
+use App\Modules\Immersion\Http\Controllers\Player\SolutionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,6 +54,13 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         Route::post('/{game}/toggle-interrogation', [GameMasterController::class, 'toggleInterrogation'])->name('game.toggle-interrogation');
     });
 
+    // Publishing the ending. Its own ability: allowed in both modes, unlike
+    // the directing controls.
+    Route::post('/{game}/revelar', [GameMasterController::class, 'revealEnding'])
+        ->middleware('can:reveal,game')
+        ->whereNumber('game')
+        ->name('game.reveal');
+
     // The two views that give the case away.
     Route::middleware('can:viewSpoilers,game')->whereNumber('game')->group(function () {
         Route::get('/{game}/results', [GameMasterController::class, 'results'])->name('game.results');
@@ -75,6 +83,9 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     Route::get('/audio/{event}', [InboxController::class, 'audio'])->name('audio');
     Route::get('/acusacion', [AccusationController::class, 'show'])->name('accusation');
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
+
+    // Refuses with 403 until the ending is revealed; see SolutionController.
+    Route::get('/solucion', [SolutionController::class, 'show'])->name('solution');
     Route::get('/interrogatorio', [InterrogationController::class, 'index'])->name('interrogation.index');
     Route::get('/interrogatorio/{slug}', [InterrogationController::class, 'show'])->name('interrogation.show');
 

@@ -64,7 +64,29 @@ class GamePolicy
             return false;
         }
 
-        return ! $game->isAutomatic() || $game->isFinished();
+        // Revealing the ending opens these too: once the whole table has the
+        // answer there is nothing left to spoil, and without this an owner who
+        // was playing would reveal and still be locked out of the results.
+        return ! $game->isAutomatic()
+            || $game->isFinished()
+            || $game->endingRevealed();
+    }
+
+    /**
+     * Publishing the ending to the whole table.
+     *
+     * Allowed in both modes, unlike `direct`. Denying it to an owner who is
+     * playing would leave an automatic game with one absent player stuck
+     * without an ending — the exact problem this feature exists to solve. The
+     * confirmation dialog warns them it shows the answer to everyone,
+     * themselves included.
+     */
+    public function reveal(User $user, Game $game): bool
+    {
+        return $this->owns($user, $game)
+            && ! $game->endingRevealed()
+            && $game->accusationsUnlocked()
+            && $game->caseDefinition()->hasSolution();
     }
 
     /**

@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Storage;
  */
 class GatewaySpeechProvider implements SpeechProvider
 {
-    public function synthesize(int $eventId, string $script): ?string
+    public function synthesize(string $key, string $script, ?string $voice = null): ?string
     {
-        $relativePath = "audio/{$eventId}.wav";
+        $relativePath = "audio/{$key}.wav";
 
         if (Storage::disk('local')->exists($relativePath)) {
             return $relativePath;
@@ -28,7 +28,7 @@ class GatewaySpeechProvider implements SpeechProvider
         $apiKey = (string) config('immersion.ai.api_key');
 
         if ($baseUrl === '' || $apiKey === '' || str_starts_with($apiKey, 'CHANGE_ME')) {
-            Log::warning('immersion_tts_not_configured', ['event_id' => $eventId]);
+            Log::warning('immersion_tts_not_configured', ['key' => $key]);
 
             return null;
         }
@@ -39,13 +39,14 @@ class GatewaySpeechProvider implements SpeechProvider
                     'x-project-id' => $projectId,
                     'x-internal-api-key' => $apiKey,
                 ])
-                ->post("{$baseUrl}/api/projects/{$projectId}/tts", [
+                ->post("{$baseUrl}/api/projects/{$projectId}/tts", array_filter([
                     'script' => $script,
-                ]);
+                    'voice' => $voice,
+                ]));
 
             if (! $response->successful()) {
                 Log::warning('immersion_tts_failed_response', [
-                    'event_id' => $eventId,
+                    'key' => $key,
                     'status' => $response->status(),
                 ]);
 
@@ -57,7 +58,7 @@ class GatewaySpeechProvider implements SpeechProvider
             return $relativePath;
         } catch (\Throwable $exception) {
             Log::warning('immersion_tts_exception', [
-                'event_id' => $eventId,
+                'key' => $key,
                 'message' => $exception->getMessage(),
             ]);
 

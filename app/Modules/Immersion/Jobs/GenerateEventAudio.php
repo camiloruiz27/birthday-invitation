@@ -59,7 +59,7 @@ class GenerateEventAudio implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $path = $speech->synthesize($event->id, (string) $event->audio_script);
+        $path = $speech->synthesize("event-{$event->id}", (string) $event->audio_script);
 
         if (! $path) {
             // Not an exception: the provider already decided it could not
