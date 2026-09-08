@@ -69,16 +69,16 @@ const ENDINGS = [
             'Cuando todos acusen, el equipo ve quién fue, cómo y por qué — y quiénes acertaron.',
     },
     {
-        value: 'epilogue',
-        title: 'Epílogo personalizado',
-        description:
-            'Además del cierre clásico, cada jugador recibe por correo un mensaje de la persona que acusó: si acertó, confiesa; si no, se defiende y le reprocha.',
-    },
-    {
         value: 'confession_audio',
         title: 'Confesión en audio',
         description:
-            'Además del cierre clásico, recibes una grabación del culpable delatándose, para reproducirla en la mesa antes de cerrar el caso.',
+            'Además del cierre clásico, recibes una grabación del culpable delatándose —mencionando las preguntas que le hizo tu mesa— para reproducirla antes de cerrar el caso.',
+    },
+    {
+        value: 'epilogue',
+        title: 'Epílogo personalizado',
+        description:
+            'La experiencia completa: además del cierre clásico, cada jugador recibe por correo un mensaje escrito para él, de la persona que acusó. Si acertó, confiesa; si no, se defiende y le reprocha.',
     },
 ];
 

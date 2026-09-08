@@ -52,6 +52,7 @@ class Game extends Model
         'ending_revealed_by',
         'ending_audio_status',
         'ending_audio_path',
+        'ending_audio_script',
         'interrogation_enabled',
     ];
 
@@ -64,13 +65,18 @@ class Game extends Model
     ];
 
     /**
-     * The raw storage path never needs to reach a browser: the console shows
-     * the status and streams the file through a route. A game is serialized to
-     * players too, so nothing here should carry more than they need.
+     * A game is serialized straight to players, so nothing here may carry more
+     * than they need.
+     *
+     * `ending_audio_path` is a storage path the browser can do nothing with —
+     * the console shows the status and streams the file through a route.
+     * `ending_audio_script` is the culprit's confession in words: it is the
+     * solution, it belongs to the Game Master alone, and it must never ride
+     * along on a player's game object.
      *
      * @var array<int, string>
      */
-    protected $hidden = ['ending_audio_path'];
+    protected $hidden = ['ending_audio_path', 'ending_audio_script'];
 
     protected $appends = ['elapsed_minutes'];
 

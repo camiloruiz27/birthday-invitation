@@ -34,7 +34,11 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
 
     public int $backoff = 30;
 
-    public int $timeout = 120;
+    /**
+     * Comfortably longer than the gateway's own epilogue timeout, so the job
+     * is never the thing that kills a generation that was about to land.
+     */
+    public int $timeout = 300;
 
     public function __construct(public int $accusationId)
     {

@@ -153,6 +153,34 @@ class CaseAssetsTest extends TestCase
         $this->assertSame([], $problems, implode("\n", $problems));
     }
 
+    /**
+     * A case that says it ships a recording must actually ship it.
+     *
+     * Case audio is recorded outside the platform and deployed with the case,
+     * so a missing file is a deployment slip, not something to regenerate.
+     * Without this check it fails silently: the email simply goes out with no
+     * attachment and nobody notices until a table asks where the voice note is.
+     *
+     * Events with no `audio_file` yet are skipped — that is the normal state
+     * of a case whose audio is still being recorded.
+     */
+    public function test_every_declared_case_recording_exists(): void
+    {
+        $missing = [];
+
+        foreach ($this->cases() as $case) {
+            foreach ($case->timeline() as $event) {
+                $path = $event['audio_path'] ?? null;
+
+                if ($path && ! is_file(public_path($path))) {
+                    $missing[] = "{$case->slug} → \"{$event['title']}\" declara {$path} y el archivo no existe";
+                }
+            }
+        }
+
+        $this->assertSame([], $missing, implode("\n", $missing));
+    }
+
     public function test_the_timeline_email_renders_for_every_event_of_every_case(): void
     {
         foreach ($this->cases() as $case) {

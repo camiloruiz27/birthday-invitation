@@ -217,13 +217,23 @@ Todo lo que llama a un modelo de verdad se mide en **creditos**, en un monedero
 por cuenta. Los audios de la linea de tiempo y el final clasico **no cuestan**:
 son contenido autorado o TTS incluido.
 
+Todo se cobra **por partida, nunca por jugador**: invitar a alguien mas no
+puede ser una decision de costo.
+
 | | Cuesta |
 |---|---|
 | Pregunta a un sospechoso | 1 |
 | Final clasico | 0 |
-| Epilogo personalizado | 10 |
-| Audio de confesion | 15 |
-| Audios de la linea de tiempo | 0 |
+| Audio de confesion | 25 |
+| **Epilogo personalizado** | **40** |
+| Audios de la linea de tiempo | 0 (ya no usan IA) |
+
+El epilogo es el mas caro por lo que **entrega** — cada jugador recibe algo
+escrito para el —, no por lo que cuesta producirlo. Medido contra los precios
+de Google, una confesion sale ~4.6x mas cara que un epilogo de seis jugadores:
+el texto es barato y dos minutos de voz sintetizada no. Con la partida mas cara
+posible costando unos 220 COP en IA, estos numeros no son para recuperar costos
+sino para ordenar la experiencia.
 
 ### La reserva
 

@@ -49,11 +49,16 @@ class InboxController extends Controller
     {
         $timelineEvent = $player->inboxEvents()->firstWhere('id', $event);
 
-        abort_if(! $timelineEvent || ! $timelineEvent->audio_path, 404);
-        abort_unless(Storage::disk('local')->exists($timelineEvent->audio_path), 404);
+        abort_if(! $timelineEvent, 404);
+
+        // Resolved by the event: case audio ships with the case, generated
+        // audio lives in storage. Either way it is only reachable with this
+        // player's own token.
+        $path = $timelineEvent->audioAbsolutePath();
+        abort_unless($path, 404);
 
         return response()
-            ->file(Storage::disk('local')->path($timelineEvent->audio_path), [
+            ->file($path, [
                 'Content-Type' => 'audio/wav',
                 // The recording for an event never changes, and it is only
                 // reachable with the player's own token.

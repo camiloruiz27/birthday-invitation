@@ -85,7 +85,7 @@ class GatewayEpilogueProvider implements EpilogueProvider
         }
 
         try {
-            $response = Http::timeout((int) config('immersion.ai.interrogation_timeout'))
+            $response = Http::timeout((int) config('immersion.ai.epilogue_timeout', 90))
                 ->withHeaders([
                     'x-project-id' => $projectId,
                     'x-internal-api-key' => $apiKey,

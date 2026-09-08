@@ -39,7 +39,8 @@ class AiCreditsTest extends TestCase
             'immersion.credits.enabled' => true,
             'immersion.credits.costs.question' => 1,
             'immersion.credits.costs.ending.classic' => 0,
-            'immersion.credits.costs.ending.confession_audio' => 15,
+            'immersion.credits.costs.ending.confession_audio' => 25,
+            'immersion.credits.costs.ending.epilogue' => 40,
 
             // Granted explicitly per test, so what a case includes does not
             // silently rewrite every expectation below.
@@ -110,7 +111,7 @@ class AiCreditsTest extends TestCase
         $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
 
         $this->assertSame(
-            self::MAX_QUESTIONS + 15,
+            self::MAX_QUESTIONS + 25,
             $this->credits()->holdFor($game)->amount
         );
     }
@@ -480,37 +481,102 @@ class AiCreditsTest extends TestCase
      | Getting credits
      |----------------------------------------------------------------- */
 
-    public function test_a_case_arrives_with_exactly_the_credits_to_play_it_to_the_limit(): void
+    public function test_a_case_arrives_sized_for_one_full_game_with_either_ending(): void
+    {
+        config([
+            'immersion.credits.included_with_case' => true,
+            'immersion.credits.included_games' => 1,
+        ]);
+
+        $owner = $this->gameMaster();
+
+        // steve-jacobs: 45 questions + the priciest ending it can deliver
+        // (the epilogue, 40) = 85. Derived from the case, so a bigger roster
+        // arrives with more without anyone changing a number.
+        $this->assertSame(85, $this->credits()->walletFor($owner)->available());
+    }
+
+    /**
+     * The point of quoting the PRICIEST ending: the buyer's choice has to be
+     * real. Included credits sized for the confession would leave someone who
+     * wanted the epilogue short on their very first table.
+     */
+    public function test_the_included_credits_cover_whichever_ending_the_buyer_picks(): void
+    {
+        config(['immersion.credits.included_with_case' => true]);
+
+        foreach ([Game::ENDING_CONFESSION_AUDIO, Game::ENDING_EPILOGUE] as $index => $ending) {
+            $owner = $this->gameMaster(null, ['email' => "elige{$index}@example.test"]);
+
+            $game = Game::create([
+                'user_id' => $owner->id,
+                'name' => "Mesa {$index}",
+                'status' => 'draft',
+                'interrogation_enabled' => true,
+                'ending_type' => $ending,
+            ]);
+
+            $this->actingAs($owner)
+                ->post(route('immersion.gm.game.start', $game))
+                ->assertSessionHasNoErrors();
+        }
+    }
+
+    public function test_a_second_full_game_is_not_included(): void
     {
         config(['immersion.credits.included_with_case' => true]);
 
         $owner = $this->gameMaster();
 
-        // steve-jacobs: 9 suspects x 5 questions, plus its priciest ending
-        // (the confession audio, 15). Not a number from config — derived from
-        // the case, so a bigger case comes with more.
-        $this->assertSame(
-            self::MAX_QUESTIONS + 15,
-            $this->credits()->walletFor($owner)->available()
-        );
+        foreach ([1, 2] as $index) {
+            $game = Game::create([
+                'user_id' => $owner->id,
+                'name' => "Mesa {$index}",
+                'status' => 'draft',
+                'interrogation_enabled' => true,
+                'ending_type' => Game::ENDING_EPILOGUE,
+            ]);
 
-        // And that is exactly enough to start the most expensive game the case
-        // allows, with nothing left over.
-        $game = Game::create([
+            $response = $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
+
+            $index === 1
+                ? $response->assertSessionHasNoErrors()
+                : $response->assertSessionHasErrors('credits');
+        }
+    }
+
+    /**
+     * What keeps a case worth owning once the included credits are gone: the
+     * classic experience costs nothing and can be replayed forever.
+     */
+    public function test_the_classic_experience_stays_free_after_the_credits_run_out(): void
+    {
+        config(['immersion.credits.included_with_case' => true]);
+
+        $owner = $this->gameMaster();
+        $this->credits()->reserve(Game::create([
             'user_id' => $owner->id,
-            'name' => 'Al maximo',
+            'name' => 'Gasta todo',
             'status' => 'draft',
             'interrogation_enabled' => true,
-            'ending_type' => Game::ENDING_CONFESSION_AUDIO,
+            'ending_type' => Game::ENDING_EPILOGUE,
+        ]));
+
+        $this->assertSame(0, $this->credits()->walletFor($owner)->fresh()->available());
+
+        $classic = Game::create([
+            'user_id' => $owner->id,
+            'name' => 'A la antigua',
+            'status' => 'draft',
+            'interrogation_enabled' => false,
+            'ending_type' => Game::ENDING_CLASSIC,
         ]);
 
         $this->actingAs($owner)
-            ->post(route('immersion.gm.game.start', $game))
+            ->post(route('immersion.gm.game.start', $classic))
             ->assertSessionHasNoErrors();
 
-        $wallet = $this->credits()->walletFor($owner)->fresh();
-        $this->assertSame(0, $wallet->available(), 'Nothing left over, and nothing missing.');
-        $this->assertSame(self::MAX_QUESTIONS + 15, $wallet->reserved);
+        $this->assertTrue($classic->fresh()->isRunning());
     }
 
     public function test_re_granting_a_case_does_not_mint_more_credits(): void

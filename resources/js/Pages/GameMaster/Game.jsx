@@ -318,11 +318,26 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                                     Generando la grabación. Puede tardar un minuto.
                                 </p>
                             ) : (
-                                <Alert variant="warning" className="mt-2 mb-0">
-                                    No se pudo generar la grabación. La solución escrita ya
-                                    está publicada para todo el equipo, así que el caso tiene
-                                    su final igual.
-                                </Alert>
+                                <>
+                                    <Alert variant="warning" className="mt-2">
+                                        No se pudo generar la grabación. La solución escrita ya
+                                        está publicada para todo el equipo, así que el caso
+                                        tiene su final igual.
+                                    </Alert>
+
+                                    {/* The words survived even when the voice
+                                        did not: read them out at the table. */}
+                                    {ending.audio_script && (
+                                        <details className="rounded-card border border-line p-3">
+                                            <summary className="cursor-pointer text-sm font-medium text-ink">
+                                                Leer la confesión en voz alta
+                                            </summary>
+                                            <p className="mt-3 whitespace-pre-line text-sm text-ink-muted">
+                                                {ending.audio_script}
+                                            </p>
+                                        </details>
+                                    )}
+                                </>
                             )}
                         </div>
                     )}

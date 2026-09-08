@@ -2,16 +2,20 @@
 
 namespace App\Modules\Immersion;
 
+use App\Modules\Immersion\Ai\Contracts\ConfessionProvider;
 use App\Modules\Immersion\Ai\Contracts\EpilogueProvider;
 use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
+use App\Modules\Immersion\Ai\GatewayConfessionProvider;
 use App\Modules\Immersion\Ai\GatewayEpilogueProvider;
 use App\Modules\Immersion\Ai\GatewayInterrogationProvider;
 use App\Modules\Immersion\Ai\GatewaySpeechProvider;
+use App\Modules\Immersion\Ai\NullConfessionProvider;
 use App\Modules\Immersion\Ai\NullEpilogueProvider;
 use App\Modules\Immersion\Ai\NullInterrogationProvider;
 use App\Modules\Immersion\Ai\NullSpeechProvider;
 use App\Modules\Immersion\Cases\CaseRegistry;
+use App\Modules\Immersion\Console\Commands\ExportAudioScripts;
 use App\Modules\Immersion\Console\Commands\GrantCredits;
 use App\Modules\Immersion\Console\Commands\ProcessImmersionTimeline;
 use App\Modules\Immersion\Console\Commands\ReleaseStaleCreditHolds;
@@ -68,6 +72,15 @@ class ImmersionServiceProvider extends ServiceProvider
                 ? $this->app->make(GatewayEpilogueProvider::class)
                 : $this->app->make(NullEpilogueProvider::class);
         });
+
+        // Same switch again: personalising the confession is a text rewrite,
+        // not speech. Off means the authored script is spoken unchanged, which
+        // is still a complete ending.
+        $this->app->bind(ConfessionProvider::class, function () {
+            return $this->aiEnabled('interrogation')
+                ? $this->app->make(GatewayConfessionProvider::class)
+                : $this->app->make(NullConfessionProvider::class);
+        });
     }
 
     private function aiEnabled(string $capability): bool
@@ -99,6 +112,7 @@ class ImmersionServiceProvider extends ServiceProvider
                 ProcessImmersionTimeline::class,
                 GrantCredits::class,
                 ReleaseStaleCreditHolds::class,
+                ExportAudioScripts::class,
             ]);
 
             $this->app->booted(function () {

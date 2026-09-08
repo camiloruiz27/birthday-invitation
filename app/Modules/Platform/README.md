@@ -61,13 +61,20 @@ compra** un crédito es una propiedad del motor y vive en `config/immersion.php`
 Así la dirección de dependencia se mantiene — la plataforma lee el motor, nunca
 al revés — y el monedero puede existir aunque no haya nada que vender.
 
-Adquirir un caso incluye los créditos para jugarlo **al máximo** una vez, y
-**una sola vez por caso**: reintentar un webhook de compra no acuña créditos.
+Adquirir un caso incluye los créditos para **una partida completa**, y **una
+sola vez por caso**: reintentar un webhook de compra no acuña créditos.
 
 La cantidad no está en config: se deriva del propio caso — todas las preguntas
-que permite su elenco más su final más caro (`GameCost::maxForCase`). Para
-steve-jacobs son 9 × 5 + 15 = **60**. Un caso con doce sospechosos vendrá con
-más, sin tocar nada.
+que permite su elenco más **su final más caro** (`GameCost::maxForCase`). Para
+steve-jacobs son 45 + 40 = **85**.
+
+Se cotiza el final más caro a propósito, para que la elección del comprador sea
+real: si se incluyera lo justo para la confesión, quien quisiera el epílogo se
+quedaría corto en su primera mesa.
+
+Después de esa partida el caso **sigue jugable para siempre en su forma
+clásica**, que no cuesta créditos. Todo lo que use IA necesita recarga, y ahí
+está el momento de recompra.
 
 Mientras `simulated_checkout` esté encendido, la recarga se entrega sin cobrar,
 igual que los casos. Ver [Immersion/README.md](../Immersion/README.md) §4.2.3

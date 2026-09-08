@@ -40,9 +40,11 @@ class CaseTimelineMail extends Mailable
                 'assetPath' => fn (string $url) => $case->assetPath($url),
             ]);
 
-        if ($this->event->audio_path && Storage::disk('local')->exists($this->event->audio_path)) {
+        // Case audio ships with the case, generated audio lives in storage;
+        // the event resolves whichever it is.
+        if ($path = $this->event->audioAbsolutePath()) {
             $mail->attachData(
-                Storage::disk('local')->get($this->event->audio_path),
+                (string) file_get_contents($path),
                 'audio-'.$this->event->id.'.wav',
                 ['mime' => 'audio/wav']
             );

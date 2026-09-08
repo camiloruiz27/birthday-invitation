@@ -53,8 +53,34 @@ return [
         'base_url' => env('IMMERSION_AI_SERVICE_URL', ''),
         'project_id' => env('IMMERSION_AI_PROJECT_ID', 'mystery-case'),
         'api_key' => env('IMMERSION_AI_INTERNAL_API_KEY', ''),
+        /*
+         | A player is watching the interrogation happen, so it stays short: a
+         | suspect who takes a minute to answer has already broken the scene.
+         */
         'interrogation_timeout' => (int) env('IMMERSION_AI_INTERROGATION_TIMEOUT', 35),
-        'tts_timeout' => (int) env('IMMERSION_AI_TTS_TIMEOUT', 60),
+
+        /*
+         | Nobody is watching these two — both run on the queue — so they are
+         | allowed to be slow rather than to fail.
+         |
+         | Text-to-speech is by far the slowest thing here: 105 seconds of
+         | confession took about 150 to synthesise, and the confession has no
+         | length limit by design. Retries on 503 sit inside that window too.
+         | Kept under GenerateEndingAudio::$timeout.
+         */
+        'tts_timeout' => (int) env('IMMERSION_AI_TTS_TIMEOUT', 300),
+
+        /*
+         | The epilogue is usually 2-3 seconds, but the chat model degrades
+         | badly under load: 97 seconds has been measured for a generation that
+         | succeeded, against a 90 second limit that had already hung up. The
+         | gateway did the work, charged for it, and the answer was thrown away.
+         |
+         | Nobody is waiting on this — it runs on the queue — so it is allowed
+         | to be slow rather than to waste a generation. Must stay under
+         | SendEpilogue::$timeout.
+         */
+        'epilogue_timeout' => (int) env('IMMERSION_AI_EPILOGUE_TIMEOUT', 240),
 
         // Each capability can be switched off on its own. Off means the null
         // provider: suspects deflect in character, and voice-note emails go
@@ -108,29 +134,54 @@ return [
             // One question to one suspect: one real model call.
             'question' => (int) env('IMMERSION_COST_QUESTION', 1),
 
-            // Per ending type. The classic reveal is authored content with no
-            // model involved, so it is free and always affordable.
+            /*
+             | Per ending type, per game — never per player. A table of eight
+             | pays what a table of three pays, so inviting one more person is
+             | never a cost decision.
+             |
+             | The epilogue is the premium one because of what it DELIVERS:
+             | every player gets something written for them, against a single
+             | recording the table hears once. It is not the expensive one to
+             | produce — measured against Google's prices a confession costs
+             | roughly 4.6x an epilogue for six players, because text is cheap
+             | and two minutes of synthesised speech is not. At about 220 COP
+             | for the most expensive possible game, cost is not what these
+             | numbers are for.
+             |
+             | The classic reveal is authored content with no model involved,
+             | so it is free and always affordable — which is what keeps a case
+             | playable forever once the included credits are gone.
+             */
             'ending' => [
                 'classic' => 0,
-                'epilogue' => (int) env('IMMERSION_COST_EPILOGUE', 10),
-                'confession_audio' => (int) env('IMMERSION_COST_CONFESSION', 15),
+                'epilogue' => (int) env('IMMERSION_COST_EPILOGUE', 40),
+                'confession_audio' => (int) env('IMMERSION_COST_CONFESSION', 25),
             ],
         ],
 
         /*
-         | Does acquiring a case come with the credits to play it?
+         | Does acquiring a case come with credits to play it?
          |
-         | How MANY is not configured here on purpose: it is derived from the
-         | case, as every question its roster allows plus its most expensive
-         | ending (Support\GameCost::maxForCase). For steve-jacobs that is
-         | 9 x 5 questions + 15 for the confession audio = 60.
+         | How MANY is derived from the case, never written here as a figure
+         | that would stop matching the next one (Support\GameCost::maxForCase):
          |
-         | A fixed figure would be wrong the moment a case ships with twelve
-         | suspects, and "playable to the limit" is the promise — not "sixty".
+         |   (preguntas del elenco x partidas_incluidas) + su final mas caro
+         |
+         | For steve-jacobs: (9 x 5) + 40 = 85. One full game, and the buyer
+         | picks which ending it gets — the amount covers the pricier one, so
+         | the choice is real rather than nominal.
+         |
+         | Afterwards the case stays playable forever in its classic form,
+         | which costs nothing. Anything with AI needs a top-up.
          |
          | Granted once per entitlement, on creation only.
          */
         'included_with_case' => (bool) env('IMMERSION_CREDITS_WITH_CASE', true),
+
+        /*
+         | How many full games the included credits are sized for.
+         */
+        'included_games' => (int) env('IMMERSION_INCLUDED_GAMES', 1),
 
         /*
          | A running game holds its reservation until the case is closed or

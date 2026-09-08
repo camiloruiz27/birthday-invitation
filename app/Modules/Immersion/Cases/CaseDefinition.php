@@ -340,7 +340,9 @@ class CaseDefinition
             $endings[] = 'epilogue';
         }
 
-        if ($this->confessionScript() !== null) {
+        // The confession now weaves in what the table asked during the
+        // interrogation, so a case without that mechanic cannot deliver it.
+        if ($this->confessionScript() !== null && $this->hasMechanic('interrogation')) {
             $endings[] = 'confession_audio';
         }
 
@@ -372,13 +374,68 @@ class CaseDefinition
     }
 
     /**
-     * Timeline attached to every new game of this case.
+     * Timeline attached to every new game of this case, ready to be written as
+     * event rows.
+     *
+     * The manifest is authoring vocabulary and the table is engine vocabulary;
+     * this is where one becomes the other. `audio_file` names a recording that
+     * shipped with the case, so the event starts life already pointing at it —
+     * no generation, no queue, and nothing for a busy TTS model to fail at.
      *
      * @return array<int, array<string, mixed>>
      */
     public function timeline(): array
     {
-        return array_values((array) ($this->manifest['timeline'] ?? []));
+        $events = [];
+
+        foreach ((array) ($this->manifest['timeline'] ?? []) as $event) {
+            // Authoring-only keys: they describe how the recording was made,
+            // not what the engine has to store.
+            unset($event['audio_scene'], $event['audio_context'], $event['audio_speaker'], $event['audio_voice']);
+
+            $file = $event['audio_file'] ?? null;
+            unset($event['audio_file']);
+
+            if (is_string($file) && $file !== '') {
+                $event['audio_path'] = 'immersion/'.$this->slug.'/audio/'.$file;
+                $event['audio_status'] = 'ready';
+            }
+
+            $events[] = $event;
+        }
+
+        return $events;
+    }
+
+    /**
+     * The audio the case needs recorded, with everything the studio form asks
+     * for. Consumed by `immersion:export-audio-scripts`, never by the engine.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function audioScripts(): array
+    {
+        $scripts = [];
+
+        foreach ((array) ($this->manifest['timeline'] ?? []) as $index => $event) {
+            if (($event['type'] ?? null) !== 'audio_email' || empty($event['audio_script'])) {
+                continue;
+            }
+
+            $scripts[] = [
+                'index' => $index + 1,
+                'title' => (string) ($event['title'] ?? ''),
+                'minute' => (int) ($event['trigger_offset_minutes'] ?? 0),
+                'scene' => (string) ($event['audio_scene'] ?? ''),
+                'context' => (string) ($event['audio_context'] ?? ''),
+                'speaker' => (string) ($event['audio_speaker'] ?? 'Speaker 1'),
+                'voice' => (string) ($event['audio_voice'] ?? ''),
+                'script' => trim((string) $event['audio_script']),
+                'file' => (string) ($event['audio_file'] ?? ''),
+            ];
+        }
+
+        return $scripts;
     }
 
     /**

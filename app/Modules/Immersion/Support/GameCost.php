@@ -13,10 +13,11 @@ use App\Modules\Immersion\Models\Game;
  * same way for the creation form (a preview) and for the start button (the
  * charge), or the Game Master is quoted one number and billed another.
  *
- * The interrogation ceiling does NOT depend on how many people are playing. A
- * suspect belongs to the first player who really questions them, so the whole
- * table shares one budget per suspect: nine suspects at five questions is
- * forty-five questions whether three people play or eight.
+ * Nothing here scales with the size of the table, deliberately. The
+ * interrogation cannot — a suspect belongs to the first player who really
+ * questions them, so nine suspects at five questions is forty-five questions
+ * whether three people play or eight. The endings could have, and do not:
+ * inviting one more person to the table must never be a cost decision.
  */
 class GameCost
 {
@@ -59,23 +60,25 @@ class GameCost
     }
 
     /**
-     * The most expensive way this case can possibly be played: every question
-     * asked, and the priciest ending it can actually deliver.
+     * What a case is sold with: one full game, with the buyer free to pick
+     * either premium ending.
      *
-     * This is what a case is sold with. Buying one has to arrive playable to
-     * the limit — a number that depends on the case (nine suspects at five
-     * questions is not the same as twelve at six), so it is derived here rather
-     * than written into config as a figure that silently stops matching the
-     * next case.
+     * The priciest supported ending rather than a chosen one, so the choice is
+     * real: quoting the cheaper would leave someone who wanted the other short
+     * on their very first table. Derived rather than configured as a figure,
+     * so a case with twelve suspects arrives with more without anyone
+     * remembering to change a number.
      */
     public function maxForCase(CaseDefinition $case): int
     {
+        $games = max(1, (int) config('immersion.credits.included_games', 1));
+
         $endings = array_intersect_key(
             $this->endingPrices(),
             array_flip($case->supportedEndings())
         );
 
-        return $this->maxQuestions($case) * $this->questionCost()
+        return $this->maxQuestions($case) * $this->questionCost() * $games
             + ($endings ? max($endings) : 0);
     }
 

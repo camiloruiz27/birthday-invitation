@@ -79,8 +79,44 @@ class TimelineEvent extends Model
     }
 
     /**
+     * Was this recording shipped with the case rather than generated?
+     *
+     * Case audio is authored once, recorded outside the platform and deployed
+     * with the case like its photographs. It lives under public/immersion/,
+     * so it is recognised by where it points rather than by a second column.
+     */
+    public function audioIsCaseAsset(): bool
+    {
+        return (bool) $this->audio_path && str_starts_with($this->audio_path, 'immersion/');
+    }
+
+    /**
+     * Where the recording actually is on disk, whichever kind it is.
+     *
+     * The two live in different roots — case audio ships with the case, and
+     * anything still generated lands in storage — so every reader goes through
+     * here instead of guessing.
+     */
+    public function audioAbsolutePath(): ?string
+    {
+        if (! $this->audio_path) {
+            return null;
+        }
+
+        $path = $this->audioIsCaseAsset()
+            ? public_path($this->audio_path)
+            : \Illuminate\Support\Facades\Storage::disk('local')->path($this->audio_path);
+
+        return is_file($path) ? $path : null;
+    }
+
+    /**
      * An audio event that went out without its recording and is not currently
      * being generated: the one case the Game Master can act on.
+     *
+     * Never true for case audio: if a file shipped with the case is missing,
+     * retrying would generate a different recording from the one the author
+     * approved. That is a deployment problem, not something to paper over.
      */
     public function needsAudioRetry(): bool
     {

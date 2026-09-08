@@ -140,6 +140,7 @@ class GameMasterController extends Controller
         }
 
         $endingType = $data['ending_type'] ?? Game::ENDING_CLASSIC;
+        $interrogation = (bool) ($data['interrogation_enabled'] ?? false);
 
         // An ending is a capability of the case's content, not of the build.
         // Checked on the server: the form hides the ones this case cannot do,
@@ -150,6 +151,16 @@ class GameMasterController extends Controller
             ]);
         }
 
+        // The confession now quotes what the table asked the culprit, so it
+        // has nothing to work with when nobody interrogated anyone. Refused at
+        // creation rather than degrading at the reveal: the Game Master can
+        // still fix it here, and at the reveal they cannot.
+        if ($endingType === Game::ENDING_CONFESSION_AUDIO && ! $interrogation) {
+            throw ValidationException::withMessages([
+                'ending_type' => 'La confesion en audio necesita el interrogatorio: el culpable menciona las preguntas que le hicieron.',
+            ]);
+        }
+
         $user = $request->user();
         $mode = $data['mode'] ?? Game::MODE_GM_LED;
 
@@ -157,7 +168,7 @@ class GameMasterController extends Controller
         // games and then inserting one is a read-modify-write, and two
         // requests arriving together would otherwise both see five games and
         // both create a sixth.
-        $game = DB::transaction(function () use ($user, $data, $case, $mode, $endingType, $quota) {
+        $game = DB::transaction(function () use ($user, $data, $case, $mode, $endingType, $interrogation, $quota) {
             User::whereKey($user->id)->lockForUpdate()->first();
 
             // The quota is per case: being full on this one says nothing about
@@ -176,7 +187,7 @@ class GameMasterController extends Controller
                 'case_version' => $case->version(),
                 'mode' => $mode,
                 'ending_type' => $endingType,
-                'interrogation_enabled' => (bool) ($data['interrogation_enabled'] ?? false),
+                'interrogation_enabled' => $interrogation,
                 'status' => 'draft',
             ]);
 
@@ -266,8 +277,12 @@ class GameMasterController extends Controller
                 'players' => $game->players()->count(),
 
                 // Confession audio: the console polls this while it generates,
-                // and only offers the player once the file exists.
+                // and only offers the player once the file exists. The script
+                // rides along so the Game Master can read it out if the
+                // synthesis failed — and only ever reaches this page, which
+                // already requires owning the game.
                 'audio_status' => $game->ending_audio_status,
+                'audio_script' => $game->ending_audio_script,
 
                 // Epilogues: how many of the table's messages have gone out,
                 // so the Game Master can tell "still writing" from "failed".

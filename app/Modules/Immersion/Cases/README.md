@@ -17,13 +17,48 @@ Cases/
       suspects/*.md       un archivo por persona interrogable
 ```
 
-Las imágenes viven aparte, en `public/immersion/<slug>/`:
+Los medios viven aparte, en `public/immersion/<slug>/`:
 
 ```
 public/immersion/steve-jacobs/
   gallery/    recortes del PDF original que acompañan cada Sobre
   photos/     retratos de sospechosos y de la victima
+  audio/      las grabaciones de la linea de tiempo
 ```
+
+## El audio del caso
+
+**No se genera en tiempo de juego.** Los guiones de la línea de tiempo son los
+mismos para todas las mesas, así que se graban una vez fuera de la plataforma y
+se despliegan con el caso, igual que las fotos. Eso saca al TTS del camino
+crítico: una mesa nunca puede quedarse sin su nota de voz porque el modelo esté
+saturado.
+
+Para obtener los guiones listos para pegar en el estudio, con su Scene y su
+Sample Context:
+
+```bash
+php artisan immersion:export-audio-scripts steve-jacobs
+php artisan immersion:export-audio-scripts --missing   # solo los que faltan
+```
+
+Sube los `.wav` a `public/immersion/<slug>/audio/` y apúntalos en el evento:
+
+```php
+'audio_file' => 'lab-goddard.wav',
+```
+
+Los campos `audio_scene`, `audio_context`, `audio_speaker` y `audio_voice` son
+**solo para el estudio**: describen cómo grabar y no llegan a la base de datos.
+El texto hablado va en `audio_script` y **solo** debe contener lo que se dice —
+las acotaciones ("la llamada se corta") van en `audio_scene`, o el sintetizador
+las lee en voz alta.
+
+Un `audio_file` declarado cuyo archivo no exista lo detecta `CaseAssetsTest`;
+sin esa comprobación el correo saldría sin adjunto y nadie se enteraría.
+
+La **confesión** del final premium es la excepción: se genera por partida,
+porque menciona las preguntas que esa mesa le hizo al culpable.
 
 ## Crear un caso nuevo
 

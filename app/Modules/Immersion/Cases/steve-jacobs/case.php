@@ -354,6 +354,15 @@ return [
             'type' => 'audio_email',
             'trigger_offset_minutes' => 45,
             'title' => 'Mensaje de voz - Laboratorio forense',
+
+            // Recorded outside the platform and shipped with the case: the
+            // same voice note for every table, so generating it per game was
+            // paying for the same recording over and over.
+            'audio_file' => 'lab-goddard.wav',
+            'audio_scene' => 'Un laboratorio forense al final del turno. Zumbido de equipos de fondo, una linea telefonica no muy buena.',
+            'audio_context' => 'El doctor Goddard deja un mensaje de voz a la detective a cargo. Ya escribio el informe; esto es un adelanto verbal, dicho de corrido y con cansancio profesional.',
+            'audio_speaker' => 'Speaker 1 - Dr. Stephen Goddard',
+            'audio_voice' => 'Charon',
             // REDACTADO PARA LA MECANICA: guion de TTS, voz del Dr. Goddard
             // (ya nombrado en el informe de laboratorio de sobre-1). Solo
             // reafirma en audio hallazgos que ya estan por escrito.
@@ -375,19 +384,24 @@ return [
             'type' => 'audio_email',
             'trigger_offset_minutes' => 50,
             'title' => 'Llamada de numero desconocido',
+
+            'audio_file' => 'llamada-anonima.wav',
+            'audio_scene' => 'Llamada anonima de madrugada desde un numero desconocido. La voz llega distorsionada, la senal es mala y hay ruido de calle detras. Al terminar, la llamada se corta de golpe.',
+            'audio_context' => 'Alguien que sabe algo y no quiere que lo identifiquen. Habla rapido y bajo, mirando por encima del hombro, y cuelga antes de decir de mas.',
+            'audio_speaker' => 'Speaker 1 - Numero desconocido',
+            'audio_voice' => 'Fenrir',
             // REDACTADO PARA LA MECANICA: llamada anonima ambigua (posible red
             // herring), solo para un jugador al azar. No contradice el material
             // original: se apoya en la torre blanca ya revelada en sobre-1.
+            // Solo lo que se dice. Las acotaciones ("la llamada suena
+            // distorsionada", "la llamada se corta") viven en audio_scene:
+            // pegadas aqui, el sintetizador las leeria en voz alta.
             'audio_script' => <<<'TXT'
-                Numero desconocido. La llamada suena distorsionada.
-
                 ...hola? Se que estas investigando lo de Jacobs. La torre blanca no
                 es un accidente ni una casualidad, y esta no es la primera vez que
                 pasa. Si de verdad quieres entender que significa esa pieza, deja
                 de mirar solo el hotel. Mira quien mas ha aparecido con una torre
                 blanca cerca. No voy a decir nada mas por este medio.
-
-                La llamada se corta.
                 TXT,
             'delivery_mode' => 'random_player',
         ],

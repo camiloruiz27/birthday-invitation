@@ -2,6 +2,7 @@
 
 namespace App\Modules\Immersion\Jobs;
 
+use App\Modules\Immersion\Ai\Contracts\ConfessionProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Bus\Queueable;
@@ -30,8 +31,12 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
 
     public int $backoff = 30;
 
-    /** Comfortably longer than the gateway's own TTS timeout. */
-    public int $timeout = 180;
+    /**
+     * Comfortably longer than the gateway's own TTS timeout, which is itself
+     * generous: this job does two model calls back to back — the rewrite and
+     * then the synthesis of a confession with no length limit.
+     */
+    public int $timeout = 420;
 
     public function __construct(public int $gameId)
     {
@@ -42,7 +47,7 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
         return (string) $this->gameId;
     }
 
-    public function handle(SpeechProvider $speech): void
+    public function handle(SpeechProvider $speech, ConfessionProvider $confessions): void
     {
         $game = Game::find($this->gameId);
 
@@ -57,13 +62,22 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
         }
 
         $case = $game->caseDefinition();
-        $script = $case->confessionScript();
+
+        // Two steps, in this order: first the authored confession is rewritten
+        // around the questions THIS table put to the culprit, then that script
+        // is spoken. The rewrite falls back to the script unchanged, so a
+        // table that never questioned the culprit still gets its recording.
+        $script = $confessions->script($game);
 
         if (! $script) {
             $game->update(['ending_audio_status' => Game::AUDIO_FAILED]);
 
             return;
         }
+
+        // Kept so the Game Master can read what was said without playing it,
+        // and so a failed synthesis does not throw the writing away too.
+        $game->update(['ending_audio_script' => $script]);
 
         $path = $speech->synthesize(
             "ending-{$game->id}",

@@ -41,6 +41,11 @@ class AdvancedEndingsTest extends TestCase
     /** A phrase that appears only inside the fixture's solucion.md. */
     private const SOLUTION_MARKER = 'MARCADOR-SOLUCION-SECRETA';
 
+    /** The fixture's authored confession, verbatim. */
+    private const CONFESSION = 'Lo hice yo. Me quedaba con el seguro y nadie iba a notarlo.';
+
+    private const CULPRIT_QUESTION = '¿Por que era usted la beneficiaria del seguro?';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -96,9 +101,8 @@ class AdvancedEndingsTest extends TestCase
             $game->timelineEvents()->create($event);
         }
 
-        $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
-        $game->timelineEvents()->where('type', 'unlock')->update(['sent_at' => now()]);
-
+        // Players first, then start: that is the real order, and it matters
+        // because starting is what reserves one epilogue per player.
         $roster = collect([self::CULPRIT, self::INNOCENT])
             ->map(function (string $slug, int $index) use ($game) {
                 $player = $game->players()->create([
@@ -122,6 +126,9 @@ class AdvancedEndingsTest extends TestCase
                 return $player;
             });
 
+        $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
+        $game->timelineEvents()->where('type', 'unlock')->update(['sent_at' => now()]);
+
         if ($reveal) {
             $this->actingAs($owner)->post(route('immersion.gm.game.reveal', $game));
         }
@@ -129,6 +136,31 @@ class AdvancedEndingsTest extends TestCase
         $this->post(route('logout'));
 
         return [$game->fresh(), $roster];
+    }
+
+    private function runAudioJob(Game $game): void
+    {
+        (new GenerateEndingAudio($game->id))->handle(
+            app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class),
+            app(\App\Modules\Immersion\Ai\Contracts\ConfessionProvider::class)
+        );
+    }
+
+    /**
+     * Puts one question to the culprit, the way a player would.
+     */
+    private function questionTheCulprit(Game $game, Player $player, string $question): void
+    {
+        $session = $game->interrogationSessions()->create([
+            'player_id' => $player->id,
+            'suspect_slug' => self::CULPRIT,
+            'started_at' => now(),
+            'max_questions' => 2,
+            'questions_used' => 1,
+        ]);
+
+        $session->messages()->create(['role' => 'player', 'content' => $question]);
+        $session->messages()->create(['role' => 'suspect', 'content' => 'No se de que me habla.']);
     }
 
     /* ------------------------------------------------------------------
@@ -407,15 +439,15 @@ class AdvancedEndingsTest extends TestCase
             $game->timelineEvents()->create($event);
         }
 
-        $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
-        $game->timelineEvents()->where('type', 'unlock')->update(['sent_at' => now()]);
-
         $accuser = $game->players()->create([
             'name' => 'Acusa', 'email' => 'a@example.test', 'access_token' => 'tok-a',
         ]);
         $silent = $game->players()->create([
             'name' => 'Calla', 'email' => 'b@example.test', 'access_token' => 'tok-b',
         ]);
+
+        $this->actingAs($owner)->post(route('immersion.gm.game.start', $game));
+        $game->timelineEvents()->where('type', 'unlock')->update(['sent_at' => now()]);
 
         $this->post(route('logout'));
         $this->post(route('immersion.player.accusation.store', $accuser->access_token), [
@@ -449,28 +481,120 @@ class AdvancedEndingsTest extends TestCase
         $this->assertSame(Game::AUDIO_PENDING, $game->fresh()->ending_audio_status);
     }
 
-    public function test_the_audio_job_reads_the_authored_script_aloud(): void
+    public function test_the_audio_job_speaks_the_authored_script_when_nobody_questioned_the_culprit(): void
     {
         Http::fake(['*' => Http::response('FAKE-WAV-BYTES', 200)]);
 
         [$game] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
 
-        (new GenerateEndingAudio($game->id))->handle(app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class));
-
+        $this->runAudioJob($game);
         $game->refresh();
 
         $this->assertSame(Game::AUDIO_READY, $game->ending_audio_status);
         $this->assertSame("audio/ending-{$game->id}.wav", $game->ending_audio_path);
+        $this->assertSame(self::CONFESSION, $game->ending_audio_script);
 
-        // The script is authored, so the model is only ever asked to read it —
-        // never to compose a confession.
+        // Nothing to weave in, so no rewrite is even attempted: the authored
+        // script goes straight to the voice.
+        Http::assertNotSent(fn ($request) => str_ends_with($request->url(), '/confession'));
+
         Http::assertSent(function ($request) {
-            $this->assertStringEndsWith('/tts', $request->url());
-            $this->assertSame('Lo hice yo. Me quedaba con el seguro y nadie iba a notarlo.', $request->data()['script']);
+            if (! str_ends_with($request->url(), '/tts')) {
+                return false;
+            }
+
+            $this->assertSame(self::CONFESSION, $request->data()['script']);
             $this->assertSame('Kore', $request->data()['voice']);
 
             return true;
         });
+    }
+
+    public function test_the_confession_is_rewritten_around_the_questions_the_table_asked(): void
+    {
+        Http::fake([
+            '*/confession' => Http::response(['script' => 'Me preguntaste por el seguro. Si, fui yo.', 'personalised' => true], 200),
+            '*' => Http::response('FAKE-WAV-BYTES', 200),
+        ]);
+
+        [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
+        $this->questionTheCulprit($game, $roster[0], '¿Por que era usted la beneficiaria del seguro?');
+
+        $this->runAudioJob($game);
+
+        // The table hears its own investigation, and the words are stored so
+        // the Game Master can read them out if the voice never arrives.
+        $this->assertSame('Me preguntaste por el seguro. Si, fui yo.', $game->fresh()->ending_audio_script);
+
+        Http::assertSent(function ($request) {
+            if (! str_ends_with($request->url(), '/confession')) {
+                return false;
+            }
+
+            // Only the questions put to the CULPRIT, and the authored script
+            // as the backbone — the model rewrites, it does not compose.
+            $this->assertSame([self::CULPRIT_QUESTION], $request->data()['questions']);
+            $this->assertSame(self::CONFESSION, $request->data()['script']);
+
+            return true;
+        });
+    }
+
+    /**
+     * The model intermittently syllabifies its answer with soft hyphens —
+     * "de{U+00AD}tec{U+00AD}ti{U+00AD}ve". Invisible on screen, and not silence
+     * to a speech synthesiser: it reaches TTS as a different word. Seen in two
+     * runs out of four against the real gateway.
+     */
+    public function test_invisible_characters_never_reach_the_synthesiser(): void
+    {
+        $sucio = "Fui yo.\u{00AD} Cambié las cáp\u{00AD}su\u{00AD}las\u{200B} y\u{00A0}bajé.";
+
+        Http::fake([
+            '*/confession' => Http::response(['script' => $sucio, 'personalised' => true], 200),
+            '*' => Http::response('FAKE-WAV-BYTES', 200),
+        ]);
+
+        [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
+        $this->questionTheCulprit($game, $roster[0], self::CULPRIT_QUESTION);
+
+        $this->runAudioJob($game);
+
+        $limpio = $game->fresh()->ending_audio_script;
+
+        $this->assertSame('Fui yo. Cambié las cápsulas y bajé.', $limpio);
+        $this->assertSame(0, preg_match_all('/[\x{00AD}\x{200B}\x{200C}\x{200D}\x{FEFF}]/u', $limpio));
+
+        // And what was spoken is the cleaned text, not the raw reply.
+        Http::assertSent(function ($request) use ($limpio) {
+            if (! str_ends_with($request->url(), '/tts')) {
+                return false;
+            }
+
+            $this->assertSame($limpio, $request->data()['script']);
+
+            return true;
+        });
+    }
+
+    public function test_a_failed_rewrite_still_speaks_the_authored_confession(): void
+    {
+        Http::fake([
+            '*/confession' => Http::response(['error' => 'nope'], 500),
+            '*' => Http::response('FAKE-WAV-BYTES', 200),
+        ]);
+
+        [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
+        $this->questionTheCulprit($game, $roster[0], self::CULPRIT_QUESTION);
+
+        $this->runAudioJob($game);
+
+        $game->refresh();
+
+        // The authored script is a complete confession on its own: losing the
+        // personal references must not lose the ending.
+        $this->assertSame(Game::AUDIO_READY, $game->ending_audio_status);
+        $this->assertSame(self::CONFESSION, $game->ending_audio_script);
     }
 
     public function test_the_game_master_can_play_the_confession_and_nobody_else_can(): void
@@ -478,7 +602,7 @@ class AdvancedEndingsTest extends TestCase
         Http::fake(['*' => Http::response('FAKE-WAV-BYTES', 200)]);
 
         [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
-        (new GenerateEndingAudio($game->id))->handle(app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class));
+        $this->runAudioJob($game);
 
         $owner = $game->owner;
 
@@ -510,7 +634,7 @@ class AdvancedEndingsTest extends TestCase
 
         [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
 
-        (new GenerateEndingAudio($game->id))->handle(app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class));
+        $this->runAudioJob($game);
 
         $this->assertSame(Game::AUDIO_FAILED, $game->fresh()->ending_audio_status);
 
@@ -524,7 +648,7 @@ class AdvancedEndingsTest extends TestCase
         Http::fake(['*' => Http::response('FAKE-WAV-BYTES', 200)]);
 
         [$game, $roster] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
-        (new GenerateEndingAudio($game->id))->handle(app(\App\Modules\Immersion\Ai\Contracts\SpeechProvider::class));
+        $this->runAudioJob($game);
 
         $this->actingAs($game->owner)
             ->get(route('immersion.gm.game.show', $game))
@@ -539,15 +663,19 @@ class AdvancedEndingsTest extends TestCase
      | Credits
      |----------------------------------------------------------------- */
 
-    public function test_the_ending_is_charged_once_when_it_is_revealed(): void
+    /**
+     * Per game, never per player: a table of eight pays what a table of three
+     * pays, so inviting one more person is never a cost decision.
+     */
+    public function test_the_ending_is_charged_once_for_the_whole_table(): void
     {
-        config(['immersion.credits.costs.ending.confession_audio' => 15]);
+        config(['immersion.credits.costs.ending.confession_audio' => 25]);
 
         [$game] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
 
         $spent = app(AiCredits::class)->holdFor($game)->spent;
 
-        $this->assertSame(15, $spent, 'The ending costs exactly its price, once.');
+        $this->assertSame(25, $spent, 'The ending costs exactly its price, once.');
     }
 
     public function test_an_unfunded_ending_degrades_to_the_classic_reveal(): void
