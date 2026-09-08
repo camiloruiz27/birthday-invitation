@@ -81,6 +81,74 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI credits
+    |--------------------------------------------------------------------------
+    |
+    | Everything that costs a real model call is metered in credits, held in a
+    | per-account wallet. The engine meters itself here because only the engine
+    | knows which mechanics call a model; selling top-ups is commerce and lives
+    | in config/platform.php.
+    |
+    | The whole ceiling a game could possibly consume is RESERVED when the Game
+    | Master starts it, and whatever went unused is released when the case is
+    | closed. That is why the ending is chosen at creation: a game cannot start
+    | owing capacity it may not have later, and the reveal is the one moment
+    | that must never fail for lack of balance.
+    |
+    | With credits off, nothing is reserved, nothing is charged and no wallet is
+    | touched — the switch exists so a private deployment can run the engine
+    | without an economy at all.
+    |
+    */
+
+    'credits' => [
+        'enabled' => (bool) env('IMMERSION_CREDITS', true),
+
+        'costs' => [
+            // One question to one suspect: one real model call.
+            'question' => (int) env('IMMERSION_COST_QUESTION', 1),
+
+            // Per ending type. The classic reveal is authored content with no
+            // model involved, so it is free and always affordable.
+            'ending' => [
+                'classic' => 0,
+                'epilogue' => (int) env('IMMERSION_COST_EPILOGUE', 10),
+                'confession_audio' => (int) env('IMMERSION_COST_CONFESSION', 15),
+            ],
+        ],
+
+        /*
+         | Does acquiring a case come with the credits to play it?
+         |
+         | How MANY is not configured here on purpose: it is derived from the
+         | case, as every question its roster allows plus its most expensive
+         | ending (Support\GameCost::maxForCase). For steve-jacobs that is
+         | 9 x 5 questions + 15 for the confession audio = 60.
+         |
+         | A fixed figure would be wrong the moment a case ships with twelve
+         | suspects, and "playable to the limit" is the promise — not "sixty".
+         |
+         | Granted once per entitlement, on creation only.
+         */
+        'included_with_case' => (bool) env('IMMERSION_CREDITS_WITH_CASE', true),
+
+        /*
+         | A running game holds its reservation until the case is closed or
+         | paused. A table that does neither would freeze that capacity forever,
+         | so holds on games with no activity for this many hours are released
+         | by the scheduler. The game itself is left alone and can be re-armed
+         | from its console.
+         |
+         | A week by default, because playing a case across two weekends is a
+         | normal way to play and it should need no intervention. Pausing gives
+         | the credits back immediately, so this only ever catches games that
+         | were left running.
+         */
+        'stale_hold_hours' => (int) env('IMMERSION_STALE_HOLD_HOURS', 168),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Rate limits
     |--------------------------------------------------------------------------
     |

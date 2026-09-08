@@ -25,10 +25,11 @@ export default function InterrogationChat({
     const [sending, setSending] = useState(false);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [raceLockedBy, setRaceLockedBy] = useState(null);
+    const [outOfCredits, setOutOfCredits] = useState(false);
     const scrollRef = useRef(null);
 
     const effectiveLockedBy = lockedBy || raceLockedBy;
-    const readOnly = closed || Boolean(effectiveLockedBy);
+    const readOnly = closed || Boolean(effectiveLockedBy) || outOfCredits;
 
     useEffect(() => {
         const element = scrollRef.current;
@@ -79,6 +80,22 @@ export default function InterrogationChat({
                 // Reload to get their transcript and the official statement.
                 setRaceLockedBy(error.response.data.locked_by);
                 router.reload();
+
+                return;
+            }
+
+            if (error.response?.data?.out_of_credits) {
+                // Retrying cannot help: the game has no AI capacity left. Drop
+                // the optimistic bubbles rather than offering a retry that is
+                // guaranteed to fail again.
+                setMessages((previous) =>
+                    previous.filter(
+                        (message) =>
+                            message.id !== playerTempId && message.id !== suspectTempId
+                    )
+                );
+                setOutOfCredits(true);
+                setLastQuestion(null);
 
                 return;
             }
@@ -167,6 +184,16 @@ export default function InterrogationChat({
                             sending={sending}
                             remaining={maxQuestions - questionsUsed}
                         />
+                    </div>
+                ) : outOfCredits && !closed && !effectiveLockedBy ? (
+                    /* Out of AI capacity, not out of questions: the official
+                       statement is not unlocked, so it must not be shown. */
+                    <div className="px-4 py-4 sm:px-0">
+                        <div className="border-2 border-dashed border-paper-line px-4 py-4 text-center text-sm text-paper-muted">
+                            Esta partida se quedó sin créditos de inteligencia artificial, así
+                            que {suspect.name} no puede seguir respondiendo. Avísale al Game
+                            Master. Tus preguntas siguen intactas.
+                        </div>
                     </div>
                 ) : (
                     <div className="px-4 py-4 sm:px-0">

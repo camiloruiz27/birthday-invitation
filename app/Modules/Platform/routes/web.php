@@ -7,6 +7,7 @@ use App\Modules\Platform\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Modules\Platform\Http\Controllers\Auth\RegisteredUserController;
 use App\Modules\Platform\Http\Controllers\CatalogController;
 use App\Modules\Platform\Http\Controllers\CheckoutController;
+use App\Modules\Platform\Http\Controllers\CreditsController;
 use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
@@ -82,6 +83,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/panel', DashboardController::class)->name('dashboard');
     Route::get('/biblioteca', LibraryController::class)->name('library');
+
+    // The AI credit wallet. The top-up is the same stand-in as case checkout
+    // and 404s when the simulation is off.
+    Route::get('/creditos', [CreditsController::class, 'index'])->name('credits');
+    Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])->name('credits.purchase');
 
     // Platform administration. Granted only from the console
     // (php artisan platform:make-admin), never through a screen.

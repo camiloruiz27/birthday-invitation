@@ -67,25 +67,28 @@ const ENDINGS = [
         title: 'Clásico',
         description:
             'Cuando todos acusen, el equipo ve quién fue, cómo y por qué — y quiénes acertaron.',
-        available: true,
     },
     {
         value: 'epilogue',
         title: 'Epílogo personalizado',
         description:
-            'Cada jugador recibe un mensaje de la persona que acusó: si acertó, confiesa; si no, se defiende.',
-        available: false,
+            'Además del cierre clásico, cada jugador recibe por correo un mensaje de la persona que acusó: si acertó, confiesa; si no, se defiende y le reprocha.',
     },
     {
         value: 'confession_audio',
         title: 'Confesión en audio',
         description:
-            'Recibes una grabación del culpable delatándose, para reproducirla en la mesa.',
-        available: false,
+            'Además del cierre clásico, recibes una grabación del culpable delatándose, para reproducirla en la mesa antes de cerrar el caso.',
     },
 ];
 
-function EndingPicker({ value, onChange }) {
+/**
+ * `supported` is the list the selected case can actually deliver — the epilogue
+ * needs a written line for every inocente, the audio needs a script. Anything
+ * outside it is shown as unavailable rather than hidden, so a Game Master can
+ * see what the case is missing instead of wondering where an ending went.
+ */
+function EndingPicker({ value, onChange, prices, supported }) {
     return (
         <fieldset>
             <legend className="text-sm font-medium text-ink">¿Cómo termina el caso?</legend>
@@ -94,11 +97,14 @@ function EndingPicker({ value, onChange }) {
             </p>
 
             <div className="mt-3 space-y-3">
-                {ENDINGS.map((ending) => (
+                {ENDINGS.map((ending) => {
+                    const available = supported.includes(ending.value);
+
+                    return (
                     <label
                         key={ending.value}
                         className={`flex gap-3 rounded-card border p-4 transition-colors ${
-                            !ending.available
+                            !available
                                 ? 'cursor-not-allowed border-line opacity-50'
                                 : value === ending.value
                                   ? 'cursor-pointer border-accent bg-accent-dim/30'
@@ -110,16 +116,23 @@ function EndingPicker({ value, onChange }) {
                             name="ending_type"
                             value={ending.value}
                             checked={value === ending.value}
-                            disabled={!ending.available}
+                            disabled={!available}
                             onChange={(event) => onChange(event.target.value)}
                             className="mt-1 h-4 w-4 shrink-0"
                         />
                         <span className="min-w-0">
                             <span className="block text-sm font-medium text-ink">
                                 {ending.title}
-                                {!ending.available && (
+                                {!available && (
                                     <span className="ml-2 text-xs font-normal text-ink-subtle">
-                                        Próximamente
+                                        No disponible en este caso
+                                    </span>
+                                )}
+                                {prices && prices[ending.value] !== undefined && (
+                                    <span className="ml-2 text-xs font-normal text-accent">
+                                        {prices[ending.value] === 0
+                                            ? 'Sin créditos'
+                                            : `${prices[ending.value]} créditos`}
                                     </span>
                                 )}
                             </span>
@@ -128,13 +141,80 @@ function EndingPicker({ value, onChange }) {
                             </span>
                         </span>
                     </label>
-                ))}
+                    );
+                })}
             </div>
         </fieldset>
     );
 }
 
-export default function NewGameForm({ library }) {
+/**
+ * What starting this game will freeze, and whether the balance covers it.
+ *
+ * Shown while configuring rather than at the start button, because both things
+ * that drive the number — the ending and the interrogation — are chosen here
+ * and cannot be changed afterwards.
+ */
+function CostEstimate({ credits, questions, interrogation, endingType }) {
+    const interrogationCost = interrogation ? questions * credits.question : 0;
+    const endingCost = credits.endings[endingType] ?? 0;
+    const total = interrogationCost + endingCost;
+
+    if (total === 0) {
+        return (
+            <p className="text-sm text-ink-muted">
+                Esta configuración no consume créditos de IA.
+            </p>
+        );
+    }
+
+    const short = total - credits.available;
+
+    return (
+        <div>
+            <dl className="space-y-1.5 text-sm">
+                {interrogation && (
+                    <div className="flex justify-between gap-4">
+                        <dt className="text-ink-muted">
+                            Interrogatorio ({questions} preguntas como máximo)
+                        </dt>
+                        <dd className="tabular text-ink">{interrogationCost}</dd>
+                    </div>
+                )}
+                {endingCost > 0 && (
+                    <div className="flex justify-between gap-4">
+                        <dt className="text-ink-muted">Final</dt>
+                        <dd className="tabular text-ink">{endingCost}</dd>
+                    </div>
+                )}
+                <div className="flex justify-between gap-4 border-t border-line pt-1.5 font-medium">
+                    <dt className="text-ink">Se congela al iniciar</dt>
+                    <dd className="tabular text-ink">{total}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                    <dt className="text-ink-muted">Tu saldo</dt>
+                    <dd className="tabular text-ink-muted">{credits.available}</dd>
+                </div>
+            </dl>
+
+            {short > 0 ? (
+                <Alert variant="warning" className="mt-3 mb-0">
+                    Te faltan {short} créditos para iniciarla. Puedes crearla igual y{' '}
+                    <a href={route('credits')} className="text-accent underline">
+                        recargar
+                    </a>{' '}
+                    antes de empezar.
+                </Alert>
+            ) : (
+                <p className="mt-3 text-xs text-ink-subtle">
+                    Lo que la mesa no llegue a usar vuelve a tu saldo cuando cierres el caso.
+                </p>
+            )}
+        </div>
+    );
+}
+
+export default function NewGameForm({ library, credits = null }) {
     const [players, setPlayers] = useState(() => Array.from({ length: 6 }, emptyPlayer));
 
     // Start on a case that still has room, so the form does not open already
@@ -187,7 +267,21 @@ export default function NewGameForm({ library }) {
                     id="case_slug"
                     label="Caso"
                     value={data.case_slug}
-                    onChange={(value) => setData('case_slug', value)}
+                    onChange={(value) => {
+                        // Cases differ in which endings they can deliver, so
+                        // switching to one that cannot do the current pick has
+                        // to fall back rather than submit something invalid.
+                        const next = library.find((item) => item.slug === value);
+                        setData((current) => ({
+                            ...current,
+                            case_slug: value,
+                            ending_type: (next?.endings || ['classic']).includes(
+                                current.ending_type
+                            )
+                                ? current.ending_type
+                                : 'classic',
+                        }));
+                    }}
                     error={errors.case_slug}
                     disabled={library.length === 1}
                     options={library.map((item) => ({
@@ -218,6 +312,8 @@ export default function NewGameForm({ library }) {
             <EndingPicker
                 value={data.ending_type}
                 onChange={(value) => setData('ending_type', value)}
+                prices={credits?.endings}
+                supported={selectedCase?.endings || ['classic']}
             />
 
             <CheckboxField
@@ -227,6 +323,18 @@ export default function NewGameForm({ library }) {
                 onChange={(value) => setData('interrogation_enabled', value)}
                 hint="Los jugadores podrán preguntar a los sospechosos. Se elige ahora y no se puede cambiar una vez iniciado el caso."
             />
+
+            {credits && selectedCase && (
+                <div className="rounded-card border border-line bg-surface-sunken p-4">
+                    <p className="mb-3 text-sm font-medium text-ink">Créditos de IA</p>
+                    <CostEstimate
+                        credits={credits}
+                        questions={selectedCase.max_questions}
+                        interrogation={data.interrogation_enabled}
+                        endingType={data.ending_type}
+                    />
+                </div>
+            )}
 
             <fieldset>
                 <legend className="text-sm font-medium text-ink">

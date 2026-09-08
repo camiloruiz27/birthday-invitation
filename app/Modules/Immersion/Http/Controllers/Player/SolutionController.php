@@ -3,6 +3,7 @@
 namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AccusationScoreboard;
 use Inertia\Inertia;
@@ -45,6 +46,35 @@ class SolutionController extends Controller
 
             'correctCount' => count(array_filter($board, fn ($row) => $row['correct'] === true)),
             'revealedBy' => $game->ending_revealed_by,
+
+            // Their own epilogue, and only their own: it answers what THIS
+            // person wrote, and reading someone else's would be reading their
+            // accusation. It also arrives by email, so this is the copy that
+            // survives a lost inbox.
+            'epilogue' => fn () => $this->epilogueFor($player),
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function epilogueFor(Player $player): ?array
+    {
+        if ($player->game->ending_type !== Game::ENDING_EPILOGUE) {
+            return null;
+        }
+
+        $accusation = $player->accusation()->first();
+
+        if (! $accusation || ! $accusation->epilogue_status) {
+            return null;
+        }
+
+        return [
+            'status' => $accusation->epilogue_status,
+            'suspect_name' => $accusation->suspect_name,
+            // Explicit opt-in; the column is hidden by default.
+            'body' => $accusation->revealEpilogue()->epilogue_body,
+        ];
     }
 }

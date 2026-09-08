@@ -188,22 +188,30 @@ return [
     | `content/solucion.md` must never reach the AI gateway. Suspect testimonies
     | are sent verbatim during interrogations; the solution is not.
     |
-    | >>> PENDIENTE: contenido por escribir. <<<
-    | Hasta que se llene, la revelacion muestra este texto de plantilla. Lo que
-    | se decida aqui tiene que ser coherente con los 9 testimonios ya escritos
-    | en content/suspects/.
+    | Every claim below is anchored in material the table already received: the
+    | forensic report and the chess piece (sobre 1), the nine testimonies and
+    | Sarah Collins' access log (sobre 2), the Chessmith receipt, the CCTV mail
+    | and the "Torre Blanca" channel (sobre 3). Nothing here is new evidence.
     |
     */
 
     'solution' => [
         // Must be a key of 'suspects' above.
-        'culprit_slug' => 'PENDIENTE',
+        'culprit_slug' => 'rachel-miller',
 
-        'headline' => 'PENDIENTE: la frase que cierra el caso.',
-        'motive' => 'PENDIENTE: por que lo hizo.',
-        'method' => 'PENDIENTE: como lo hizo.',
+        'headline' => 'La amiga de la esposa. Una dentista con acceso a digitoxina, un uniforme robado y una torre blanca por firma.',
+
+        'motive' => 'Justicia por mano propia. HelixCare retrasó y negó tratamientos críticos hasta que la gente se murió esperando, y ningún ejecutivo renunció ni pidió perdón. Rachel decidió cobrar esa cuenta ella misma, y Steve Jacobs no fue el primer nombre de su lista.',
+
+        'method' => 'Con un uniforme de empleada y una tarjeta maestra robados del propio hotel, entró a la habitación 803 a las 9:12 p.m. — mientras Steve seguía en la gala — y cambió con guantes las cápsulas de su frasco de suplementos por otras cargadas con digitoxina. Dejó la torre blanca en el lavabo y se fue antes de que él subiera.',
+
         'key_evidence' => [
-            'PENDIENTE: la prueba que lo señala.',
+            'Su coartada se cae sola: Rachel declaró que estuvo en casa viendo una película, pero Elizabeth Foster la vio pasar por la calle lateral del hotel esa noche. El correo de CCTV confirma que Elizabeth no se bajó del coche entre las 7:06 y las 10:02 p.m., así que la testigo estaba exactamente donde dice, mirando exactamente hacia allá.',
+            'Sarah Collins reportó un uniforme de empleada y una tarjeta maestra desaparecidos, que nunca se recuperaron. Con esa tarjeta maestra alguien entró a la 803 a las 9:12 p.m., cuando Steve todavía estaba en la cena y Emily Johnson ya había hecho la preparación nocturna a las 6:03 p.m.',
+            'Rachel es dentista con práctica privada: la única persona del expediente con acceso legal a compuestos controlados, y por lo tanto a digitoxina, sin dejar detrás un rastro de compra.',
+            'La llamada del supuesto "equipo de seguridad" a las 8:45 p.m. sacó a Jeremy Burt de la recepción trasera para revisar el sótano — quince minutos antes de la entrega del ajedrez, pedida para las 9:00 p.m. en esa misma puerta. Nadie del hotel hizo esa llamada.',
+            'El pedido a Chessmith a nombre de "Robin Good", pagado con AnonyPay tras una VPN, con la instrucción de incluir solo las piezas blancas y entregarlo en la entrada trasera del Hotel Altamira.',
+            '«Estaba podrido hasta la médula», dijo Rachel en su interrogatorio, sin que nadie se lo preguntara. Es palabra por palabra el título del video del canal Torre Blanca: «10 hombres podridos hasta la médula. El mundo estaría mejor sin ellos».',
         ],
 
         // The long reveal, rendered verbatim like any other case content.
@@ -218,20 +226,61 @@ return [
          * One entry per suspect that is not the culprit.
          */
         'exonerations' => [
-            'elizabeth-foster' => 'PENDIENTE',
-            'sofia-reyes' => 'PENDIENTE',
-            'lucas-jacobs' => 'PENDIENTE',
-            'rachel-miller' => 'PENDIENTE',
-            'emily-johnson' => 'PENDIENTE',
-            'kevin-huang' => 'PENDIENTE',
-            'daniel-blake' => 'PENDIENTE',
-            'sarah-collins' => 'PENDIENTE',
-            'jeremy-burt-testigo' => 'PENDIENTE',
+            'elizabeth-foster' => 'Estuvo ahí toda la noche, y por eso mismo no pudo ser ella. El correo de CCTV de Sarah Collins documenta su Bentley estacionado a 100 metros de la entrada desde las 7:06 hasta las 10:02 p.m., y deja constancia de que el conductor no salió del auto en ningún momento. Elizabeth nunca entró al Hotel Altamira. La celosa del expediente resultó ser la testigo que, sin saberlo, entregó al asesino.',
+
+            'sofia-reyes' => 'Nunca pasó del vestíbulo. Daniel Blake la interceptó a las 10:00 p.m. y el recibo del San Francisco Taxi VIP la saca del hotel a las 10:05 p.m. rumbo a South Beach. Para entonces las cápsulas llevaban casi una hora cambiadas: la habitación ya estaba envenenada antes de que ella cruzara la puerta. Y estaba embarazada de él — lo que quería esa noche era una respuesta, no un cadáver.',
+
+            'lucas-jacobs' => 'El registro de entrada y salida del estudio de RADA lo tiene ensayando de 19:01 a 22:00, con siete compañeros firmando el mismo turno, y el recibo del bar Prince Albert lo pone en Mission a las 22:24. El collar con sus iniciales estaba en esa habitación porque él mismo se lo devolvió a su padre en el desayuno de esa mañana y a Steve se le cayó del bolsillo. Tenía motivo y herencia; no tuvo un solo minuto de oportunidad.',
+
+            'emily-johnson' => 'Su tarjeta abrió la 803 a las 6:03 p.m. para la preparación nocturna, tres horas antes de que las cápsulas fueran cambiadas, y terminó su turno a las 11:00 p.m. El uniforme y la tarjeta maestra que desaparecieron del hotel son precisamente la prueba de lo contrario: Emily no fue la asesina, fue la persona a la que suplantaron. Encontrar el cuerpo fue el turno que le tocó, no una confesión.',
+
+            'kevin-huang' => 'Tenía el motivo más limpio del expediente: su padre murió esperando una autorización que HelixCare nunca firmó. Y tiene la coartada más completa. El Uber lo saca del hotel a las 19:46 hacia el St. Thomas Hospital y su propia publicación de Facebook, fechada ese 4 de febrero, lo muestra ahí con su hija recién nacida. Mientras Steve Jacobs moría, Kevin estaba siendo padre.',
+
+            'daniel-blake' => 'Es culpable, pero de otra cosa. Falsificó registros clínicos por orden de Steve y repartía estimulantes sin receta entre el personal de HelixCare — por eso sus huellas están en el frasco que dejó en esa habitación días antes, y por eso hay una investigación separada abierta a su nombre. Lo que no tenía era acceso a digitoxina ni una sola razón para matar al socio que sostenía su imperio. Traicionó a Steve en los papeles; no lo envenenó.',
+
+            'sarah-collins' => 'Es la razón por la que este caso se resolvió. Notó el uniforme y la tarjeta maestra faltantes cuando nadie se lo había pedido, revisó por iniciativa propia el registro de accesos de la 803, y entregó a la policía tanto la hora exacta de la entrada de las 9:12 p.m. como el material de CCTV. Un cómplice no aporta la cronología que condena a quien lo encubre.',
+
+            'jeremy-burt-testigo' => 'Fue usado. La llamada de las 8:45 p.m. pidiéndole revisar las salidas de emergencia del sótano —una tarea que él mismo declaró que nunca le asignan— existió únicamente para dejar la recepción trasera vacía cuando llegara el ajedrez. Que no registrara ninguna entrega no fue negligencia: la entrega estaba diseñada desde el principio para no quedar registrada.',
         ],
 
-        // Used by the confession audio (later delivery). Written to be played
-        // as-is, so the table still gets an ending if the AI is unavailable.
-        'confession_script' => null,
+        // Voice the confession is read in. Gemini prebuilt voice name; null
+        // falls back to the gateway's default.
+        'confession_voice' => 'Kore',
+
+        // Used by the confession audio. Written to be played as-is: the model
+        // only reads it aloud, it never composes it.
+        'confession_script' => <<<'TXT'
+            ¿Sabe qué es lo que más me molesta, detective? Que me pregunte por mi
+            integridad.
+
+            Yo he pasado veinte años con las manos dentro de la boca de gente
+            aterrada, diciéndoles que respiren, que ya casi. Firmo lo que receto.
+            Respondo por cada cosa que hago. Steve Jacobs firmó cinco mil
+            doscientas treinta y ocho negaciones de cobertura y no respondió por
+            ninguna. Veintiséis personas se murieron esperando un correo suyo.
+            Pagó trescientos cuarenta y dos millones, no admitió nada, y esa
+            misma noche estaba bailando en un salón de gala.
+
+            Sí. Fui yo.
+
+            Le abrí la puerta con la tarjeta que me llevé del carrito de la
+            lavandería, con el uniforme de ellos puesto, y nadie me miró la cara
+            ni una vez. Así de invisible es una mujer con un uniforme de
+            empleada. Cambié las cápsulas de su frasco, dejé la torre en el
+            lavabo y bajé por las escaleras.
+
+            No corrí. No tenía por qué.
+
+            La torre blanca no es un juego. La torre es la pieza que protege al
+            rey y nunca se mueve en diagonal: va de frente, hasta el final del
+            tablero. Steve fue el cuarto. No voy a decirle cuántos faltan.
+
+            Y no me llame asesina como si eso cerrara algo. Los verdaderos
+            culpables son los que sostienen el sufrimiento sin que nadie los
+            castigue. Yo solo dejé de esperar a que alguien más lo hiciera.
+
+            Dígale a Elizabeth que lo siento. Ella no merecía enterarse así.
+            TXT,
     ],
 
     /*
@@ -418,6 +467,15 @@ return [
             ['file' => 'sobre3-recibos-varios.jpg', 'caption' => 'Recibo de bar, publicación de Facebook, Uber y taxi'],
             ['file' => 'sobre3-registro-rada.jpg', 'caption' => 'Registro de entrada y salida — Estudio de Ensayo de RADA'],
             ['file' => 'sobre3-correo-cctv.jpg', 'caption' => 'Correo — Material solicitado de CCTV'],
+        ],
+
+        // The reveal re-shows the four pieces of evidence that convict, so the
+        // table can see the chain instead of taking the detective's word.
+        'solucion.md' => [
+            ['file' => 'evidencia-3-torre-blanca.jpg', 'caption' => 'La firma — torre blanca dejada en el lavabo de la 803'],
+            ['file' => 'sobre3-recibo-chessmith.jpg', 'caption' => 'El pedido de "Robin Good" — solo piezas blancas, entrega trasera, 9:00 p.m.'],
+            ['file' => 'sobre3-youtube-torreblanca.jpg', 'caption' => 'Canal "Torre Blanca" — "10 hombres podridos hasta la médula"'],
+            ['file' => 'sobre3-correo-cctv.jpg', 'caption' => 'CCTV — Elizabeth Foster nunca salió de su coche'],
         ],
     ],
 

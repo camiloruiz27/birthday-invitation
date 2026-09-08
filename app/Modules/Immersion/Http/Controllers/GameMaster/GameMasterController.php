@@ -7,10 +7,13 @@ use App\Models\User;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Jobs\GenerateEventAudio;
+use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Support\AccusationScoreboard;
+use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Immersion\Support\GameQuota;
 use App\Modules\Immersion\Support\RevealEnding;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +27,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class GameMasterController extends Controller
 {
@@ -62,7 +66,7 @@ class GameMasterController extends Controller
         ]);
     }
 
-    public function create(Request $request, GameQuota $quota): Response
+    public function create(Request $request, GameQuota $quota, AiCredits $credits, GameCost $cost, CaseRegistry $cases): Response
     {
         $user = $request->user();
         $library = $user->library();
@@ -71,13 +75,34 @@ class GameMasterController extends Controller
         return Inertia::render('GameMaster/CreateGame', [
             // Each case carries its own quota, so the form can react as the
             // Game Master switches between them.
-            'library' => $library->map(fn ($case) => [
-                'slug' => $case->slug,
-                'name' => $case->name,
-                'min_players' => $case->min_players,
-                'max_players' => $case->max_players,
-                'quota' => $quotas[$case->slug],
-            ])->values(),
+            'library' => $library->map(function ($case) use ($quotas, $cases, $cost) {
+                $definition = $cases->find($case->slug);
+
+                return [
+                    'slug' => $case->slug,
+                    'name' => $case->name,
+                    'min_players' => $case->min_players,
+                    'max_players' => $case->max_players,
+                    'quota' => $quotas[$case->slug],
+
+                    // The interrogation ceiling is a property of the case, not
+                    // of the table: one question budget per suspect, claimed by
+                    // whoever gets there first.
+                    'max_questions' => $definition ? $cost->maxQuestions($definition) : 0,
+
+                    // Which endings this case can actually deliver. A case with
+                    // no confession script must not be sold the premium ending.
+                    'endings' => $definition ? $definition->supportedEndings() : [],
+                ];
+            })->values(),
+
+            // Priced here rather than in the form, so the estimate the Game
+            // Master reads is the same arithmetic that will charge them.
+            'credits' => $credits->enabled() ? [
+                'available' => $credits->walletFor($user)->available(),
+                'question' => $cost->questionCost(),
+                'endings' => $cost->endingPrices(),
+            ] : null,
         ]);
     }
 
@@ -90,8 +115,13 @@ class GameMasterController extends Controller
 
             // Chosen up front, not toggled mid-run: the advanced endings and
             // the interrogation cost AI capacity that has to be reserved
-            // before the case starts.
-            'ending_type' => ['nullable', Rule::in([Game::ENDING_CLASSIC])],
+            // before the case starts. Which endings are actually on offer
+            // depends on the case's content and is checked below.
+            'ending_type' => ['nullable', Rule::in([
+                Game::ENDING_CLASSIC,
+                Game::ENDING_EPILOGUE,
+                Game::ENDING_CONFESSION_AUDIO,
+            ])],
             'interrogation_enabled' => ['nullable', 'boolean'],
 
             'players' => ['required', 'array', 'min:1'],
@@ -109,6 +139,17 @@ class GameMasterController extends Controller
             ]);
         }
 
+        $endingType = $data['ending_type'] ?? Game::ENDING_CLASSIC;
+
+        // An ending is a capability of the case's content, not of the build.
+        // Checked on the server: the form hides the ones this case cannot do,
+        // but hiding an option is not a restriction.
+        if ($endingType !== Game::ENDING_CLASSIC && ! $case->supportsEnding($endingType)) {
+            throw ValidationException::withMessages([
+                'ending_type' => 'Este caso todavia no trae ese final.',
+            ]);
+        }
+
         $user = $request->user();
         $mode = $data['mode'] ?? Game::MODE_GM_LED;
 
@@ -116,7 +157,7 @@ class GameMasterController extends Controller
         // games and then inserting one is a read-modify-write, and two
         // requests arriving together would otherwise both see five games and
         // both create a sixth.
-        $game = DB::transaction(function () use ($user, $data, $case, $mode, $quota) {
+        $game = DB::transaction(function () use ($user, $data, $case, $mode, $endingType, $quota) {
             User::whereKey($user->id)->lockForUpdate()->first();
 
             // The quota is per case: being full on this one says nothing about
@@ -134,7 +175,7 @@ class GameMasterController extends Controller
                 'case_slug' => $case->slug,
                 'case_version' => $case->version(),
                 'mode' => $mode,
-                'ending_type' => $data['ending_type'] ?? Game::ENDING_CLASSIC,
+                'ending_type' => $endingType,
                 'interrogation_enabled' => (bool) ($data['interrogation_enabled'] ?? false),
                 'status' => 'draft',
             ]);
@@ -185,7 +226,7 @@ class GameMasterController extends Controller
         return back()->with('status', 'Linea de tiempo por defecto cargada.');
     }
 
-    public function show(Request $request, Game $game): Response
+    public function show(Request $request, Game $game, AiCredits $credits, GameCost $cost): Response
     {
         $spoilersAllowed = $request->user()->can('viewSpoilers', $game);
 
@@ -223,7 +264,48 @@ class GameMasterController extends Controller
                 'revealed_at' => $game->ending_revealed_at,
                 'pending_accusations' => $game->pendingAccusationsCount(),
                 'players' => $game->players()->count(),
+
+                // Confession audio: the console polls this while it generates,
+                // and only offers the player once the file exists.
+                'audio_status' => $game->ending_audio_status,
+
+                // Epilogues: how many of the table's messages have gone out,
+                // so the Game Master can tell "still writing" from "failed".
+                'epilogues' => $game->ending_type === Game::ENDING_EPILOGUE ? [
+                    'total' => $game->accusations()->count(),
+                    'sent' => $game->accusations()->whereNotNull('epilogue_sent_at')->count(),
+                    'failed' => $game->accusations()->where('epilogue_status', Accusation::EPILOGUE_FAILED)->count(),
+                ] : null,
             ],
+
+            // What this game costs in AI credits and where that stands. Shown
+            // before it starts so a shortfall is discovered by the Game Master
+            // setting up, not by a table already sitting at the board.
+            'credits' => function () use ($game, $credits, $cost) {
+                if (! $credits->enabled()) {
+                    return null;
+                }
+
+                $hold = $credits->holdFor($game);
+
+                return [
+                    'cost' => $cost->for($game),
+                    'available' => $credits->walletFor($game->user_id)->available(),
+                    'shortfall' => $credits->shortfallFor($game),
+
+                    // Three states, not two. "No hold" and "hold given back"
+                    // look the same from the wallet but mean opposite things to
+                    // the Game Master: one is a game that never needed capacity,
+                    // the other is a game that needs it back before the table
+                    // can interrogate again.
+                    'armed' => $hold !== null && ! $hold->isReleased(),
+                    'hold' => $hold ? [
+                        'amount' => $hold->amount,
+                        'spent' => $hold->spent,
+                        'remaining' => max(0, $hold->amount - $hold->spent),
+                    ] : null,
+                ];
+            },
 
             // In automatic mode the owner plays from their own inbox.
             'ownerPlayerToken' => fn () => $game->ownerPlayer()?->access_token,
@@ -231,14 +313,27 @@ class GameMasterController extends Controller
     }
 
     /**
-     * Starts the run.
+     * Starts the case, and freezes the AI capacity it could need.
      *
-     * A conditional UPDATE rather than check-then-write: starting twice would
-     * reset the clock and desync the timeline from what it already sent, and
-     * once starting also reserves AI credits a double click would debit twice.
+     * The reservation comes first and the clock second. A game that starts and
+     * then fails to reserve would be running with no way to pay for the ending
+     * it was configured with, and there is no taking a started case back from
+     * a table that is already reading its first envelope.
      */
-    public function start(Game $game): RedirectResponse
+    public function start(Game $game, AiCredits $credits): RedirectResponse
     {
+        if ($game->started_at) {
+            return back()->with('status', 'Esta partida ya fue iniciada.');
+        }
+
+        if (! $credits->reserve($game)) {
+            $missing = $credits->shortfallFor($game);
+
+            return back()->withErrors([
+                'credits' => "Te faltan {$missing} creditos de IA para iniciar esta partida. Recarga o crea la partida sin interrogatorio.",
+            ]);
+        }
+
         $started = Game::query()
             ->whereKey($game->getKey())
             ->whereNull('started_at')
@@ -249,6 +344,8 @@ class GameMasterController extends Controller
             ]);
 
         if ($started === 0) {
+            // Lost the race against a second click. The hold is unique per
+            // game, so the winner's reservation stands and this one made none.
             return back()->with('status', 'Esta partida ya fue iniciada.');
         }
 
@@ -263,10 +360,16 @@ class GameMasterController extends Controller
      * accusations all go via cascade. The generated audio lives on disk rather
      * than in a table, so it is cleaned up by hand — otherwise every deleted
      * game would leave megabytes of orphaned WAVs behind.
+     *
+     * The credit hold is released BEFORE the delete, for the same reason: the
+     * cascade would take the hold row with it and the frozen credits would
+     * never come back to the wallet.
      */
-    public function destroy(Game $game): RedirectResponse
+    public function destroy(Game $game, AiCredits $credits): RedirectResponse
     {
         $name = $game->name;
+
+        $credits->release($game, "Partida eliminada: \"{$name}\"");
 
         $audioPaths = $game->timelineEvents()
             ->whereNotNull('audio_path')
@@ -284,7 +387,14 @@ class GameMasterController extends Controller
             ->with('status', "Partida \"{$name}\" eliminada. Los enlaces de sus jugadores dejaron de funcionar.");
     }
 
-    public function finish(Game $game): RedirectResponse
+    /**
+     * Closes the case and gives back the AI capacity it did not use.
+     *
+     * Closing is the only moment the reservation can be settled: until then the
+     * table could still ask another question or trigger the ending, and a
+     * refund handed out early would be a refund of credits still needed.
+     */
+    public function finish(Game $game, AiCredits $credits): RedirectResponse
     {
         if ($game->isFinished()) {
             return back()->with('status', 'Esta partida ya estaba terminada.');
@@ -292,32 +402,88 @@ class GameMasterController extends Controller
 
         $game->finish();
 
-        return back()->with('status', 'Caso cerrado. Ya puedes revisar los interrogatorios y las acusaciones.');
+        $refunded = $credits->release($game, "Caso cerrado: \"{$game->name}\"");
+
+        return back()->with('status', $refunded > 0
+            ? "Caso cerrado. Se te devolvieron {$refunded} creditos de IA que no se usaron."
+            : 'Caso cerrado. Ya puedes revisar los interrogatorios y las acusaciones.');
     }
 
-    public function pause(Game $game): RedirectResponse
+    /**
+     * Stops the clock, and hands back the AI capacity while nobody is playing.
+     *
+     * Pausing is what a table does when it is continuing another day, and a
+     * case spread over two weekends should not keep a week's worth of credits
+     * frozen in between. Resuming re-freezes what is left.
+     */
+    public function pause(Game $game, AiCredits $credits): RedirectResponse
     {
-        if ($game->isRunning()) {
-            $game->update([
-                'status' => 'paused',
-                'paused_at' => Carbon::now(),
+        if (! $game->isRunning()) {
+            return back()->with('status', 'Partida pausada.');
+        }
+
+        $game->update([
+            'status' => 'paused',
+            'paused_at' => Carbon::now(),
+        ]);
+
+        $returned = $credits->release($game, "Partida en pausa: \"{$game->name}\"");
+
+        return back()->with('status', $returned > 0
+            ? "Partida pausada. Te devolvimos {$returned} creditos mientras tanto; se vuelven a reservar al reanudar."
+            : 'Partida pausada.');
+    }
+
+    /**
+     * Restarts the clock, re-freezing only what the game has left to spend.
+     *
+     * Ordered so a resume that cannot pay does not happen at all: a running
+     * case whose suspects refuse to answer is worse than one still paused,
+     * because only the paused one still tells the Game Master why.
+     */
+    public function resume(Game $game, AiCredits $credits): RedirectResponse
+    {
+        if (! $game->isPaused() || ! $game->paused_at) {
+            return back()->with('status', 'Partida reanudada.');
+        }
+
+        if (! $credits->rearm($game)) {
+            return back()->withErrors([
+                'credits' => "Te faltan {$credits->shortfallFor($game)} creditos de IA para reanudar esta partida. Recarga y vuelve a intentarlo.",
             ]);
         }
 
-        return back()->with('status', 'Partida pausada.');
-    }
-
-    public function resume(Game $game): RedirectResponse
-    {
-        if ($game->isPaused() && $game->paused_at) {
-            $game->update([
-                'status' => 'running',
-                'paused_seconds_total' => $game->paused_seconds_total + $game->paused_at->diffInSeconds(Carbon::now()),
-                'paused_at' => null,
-            ]);
-        }
+        $game->update([
+            'status' => 'running',
+            'paused_seconds_total' => $game->paused_seconds_total + $game->paused_at->diffInSeconds(Carbon::now()),
+            'paused_at' => null,
+        ]);
 
         return back()->with('status', 'Partida reanudada.');
+    }
+
+    /**
+     * Re-freezes the capacity of a game that gave it back without being paused.
+     *
+     * The case the pause button does not cover: a table that simply walked away
+     * with the game still running, whose reservation the stale-hold sweeper
+     * returned days later. There is no resume to hook onto, and re-arming from
+     * inside a player's question would silently debit the Game Master's wallet
+     * for a table they may not be running any more — so it is a button.
+     */
+    public function rearmCredits(Game $game, AiCredits $credits): RedirectResponse
+    {
+        if ($credits->isArmed($game) || ! $credits->holdFor($game)) {
+            return back()->with('status', 'Esta partida ya tiene su capacidad de IA reservada.');
+        }
+
+        if (! $credits->rearm($game)) {
+            return back()->withErrors([
+                'credits' => "Te faltan {$credits->shortfallFor($game)} creditos de IA para reactivar esta partida.",
+            ]);
+        }
+
+        return back()->with('status', 'Capacidad de IA reactivada. Los interrogatorios vuelven a funcionar.');
     }
 
     public function forceNext(Game $game): RedirectResponse
@@ -396,6 +562,29 @@ class GameMasterController extends Controller
                 'can' => $request->user()->can('reveal', $game),
             ],
         ]);
+    }
+
+    /**
+     * Streams the confession audio to the Game Master.
+     *
+     * Deliberately not reachable with a player token. The premium ending is
+     * meant to be heard once, out loud, by everyone at the same time — a link
+     * each player could open on their own phone would be a different, worse
+     * mechanic. GamePolicy::control is what enforces it.
+     */
+    public function endingAudio(Game $game): BinaryFileResponse
+    {
+        abort_unless($game->ending_audio_path, 404);
+        abort_unless(Storage::disk('local')->exists($game->ending_audio_path), 404);
+
+        return response()
+            ->file(Storage::disk('local')->path($game->ending_audio_path), [
+                'Content-Type' => 'audio/wav',
+                // The recording never changes and is only reachable by the
+                // account that owns the game.
+                'Cache-Control' => 'private, max-age=86400',
+            ])
+            ->setAutoLastModified();
     }
 
     /**

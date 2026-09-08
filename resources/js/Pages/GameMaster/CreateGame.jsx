@@ -5,7 +5,7 @@ import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import NewGameForm from '../../components/game-master/NewGameForm';
 
-export default function CreateGame({ library }) {
+export default function CreateGame({ library, credits }) {
     // The quota is per case, so this page only blocks when every case is full;
     // otherwise the form lets the Game Master pick one that still has room.
     const allFull = library.length > 0 && library.every((item) => item.quota.full);
@@ -49,7 +49,7 @@ export default function CreateGame({ library }) {
                         panel.
                     </p>
 
-                    <NewGameForm library={library} />
+                    <NewGameForm library={library} credits={credits} />
                 </Card>
             )}
         </AppLayout>

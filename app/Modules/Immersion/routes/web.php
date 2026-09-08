@@ -43,6 +43,10 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         Route::post('/{game}/pause', [GameMasterController::class, 'pause'])->name('game.pause');
         Route::post('/{game}/resume', [GameMasterController::class, 'resume'])->name('game.resume');
         Route::post('/{game}/finish', [GameMasterController::class, 'finish'])->name('game.finish');
+
+        // Re-freezes AI capacity a game gave back without being paused, which
+        // is the only way an abandoned-then-resumed case can interrogate again.
+        Route::post('/{game}/reactivar-ia', [GameMasterController::class, 'rearmCredits'])->name('game.rearm-credits');
         Route::post('/{game}/load-default-timeline', [GameMasterController::class, 'loadDefaultTimeline'])->name('game.load-default-timeline');
         Route::post('/{game}/events/{event}/retry-audio', [GameMasterController::class, 'retryAudio'])->name('game.event.retry-audio');
     });
@@ -60,6 +64,14 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         ->middleware('can:reveal,game')
         ->whereNumber('game')
         ->name('game.reveal');
+
+    // The confession audio, for the Game Master to play at the table. Under
+    // `control` rather than a player token on purpose: the premium ending is
+    // meant to be heard once, together.
+    Route::get('/{game}/audio-final', [GameMasterController::class, 'endingAudio'])
+        ->middleware('can:control,game')
+        ->whereNumber('game')
+        ->name('game.ending-audio');
 
     // The two views that give the case away.
     Route::middleware('can:viewSpoilers,game')->whereNumber('game')->group(function () {

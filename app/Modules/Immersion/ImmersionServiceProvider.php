@@ -2,14 +2,19 @@
 
 namespace App\Modules\Immersion;
 
+use App\Modules\Immersion\Ai\Contracts\EpilogueProvider;
 use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
+use App\Modules\Immersion\Ai\GatewayEpilogueProvider;
 use App\Modules\Immersion\Ai\GatewayInterrogationProvider;
 use App\Modules\Immersion\Ai\GatewaySpeechProvider;
+use App\Modules\Immersion\Ai\NullEpilogueProvider;
 use App\Modules\Immersion\Ai\NullInterrogationProvider;
 use App\Modules\Immersion\Ai\NullSpeechProvider;
 use App\Modules\Immersion\Cases\CaseRegistry;
+use App\Modules\Immersion\Console\Commands\GrantCredits;
 use App\Modules\Immersion\Console\Commands\ProcessImmersionTimeline;
+use App\Modules\Immersion\Console\Commands\ReleaseStaleCreditHolds;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -54,6 +59,15 @@ class ImmersionServiceProvider extends ServiceProvider
                 ? $this->app->make(GatewaySpeechProvider::class)
                 : $this->app->make(NullSpeechProvider::class);
         });
+
+        // The personalised epilogue rides on the same switch as the
+        // interrogation: both are the gateway writing dialogue in character,
+        // and a deployment that does not trust one should not get the other.
+        $this->app->bind(EpilogueProvider::class, function () {
+            return $this->aiEnabled('interrogation')
+                ? $this->app->make(GatewayEpilogueProvider::class)
+                : $this->app->make(NullEpilogueProvider::class);
+        });
     }
 
     private function aiEnabled(string $capability): bool
@@ -83,6 +97,8 @@ class ImmersionServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ProcessImmersionTimeline::class,
+                GrantCredits::class,
+                ReleaseStaleCreditHolds::class,
             ]);
 
             $this->app->booted(function () {
@@ -101,6 +117,15 @@ class ImmersionServiceProvider extends ServiceProvider
                 if (config('queue.default') !== 'sync') {
                     $schedule->command('queue:work --stop-when-empty --max-time=50 --tries=2 --quiet')
                         ->everyMinute()
+                        ->withoutOverlapping();
+                }
+
+                // Credits frozen by games nobody closed come back on their own.
+                // Hourly rather than per minute: the window is measured in days
+                // and this walks every open reservation.
+                if (config('immersion.credits.enabled')) {
+                    $schedule->command(ReleaseStaleCreditHolds::class)
+                        ->hourly()
                         ->withoutOverlapping();
                 }
             });

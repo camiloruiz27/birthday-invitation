@@ -6,6 +6,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Alert from '../../components/ui/Alert';
 import EmptyState from '../../components/ui/EmptyState';
+import Spinner from '../../components/ui/Spinner';
 import { ConfirmModal } from '../../components/ui/Modal';
 import TimelineEventRow from '../../components/game-master/TimelineEventRow';
 import DeleteGameButton from '../../components/game-master/DeleteGameButton';
@@ -47,12 +48,112 @@ function PlayerLink({ player }) {
     );
 }
 
-export default function Game({ game, timelineSummary, can, ownerPlayerToken, ending }) {
+/**
+ * The AI reservation for this run.
+ *
+ * Before the case starts this is the warning that matters — a shortfall found
+ * here is fixable, the same shortfall found mid-game is not. Afterwards it just
+ * reports what is frozen and what will come back.
+ */
+function CreditsCard({ credits, status, onRearm, processing }) {
+    const { cost, available, shortfall, hold, armed } = credits;
+
+    if (cost.total === 0 && !hold) {
+        return null;
+    }
+
+    if (armed) {
+        return (
+            <Card className="mb-6">
+                <CardHeader
+                    title="Créditos de IA"
+                    description={`${hold.amount} reservados para esta partida.`}
+                />
+                <p className="text-sm text-ink-muted">
+                    Van {hold.spent} usados. Los {hold.remaining} restantes vuelven a tu saldo
+                    cuando cierres el caso o la pauses.
+                </p>
+            </Card>
+        );
+    }
+
+    // The game had capacity and gave it back — paused, or swept after days of
+    // inactivity. Without this card the symptom is a chat that says "sin
+    // créditos" while the wallet is visibly full.
+    if (hold && status !== 'finished') {
+        return (
+            <Card className="mb-6">
+                <CardHeader
+                    title="Créditos de IA"
+                    description="Esta partida no tiene capacidad reservada ahora mismo."
+                    actions={
+                        status !== 'paused' && (
+                            <Button size="sm" onClick={onRearm} loading={processing}>
+                                Reactivar IA
+                            </Button>
+                        )
+                    }
+                />
+
+                {shortfall > 0 ? (
+                    <Alert variant="warning" className="mb-0">
+                        Hacen falta {hold.remaining} créditos para que los sospechosos vuelvan a
+                        responder, y tienes {available}. Recarga {shortfall} más.
+                    </Alert>
+                ) : (
+                    <p className="text-sm text-ink-muted">
+                        {status === 'paused'
+                            ? `Te devolvimos ${hold.remaining} créditos mientras está en pausa. Se vuelven a reservar al reanudar.`
+                            : `Los ${hold.remaining} créditos que le quedaban volvieron a tu saldo. Reactívala para seguir interrogando; lo ya usado no se cobra otra vez.`}
+                    </p>
+                )}
+            </Card>
+        );
+    }
+
+    if (status !== 'draft') {
+        return null;
+    }
+
+    return (
+        <Card className="mb-6">
+            <CardHeader
+                title="Créditos de IA"
+                description={`Iniciar esta partida congelará ${cost.total} créditos.`}
+                actions={
+                    <Button href={route('credits')} variant="secondary" size="sm">
+                        Ver créditos
+                    </Button>
+                }
+            />
+
+            {shortfall > 0 ? (
+                <Alert variant="warning" title="No puedes iniciarla todavía" className="mb-0">
+                    Tienes {available} créditos y hacen falta {cost.total}. Recarga {shortfall}{' '}
+                    más, o crea la partida sin interrogatorio si prefieres jugarla así.
+                </Alert>
+            ) : (
+                <p className="text-sm text-ink-muted">
+                    Tienes {available} disponibles. Lo que la mesa no use vuelve a tu saldo al
+                    cerrar el caso.
+                </p>
+            )}
+        </Card>
+    );
+}
+
+export default function Game({ game, timelineSummary, can, ownerPlayerToken, ending, credits }) {
+    // The advanced endings finish on the queue after the reveal, so the console
+    // has to keep looking until the recording or the last epilogue lands.
+    const endingIsWorking =
+        ending.audio_status === 'pending' ||
+        (ending.epilogues && ending.epilogues.sent < ending.epilogues.total);
+
     // The clock and the timeline advance on the server, so a running game
     // refreshes itself; a draft, paused or finished game has nothing to poll.
-    usePoll(['game', 'timelineSummary'], {
+    usePoll(['game', 'timelineSummary', 'ending'], {
         interval: 5000,
-        enabled: game.status === 'running',
+        enabled: game.status === 'running' || Boolean(endingIsWorking),
     });
 
     const [confirming, setConfirming] = useState(null);
@@ -75,6 +176,10 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
     const isAutomatic = game.mode === 'automatic';
     const finished = game.status === 'finished';
 
+    // Disabling the button is a courtesy; the server refuses the start either
+    // way. Credits arrive lazily, so a missing prop must not block the button.
+    const shortOnCredits = (credits?.shortfall ?? 0) > 0;
+
     return (
         <GameMasterLayout
             game={game}
@@ -83,7 +188,15 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
             actions={
                 <>
                     {game.status === 'draft' && (
-                        <Button onClick={() => setConfirming('start')} disabled={!hasTimeline}>
+                        <Button
+                            onClick={() => setConfirming('start')}
+                            disabled={!hasTimeline || shortOnCredits}
+                            title={
+                                shortOnCredits
+                                    ? 'No tienes créditos de IA suficientes'
+                                    : undefined
+                            }
+                        >
                             Iniciar caso
                         </Button>
                     )}
@@ -136,6 +249,15 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 </Card>
             )}
 
+            {credits && (
+                <CreditsCard
+                    credits={credits}
+                    status={game.status}
+                    processing={processing}
+                    onRearm={() => post('immersion.gm.game.rearm-credits')}
+                />
+            )}
+
             {/* Where the run stands relative to its ending. */}
             {game.status !== 'draft' && (
                 <Card className="mb-6">
@@ -165,6 +287,67 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                                 ? 'Ya acusaron todos: la solución se revela sola.'
                                 : 'Cuando acusen todos, la solución se revela sola. También puedes revelarla tú si alguien no va a acusar.'}
                         </p>
+                    )}
+
+                    {/* Confession audio: generated on reveal, played by the
+                        Game Master at the table. */}
+                    {ending.revealed_at && ending.audio_status && (
+                        <div className="mt-4 border-t border-line pt-4">
+                            <p className="text-sm font-medium text-ink">
+                                Confesión del culpable
+                            </p>
+
+                            {ending.audio_status === 'ready' ? (
+                                <>
+                                    <p className="mt-1 text-sm text-ink-muted">
+                                        Súbele el volumen y reprodúcela en la mesa antes de
+                                        cerrar el caso. Solo tú la tienes.
+                                    </p>
+                                    <audio
+                                        controls
+                                        preload="none"
+                                        src={route('immersion.gm.game.ending-audio', game.id)}
+                                        className="mt-3 w-full"
+                                    >
+                                        Tu navegador no puede reproducir audio.
+                                    </audio>
+                                </>
+                            ) : ending.audio_status === 'pending' ? (
+                                <p className="mt-1 flex items-center gap-2 text-sm text-ink-muted">
+                                    <Spinner />
+                                    Generando la grabación. Puede tardar un minuto.
+                                </p>
+                            ) : (
+                                <Alert variant="warning" className="mt-2 mb-0">
+                                    No se pudo generar la grabación. La solución escrita ya
+                                    está publicada para todo el equipo, así que el caso tiene
+                                    su final igual.
+                                </Alert>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Epilogues: one email per accusation, written after the
+                        reveal. */}
+                    {ending.revealed_at && ending.epilogues && (
+                        <div className="mt-4 border-t border-line pt-4">
+                            <p className="text-sm font-medium text-ink">Epílogos por correo</p>
+                            <p className="mt-1 text-sm text-ink-muted">
+                                {ending.epilogues.sent} de {ending.epilogues.total} enviados.
+                                {ending.epilogues.sent < ending.epilogues.total &&
+                                    ' Los demás se están escribiendo.'}
+                            </p>
+
+                            {ending.epilogues.failed > 0 && (
+                                <Alert variant="warning" className="mt-2 mb-0">
+                                    {ending.epilogues.failed}{' '}
+                                    {ending.epilogues.failed === 1
+                                        ? 'jugador no recibió el suyo'
+                                        : 'jugadores no recibieron el suyo'}
+                                    . Todos ven la solución completa de todos modos.
+                                </Alert>
+                            )}
+                        </div>
                     )}
                 </Card>
             )}

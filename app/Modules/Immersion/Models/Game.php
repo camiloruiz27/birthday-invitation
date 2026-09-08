@@ -8,6 +8,7 @@ use App\Modules\Immersion\Cases\CaseRegistry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Game extends Model
@@ -26,8 +27,14 @@ class Game extends Model
     /** Each player gets a message from the suspect they accused. Later. */
     public const ENDING_EPILOGUE = 'epilogue';
 
-    /** The Game Master gets an audio of the culprit confessing. Later. */
+    /** The Game Master gets an audio of the culprit confessing. */
     public const ENDING_CONFESSION_AUDIO = 'confession_audio';
+
+    public const AUDIO_PENDING = 'pending';
+
+    public const AUDIO_READY = 'ready';
+
+    public const AUDIO_FAILED = 'failed';
 
     protected $fillable = [
         'user_id',
@@ -43,6 +50,8 @@ class Game extends Model
         'finished_at',
         'ending_revealed_at',
         'ending_revealed_by',
+        'ending_audio_status',
+        'ending_audio_path',
         'interrogation_enabled',
     ];
 
@@ -53,6 +62,15 @@ class Game extends Model
         'ending_revealed_at' => 'datetime',
         'interrogation_enabled' => 'boolean',
     ];
+
+    /**
+     * The raw storage path never needs to reach a browser: the console shows
+     * the status and streams the file through a route. A game is serialized to
+     * players too, so nothing here should carry more than they need.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = ['ending_audio_path'];
 
     protected $appends = ['elapsed_minutes'];
 
@@ -116,6 +134,19 @@ class Game extends Model
     public function interrogationSessions(): HasMany
     {
         return $this->hasMany(InterrogationSession::class);
+    }
+
+    /**
+     * The AI capacity frozen for this run, if any.
+     *
+     * Null is a normal state, not a broken one: a game that has not started
+     * yet, a game with no AI mechanics, a deployment with credits switched
+     * off, and every game that was already running when credits shipped all
+     * legitimately have no hold.
+     */
+    public function creditHold(): HasOne
+    {
+        return $this->hasOne(CreditHold::class);
     }
 
     public function isRunning(): bool

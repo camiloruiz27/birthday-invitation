@@ -94,4 +94,20 @@ class InterrogationSession extends Model
 
         return true;
     }
+
+    /**
+     * Hands back a slot taken by reserveQuestion() when the question never
+     * actually happened. Only used when charging the game's AI credits fails
+     * after the slot was taken: the player asked nothing, so they must not
+     * lose one of their five.
+     */
+    public function releaseQuestion(): void
+    {
+        static::query()
+            ->whereKey($this->getKey())
+            ->where('questions_used', '>', 0)
+            ->decrement('questions_used');
+
+        $this->refresh();
+    }
 }

@@ -7,6 +7,8 @@ use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
+use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\GameCost;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +19,12 @@ use Inertia\Response;
 
 class InterrogationController extends Controller
 {
+    public function __construct(
+        private AiCredits $credits,
+        private GameCost $cost,
+    ) {
+    }
+
     public function index(Player $player): Response
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
@@ -115,6 +123,21 @@ class InterrogationController extends Controller
                 'message' => "Ya usaste tus {$session->max_questions} preguntas con esta persona.",
                 'closed' => true,
             ], 422);
+        }
+
+        // Charge the game's reservation before making the call. This should
+        // never fail — the whole question ceiling was frozen when the case
+        // started — so if it does, something released the hold underneath a
+        // running game and the honest thing is to say so rather than hand out
+        // a model call nobody paid for. The question slot just taken is given
+        // back, so the player loses nothing.
+        if (! $this->credits->spend($player->game, $this->cost->questionCost(), "Pregunta a {$suspect['name']}")) {
+            $session->releaseQuestion();
+
+            return response()->json([
+                'message' => 'Esta partida se quedo sin creditos de IA. Avisa al Game Master.',
+                'out_of_credits' => true,
+            ], 402);
         }
 
         $playerMessage = InterrogationMessage::create([

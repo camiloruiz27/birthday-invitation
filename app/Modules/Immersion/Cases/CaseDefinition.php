@@ -308,6 +308,70 @@ class CaseDefinition
     }
 
     /**
+     * Which voice reads the confession. Null lets the gateway pick its default.
+     */
+    public function confessionVoice(): ?string
+    {
+        $voice = $this->manifest['solution']['confession_voice'] ?? null;
+
+        return is_string($voice) && $voice !== '' ? $voice : null;
+    }
+
+    /**
+     * Which endings this case can actually deliver.
+     *
+     * An ending is a capability of the CONTENT, not of the build: the epilogue
+     * needs a written line for every innocent suspect, and the confession audio
+     * needs a script. Offering one the case cannot fulfil would sell a Game
+     * Master an ending that silently degrades at the table, so the creation
+     * form and the server both ask here.
+     *
+     * @return string[]
+     */
+    public function supportedEndings(): array
+    {
+        if (! $this->hasSolution()) {
+            return [];
+        }
+
+        $endings = ['classic'];
+
+        if ($this->hasEveryExoneration()) {
+            $endings[] = 'epilogue';
+        }
+
+        if ($this->confessionScript() !== null) {
+            $endings[] = 'confession_audio';
+        }
+
+        return $endings;
+    }
+
+    public function supportsEnding(string $endingType): bool
+    {
+        return in_array($endingType, $this->supportedEndings(), true);
+    }
+
+    /**
+     * Does every suspect who is not the culprit have an authored reason they
+     * could not have done it? The epilogue has no fallback: a missing line
+     * would leave the model to reason out the player's mistake by itself,
+     * which is exactly inventing the ending.
+     */
+    private function hasEveryExoneration(): bool
+    {
+        $culprit = $this->culpritSlug();
+
+        foreach (array_keys($this->suspects()) as $slug) {
+            if ($slug !== $culprit && $this->exonerationFor($slug) === null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Timeline attached to every new game of this case.
      *
      * @return array<int, array<string, mixed>>

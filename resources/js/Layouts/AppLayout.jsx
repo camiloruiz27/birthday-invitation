@@ -13,6 +13,7 @@ const NAV = [
     { name: 'Panel', route: 'dashboard' },
     { name: 'Biblioteca', route: 'library' },
     { name: 'Partidas', route: 'immersion.gm.games.index' },
+    { name: 'Créditos', route: 'credits' },
 ];
 
 function NavLink({ item, active, className = '' }) {

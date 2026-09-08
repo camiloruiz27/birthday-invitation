@@ -33,6 +33,14 @@ El gateway (`lawxora-ai-service/ai-service`) necesita `MYSTERY_CASE_INTERNAL_API
 y `MYSTERY_CASE_GEMINI_API_KEY` en su propio `.env`. Si no estan configurados,
 los correos de audio salen igual, sin el adjunto (no rompe la linea de tiempo).
 
+El proyecto `mystery-case` del gateway expone tres endpoints:
+
+| Endpoint | Lo usa |
+|---|---|
+| `POST /tts` | Audios de la linea de tiempo **y** la confesion del final premium |
+| `POST /interrogate` | Interrogatorios |
+| `POST /epilogue` | Epilogo personalizado (dos prompts, uno por veredicto) |
+
 ## 3. Migrar y sembrar una partida de prueba
 
 ```
@@ -99,8 +107,20 @@ que revela los spoilers al dueno que estuvo jugando.
 ## 4.2.2 El final del caso
 
 El GM elige el tipo de final **al crear la partida** (`ending_type`), porque los
-finales avanzados reservan capacidad de IA. Hoy solo existe `classic`;
-`epilogue` y `confession_audio` estan declarados pero deshabilitados.
+finales avanzados reservan capacidad de IA. Hay tres, y **los dos avanzados se
+suman al clasico**, no lo reemplazan:
+
+| Final | Que agrega | Creditos |
+|---|---|---|
+| `classic` | Nada: la solucion escrita y el marcador | 0 |
+| `epilogue` | Un correo por jugador, de la persona que acuso | 10 |
+| `confession_audio` | Una grabacion del culpable, solo para el GM | 15 |
+
+**Un final es una capacidad del CONTENIDO, no del build.** El epilogo necesita
+una `exoneration` escrita para cada inocente; el audio necesita
+`confession_script`. `CaseDefinition::supportedEndings()` es la fuente de
+verdad, y la valida tanto el formulario como el servidor: un caso sin guion no
+puede vender el final premium.
 
 **Final clasico:** cuando **todos** los jugadores han acusado, el sistema revela
 la solucion solo. Cuentan todos los jugadores, incluido el jugador-dueno en modo
@@ -117,6 +137,49 @@ Al revelar:
 
 **Revelar no cierra la partida.** Son dos acciones distintas: el final premium
 le entrega al GM un audio para reproducir en la mesa *antes* de cerrar el caso.
+
+### Epilogo personalizado (`epilogue`)
+
+Al revelar se encola **un job por acusacion** — no por jugador: quien nunca
+acuso no tiene a nadie a quien responderle. Cada uno pide al gateway el mensaje
+de ESE sospechoso para ESE jugador, lo guarda en la fila de la acusacion
+(`epilogue_body`) y lo envia por correo. Guardarlo ademas de enviarlo es lo que
+permite releerlo en `/jugador/{token}/solucion`: un correo se pierde facil y en
+la mesa no se puede volver a abrir.
+
+Lo que se le manda al gateway **cambia segun el veredicto**, y esa asimetria es
+deliberada:
+
+- Acerto → se envian `method`, `motive` y `key_evidence`.
+- Fallo → se envia **solo** la `exoneration` de ese sospechoso y el nombre del
+  culpable. Un personaje inocente no tiene por que saber como se cometio el
+  crimen, y mandarselo dejaria al modelo filtrar la solucion en un mensaje que
+  el jugador lee.
+
+`solucion.md` no se envia en ningun caso.
+
+`epilogue_body` esta en `$hidden`: la pagina de acusacion serializa este modelo
+y es alcanzable antes de la revelacion. Se opta explicitamente con
+`revealEpilogue()`, igual que `Player::revealCredentials()`.
+
+### Confesion en audio (`confession_audio`)
+
+**No usa un endpoint nuevo.** El guion esta autorado en el manifiesto, asi que
+es `/tts` normal: el modelo lo lee, no lo escribe. La voz sale de
+`solution.confession_voice`.
+
+No se le manda a nadie por correo. Vive en la consola del GM
+(`/partidas/{id}/audio-final`, bajo `can:control`) para que lo reproduzca en voz
+alta: la gracia es que la mesa lo escuche junta y una sola vez. Un link por
+jugador seria otra mecanica, peor.
+
+### Si la IA falla
+
+Los dos extras se disparan **despues** de que la revelacion ya quedo marcada, y
+nunca la deshacen. Si el gateway esta caido, si el caso perdio el contenido que
+ese final necesita, o si la reserva de creditos se devolvio antes de revelar, se
+salta el extra y se registra en el log — la mesa se queda con el cierre clasico,
+que es un final completo por si solo. Nunca se cobra un extra que no se entrego.
 
 El interrogatorio tambien se elige al crear y ya no se puede encender a mitad de
 partida, por la misma razon: encenderlo despues seria consumo de IA no
@@ -147,6 +210,91 @@ vive en disco, asi que ninguna cascada de base de datos lo alcanza.
 
 Subir el limite es seguro. Bajarlo **no borra nada**: las cuentas por encima del
 nuevo tope simplemente no pueden crear hasta volver por debajo.
+
+## 4.2.3 Creditos de IA
+
+Todo lo que llama a un modelo de verdad se mide en **creditos**, en un monedero
+por cuenta. Los audios de la linea de tiempo y el final clasico **no cuestan**:
+son contenido autorado o TTS incluido.
+
+| | Cuesta |
+|---|---|
+| Pregunta a un sospechoso | 1 |
+| Final clasico | 0 |
+| Epilogo personalizado | 10 |
+| Audio de confesion | 15 |
+| Audios de la linea de tiempo | 0 |
+
+### La reserva
+
+Al **iniciar** la partida se congela de una vez **todo el techo** que esa
+partida podria llegar a consumir. Si no alcanza, la partida no arranca y el GM
+ve cuanto le falta — con la mesa todavia sin sentarse, que es el unico momento
+en que eso se puede arreglar.
+
+El techo **no depende de cuantos jugadores haya**: un sospechoso pertenece al
+primer jugador que lo interroga de verdad, asi que el presupuesto es
+`sospechosos x preguntas` (45 en steve-jacobs) jueguen tres personas u ocho.
+
+Al **cerrar** el caso se devuelve lo que no se uso. Una mesa que solo interroga
+a tres personas paga tres, no nueve. Eliminar la partida tambien devuelve, y lo
+hace **antes** del delete: la fila del hold se va en cascada con la partida.
+
+`Support/AiCredits` es lo unico que mueve creditos. Cada movimiento cambia el
+monedero y escribe en el ledger dentro de la misma transaccion, con lock sobre
+la fila: son dos escrituras que no pueden separarse nunca.
+
+- `ai_credit_wallets` — `balance` (libre) y `reserved` (congelado). Columnas
+  unsigned a proposito: un sobregiro falla en la base de datos en vez de
+  regalar llamadas al modelo.
+- `ai_credit_ledger` — append-only. Una correccion es una entrada nueva con el
+  signo opuesto, nunca un update.
+- `ai_credit_holds` — una reserva por partida (`unique(game_id)`, que es lo que
+  hace que el doble clic en "Iniciar caso" congele una sola vez).
+
+### Partidas de varias sesiones
+
+Jugar un caso en dos fines de semana es normal, y la reserva no puede quedarse
+congelada la semana entera.
+
+**Pausar devuelve, reanudar vuelve a congelar.** Al pausar, la capacidad
+restante vuelve al saldo de inmediato. Al reanudar se congela otra vez, pero
+**solo lo que le queda**: una partida que ya hizo 12 preguntas vuelve a reservar
+33, no 45. Lo ya usado no se cobra dos veces.
+
+Si al reanudar el saldo ya no alcanza (se fue en otra mesa), la partida **se
+queda en pausa** y dice por que. Una partida corriendo cuyos sospechosos no
+responden es peor que una pausada: solo la pausada explica el problema.
+
+### Partidas abandonadas
+
+Una partida que nadie cierra **ni pausa** congelaria su reserva para siempre. El
+scheduler corre cada hora `immersion:release-stale-holds`, que devuelve la
+reserva de las partidas sin actividad en `IMMERSION_STALE_HOLD_HOURS` (una
+semana por defecto) y **deja la partida intacta** — cerrarla desde un cron le
+ocultaria el final a una mesa que todavia podria volver.
+
+Esa partida deja de poder interrogar, que es lo honesto una vez devuelta la
+capacidad. Su consola muestra el estado y ofrece **"Reactivar IA"**, que vuelve
+a congelar lo que le queda. Es un boton y no algo automatico dentro de la
+pregunta de un jugador: reactivar debita el monedero del GM, y eso no puede
+pasar sin que el GM lo decida.
+
+### Casos borde deliberados
+
+- Una partida **sin hold** corre gratis. Es lo que mantiene jugables las
+  partidas que ya estaban en curso cuando se desplego esto.
+- Una partida cuyo hold fue **liberado** ya no puede gastar: sus creditos
+  volvieron al monedero y dejarla seguir seria gastarlos dos veces.
+- Si cobrar falla despues de tomar el turno, el turno se **devuelve**: el
+  jugador no pierde una de sus cinco preguntas por algo que no ocurrio.
+
+### Comandos
+
+```
+php artisan immersion:grant-credits correo@ejemplo.com 100 --note="Compensacion"
+php artisan immersion:release-stale-holds --dry-run
+```
 
 ## 4.3 Cola
 

@@ -65,6 +65,57 @@ class CaseRegistryTest extends TestCase
         $this->assertSame([], $problems, implode("\n", $problems));
     }
 
+    public function test_a_solved_case_exonerates_every_innocent_suspect(): void
+    {
+        $problems = [];
+
+        foreach ($this->registry()->all() as $case) {
+            if (! $case->hasSolution()) {
+                continue;
+            }
+
+            foreach (array_keys($case->suspects()) as $slug) {
+                $exoneration = $case->exonerationFor($slug);
+
+                if ($slug === $case->culpritSlug()) {
+                    // Exonerating the culprit would feed the epilogue a line
+                    // arguing they could not have done it.
+                    if ($exoneration !== null) {
+                        $problems[] = "{$case->slug} → the culprit \"{$slug}\" has an exoneration";
+                    }
+
+                    continue;
+                }
+
+                // The personalised epilogue has no fallback: a missing line
+                // would leave the model to reason out the player's mistake,
+                // which is exactly inventing the ending.
+                if ($exoneration === null || $exoneration === CaseDefinition::PENDING) {
+                    $problems[] = "{$case->slug} → \"{$slug}\" has no written exoneration";
+                }
+            }
+        }
+
+        $this->assertSame([], $problems, implode("\n", $problems));
+    }
+
+    public function test_steve_jacobs_has_a_revealable_ending(): void
+    {
+        $case = $this->registry()->get('steve-jacobs');
+
+        $this->assertTrue($case->hasSolution());
+        $this->assertSame('rachel-miller', $case->culpritSlug());
+        $this->assertSame('Rachel Miller', $case->solution()['culprit']['name']);
+
+        // The long reveal is real prose, not the leftover template.
+        $body = $case->renderSolution();
+        $this->assertNotSame('', $body);
+        $this->assertStringNotContainsString(CaseDefinition::PENDING, $body);
+
+        // And it is illustrated by evidence the table already received.
+        $this->assertNotEmpty($case->solution()['gallery']);
+    }
+
     public function test_an_unwritten_solution_is_treated_as_absent(): void
     {
         // The placeholder must never be revealable: a table would be shown

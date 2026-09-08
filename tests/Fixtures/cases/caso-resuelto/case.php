@@ -61,7 +61,8 @@ return [
         'exonerations' => [
             'el-inocente' => 'El vecino estaba de viaje esa semana.',
         ],
-        'confession_script' => null,
+        'confession_voice' => 'Kore',
+        'confession_script' => 'Lo hice yo. Me quedaba con el seguro y nadie iba a notarlo.',
     ],
 
     'timeline' => [

@@ -222,13 +222,60 @@ class FullJourneyTest extends TestCase
             'suspect_name' => 'Daniel Blake',
         ]);
 
-        // steve-jacobs has no culprit written yet, so there is nothing to
-        // reveal and the ending stays closed.
+        // One of two players has accused, so the ending stays shut. 403, not
+        // 404: the case does have a written solution, it is just not yours yet.
         $this->assertFalse($game->fresh()->endingRevealed());
-        $this->get(route('immersion.player.solution', $token))->assertNotFound();
+        $this->get(route('immersion.player.solution', $token))->assertForbidden();
 
         /* ---------------------------------------------------------------
-         | 8. Close the case and review it
+         | 8. The last accusation ends the game by itself
+         |-------------------------------------------------------------- */
+
+        $betoToken = Player::firstWhere('email', 'beto@example.com')->access_token;
+
+        $this->post(route('immersion.player.accusation.store', $betoToken), [
+            'suspect_slug' => 'rachel-miller',
+            'weapon' => 'Cápsulas con digitoxina',
+            'motive' => 'Justicia por su cuenta',
+        ])->assertRedirect(route('immersion.player.solution', $betoToken));
+
+        $game = $game->fresh();
+        $this->assertTrue($game->endingRevealed());
+        $this->assertSame('auto', $game->ending_revealed_by);
+
+        // Revealing is not finishing: the game is still running.
+        $this->assertTrue($game->isRunning());
+
+        // Both players get in, and the verdicts are frozen onto the rows.
+        $this->get(route('immersion.player.solution', $token))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Player/Solution')
+                ->where('solution.culprit.name', 'Rachel Miller')
+                ->where('correctCount', 1)
+                ->has('scoreboard', 2)
+            );
+
+        $this->get(route('immersion.player.solution', $betoToken))->assertOk();
+
+        $this->assertDatabaseHas('immersion_accusations', [
+            'suspect_slug' => 'rachel-miller',
+            'was_correct' => true,
+        ]);
+        $this->assertDatabaseHas('immersion_accusations', [
+            'suspect_slug' => 'daniel-blake',
+            'was_correct' => false,
+        ]);
+
+        // With the answer on screen, nobody gets to change their mind.
+        $this->post(route('immersion.player.accusation.store', $token), [
+            'suspect_slug' => 'rachel-miller',
+            'weapon' => 'Ahora sí',
+            'motive' => 'Ahora sí',
+        ])->assertForbidden();
+
+        /* ---------------------------------------------------------------
+         | 9. Close the case and review it
          |-------------------------------------------------------------- */
 
         $this->actingAs($gameMaster);
@@ -239,13 +286,18 @@ class FullJourneyTest extends TestCase
 
         $this->get(route('immersion.gm.game.results', $game))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->has('game.players', 2));
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('game.players', 2)
+                ->where('scoreboard.0.correct', false)
+                ->where('scoreboard.1.correct', true)
+                ->where('solution.culprit_name', 'Rachel Miller')
+            );
 
         $this->post(route('immersion.gm.game.finish', $game))->assertRedirect();
         $this->assertTrue($game->fresh()->isFinished());
 
         /* ---------------------------------------------------------------
-         | 9. Delete it, which frees the slot
+         | 10. Delete it, which frees the slot
          |-------------------------------------------------------------- */
 
         $this->delete(route('immersion.gm.game.destroy', $game))

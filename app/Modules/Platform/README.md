@@ -51,6 +51,28 @@ centavos en la práctica, así que para `currency = COP` son pesos enteros
 > manifiesto. Ajústalo antes de vender, en la base de datos o en el manifiesto
 > con `--prices`.
 
+## Recargas de créditos de IA
+
+Segunda línea de ingreso, además del caso. Se venden en paquetes declarados en
+`config/platform.php` (`credit_packages`) — también con precios placeholder.
+
+La división es deliberada: **vender** créditos es comercio y vive aquí; **qué
+compra** un crédito es una propiedad del motor y vive en `config/immersion.php`.
+Así la dirección de dependencia se mantiene — la plataforma lee el motor, nunca
+al revés — y el monedero puede existir aunque no haya nada que vender.
+
+Adquirir un caso incluye los créditos para jugarlo **al máximo** una vez, y
+**una sola vez por caso**: reintentar un webhook de compra no acuña créditos.
+
+La cantidad no está en config: se deriva del propio caso — todas las preguntas
+que permite su elenco más su final más caro (`GameCost::maxForCase`). Para
+steve-jacobs son 9 × 5 + 15 = **60**. Un caso con doce sospechosos vendrá con
+más, sin tocar nada.
+
+Mientras `simulated_checkout` esté encendido, la recarga se entrega sin cobrar,
+igual que los casos. Ver [Immersion/README.md](../Immersion/README.md) §4.2.3
+para cómo se reservan y se devuelven.
+
 ## Cuentas y acceso
 
 Hay dos tipos de participante y **no** se mezclan:

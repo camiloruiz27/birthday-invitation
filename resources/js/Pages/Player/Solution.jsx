@@ -1,6 +1,7 @@
 import { Head } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
 import GalleryGrid from '../../components/player/GalleryGrid';
+import usePoll from '../../hooks/usePoll';
 
 function Verdict({ correct }) {
     if (correct === null) {
@@ -24,6 +25,50 @@ function Verdict({ correct }) {
     );
 }
 
+/**
+ * The message from the person this player accused.
+ *
+ * Placed right after their own verdict and before the full reconstruction: it
+ * is the personal answer to what they wrote, and it lands hardest while their
+ * own accusation is still on screen.
+ */
+function Epilogue({ epilogue }) {
+    if (epilogue.status === 'pending') {
+        return (
+            <section className="mt-5 border-2 border-dashed border-paper-line p-4 text-center">
+                <p className="case-stamp text-[10px] text-paper-muted">
+                    {epilogue.suspect_name} te está escribiendo
+                </p>
+                <p className="mt-2 text-sm text-paper-muted">
+                    Su mensaje llegará a tu correo en un momento, y también aparecerá aquí.
+                </p>
+            </section>
+        );
+    }
+
+    if (epilogue.status !== 'ready' || !epilogue.body) {
+        return null;
+    }
+
+    return (
+        <section className="mt-5 border-2 border-paper-ink bg-paper-raised p-4 sm:p-6">
+            <p className="case-stamp text-[10px] text-paper-muted">
+                Un mensaje de {epilogue.suspect_name}
+            </p>
+
+            <div className="mt-3 border-l-2 border-paper-ink pl-4">
+                {epilogue.body
+                    .split(/\n{2,}/)
+                    .map((paragraph, index) => (
+                        <p key={index} className="mt-3 text-[15px] leading-relaxed first:mt-0">
+                            {paragraph}
+                        </p>
+                    ))}
+            </div>
+        </section>
+    );
+}
+
 export default function Solution({
     player,
     game,
@@ -31,9 +76,17 @@ export default function Solution({
     scoreboard,
     correctCount,
     revealedBy,
+    epilogue,
 }) {
     const you = scoreboard.find((row) => row.is_you);
     const total = scoreboard.length;
+
+    // The epilogue is written on the queue after the reveal, so a player who
+    // opens this page immediately would otherwise have to refresh by hand.
+    usePoll(['epilogue'], {
+        interval: 8000,
+        enabled: epilogue?.status === 'pending',
+    });
 
     return (
         <PlayerLayout
@@ -98,6 +151,8 @@ export default function Solution({
                     )}
                 </section>
             )}
+
+            {epilogue && <Epilogue epilogue={epilogue} />}
 
             {solution.key_evidence?.length > 0 && (
                 <section className="mt-5 border-2 border-paper-ink bg-paper-raised p-4">

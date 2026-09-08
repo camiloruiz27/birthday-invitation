@@ -24,6 +24,53 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI credit packages
+    |--------------------------------------------------------------------------
+    |
+    | What a Game Master can buy when they run out. Selling credits is commerce
+    | and lives here; what a credit BUYS is a property of the engine and lives
+    | in config/immersion.php.
+    |
+    | While simulated_checkout is on these are handed over without payment, the
+    | same way cases are, so the whole top-up flow is walkable before there is a
+    | payment provider.
+    |
+    | PLACEHOLDER PRICING: amounts are in whole pesos (COP has no practical
+    | cents) and are reference figures, to be set before launch alongside the
+    | case price.
+    |
+    */
+
+    'credit_packages' => [
+        [
+            'id' => 'starter',
+            'name' => 'Recarga corta',
+            'credits' => 60,
+            'price_amount' => 39000,
+            'currency' => 'COP',
+            'summary' => 'Una partida completa: interrogatorio a fondo y un final avanzado.',
+        ],
+        [
+            'id' => 'standard',
+            'name' => 'Recarga estandar',
+            'credits' => 150,
+            'price_amount' => 89000,
+            'currency' => 'COP',
+            'summary' => 'Dos o tres mesas, segun cuanto interroguen.',
+            'highlight' => true,
+        ],
+        [
+            'id' => 'club',
+            'name' => 'Recarga de club',
+            'credits' => 400,
+            'price_amount' => 199000,
+            'currency' => 'COP',
+            'summary' => 'Para quien juega seguido o dirige varias mesas al mes.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Search engine indexing
     |--------------------------------------------------------------------------
     |

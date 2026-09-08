@@ -60,27 +60,48 @@ ponen este material en boca de un personaje.
 
 ```php
 'solution' => [
-    'culprit_slug' => 'kevin-huang',   // debe existir en 'suspects'
+    'culprit_slug' => 'rachel-miller',  // debe existir en 'suspects'
     'headline'     => 'La frase que cierra el caso.',
     'motive'       => 'Por qué lo hizo.',
     'method'       => 'Cómo lo hizo.',
     'key_evidence' => ['La prueba que lo señala.'],
-    'file'         => 'solucion.md',   // la revelación larga, verbatim
+    'file'         => 'solucion.md',    // la revelación larga, verbatim
 
     // Por qué CADA inocente no pudo ser. Lo usa el epílogo personalizado:
     // sin una línea autorada por sospechoso, el modelo tendría que razonar
     // el error del jugador, que es justo inventar el desenlace.
     'exonerations' => ['elizabeth-foster' => '…'],
 
-    // Guion de confesión, escrito para reproducirse tal cual.
-    'confession_script' => null,
+    // Guion de confesión, escrito para reproducirse tal cual, y la voz que
+    // lo lee (nombre de voz de Gemini; null usa la del gateway).
+    'confession_voice'  => 'Kore',
+    'confession_script' => '…',
 ],
 ```
+
+**Qué finales ofrece el caso lo decide este bloque**, no el código. Sin
+`exonerations` completas no hay epílogo; sin `confession_script` no hay audio de
+confesión. `CaseDefinition::supportedEndings()` lo calcula, y el formulario de
+creación muestra el resto como "No disponible en este caso" en vez de
+esconderlo — para que se vea qué le falta al caso.
 
 **Mientras `culprit_slug` sea `PENDIENTE`, o nombre a alguien que no está en
 `suspects`, el caso se considera sin solución**: no se ofrece revelar nada. Es
 deliberado — una mesa nunca debe ver "PENDIENTE" como respuesta. Un slug mal
 escrito lo detecta el test de integridad del manifiesto, no los jugadores.
+
+Dos reglas más las verifica `CaseRegistryTest` sobre **todos** los casos
+instalados, no solo el actual:
+
+- Todo sospechoso que no sea el culpable necesita su `exoneration` escrita. El
+  epílogo personalizado no tiene plan B: sin esa línea, el modelo tendría que
+  deducir en qué se equivocó el jugador.
+- El culpable **no** lleva `exoneration`. Sería darle al epílogo un argumento de
+  por qué no pudo haber sido quien fue.
+
+`solucion.md` también aparece en `gallery`, como cualquier otro `source_file`:
+así la revelación puede reusar las mismas fotos de evidencia que la mesa ya vio,
+sin schema nuevo.
 
 > **`solucion.md` nunca debe llegar al servicio de IA.** Los testimonios de
 > `content/suspects/` sí se le envían verbatim durante los interrogatorios; la

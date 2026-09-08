@@ -2,8 +2,12 @@
 
 namespace App\Modules\Immersion\Support;
 
+use App\Modules\Immersion\Jobs\GenerateEndingAudio;
+use App\Modules\Immersion\Jobs\SendEpilogue;
+use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Publishes a game's ending.
@@ -23,8 +27,11 @@ class RevealEnding
 
     public const BY_GAME_MASTER = 'gm';
 
-    public function __construct(private AccusationScoreboard $scoreboard)
-    {
+    public function __construct(
+        private AccusationScoreboard $scoreboard,
+        private AiCredits $credits,
+        private GameCost $cost,
+    ) {
     }
 
     /**
@@ -84,6 +91,83 @@ class RevealEnding
         // during this game.
         $this->scoreboard->persistVerdicts($game);
 
+        $this->deliverAdvancedEnding($game);
+
         return true;
+    }
+
+    /**
+     * Kicks off whatever the chosen ending adds on top of the classic reveal.
+     *
+     * Runs after the timestamp is already flipped, and never undoes it. The
+     * solution is published the moment the reveal is claimed; the epilogue and
+     * the audio are extras that arrive minutes later, and a table whose gateway
+     * is down still has a finished case rather than a hung one.
+     *
+     * Everything expensive is queued. Revealing happens in a browser request,
+     * and generating six epilogues inline would time it out.
+     */
+    private function deliverAdvancedEnding(Game $game): void
+    {
+        if ($game->ending_type === Game::ENDING_CLASSIC) {
+            return;
+        }
+
+        $case = $game->caseDefinition();
+
+        // The case may have lost the content this ending needs since the game
+        // was created. Degrading to the classic reveal is the right answer:
+        // the table still gets its ending.
+        if (! $case->supportsEnding((string) $game->ending_type)) {
+            Log::warning('immersion_ending_unsupported_by_case', [
+                'game_id' => $game->id,
+                'ending_type' => $game->ending_type,
+                'case_slug' => $game->case_slug,
+            ]);
+
+            return;
+        }
+
+        // The ending's cost was frozen when the game started, so this should
+        // always succeed. It can still fail if the reservation was returned in
+        // between — a long pause, or the stale-hold sweeper — and in that case
+        // the extras are skipped rather than taken for free.
+        $price = $this->cost->endingCost((string) $game->ending_type);
+
+        if (! $this->credits->spend($game, $price, "Final: {$game->ending_type}")) {
+            Log::warning('immersion_ending_not_funded', [
+                'game_id' => $game->id,
+                'ending_type' => $game->ending_type,
+                'credits' => $price,
+            ]);
+
+            return;
+        }
+
+        match ($game->ending_type) {
+            Game::ENDING_EPILOGUE => $this->queueEpilogues($game),
+            Game::ENDING_CONFESSION_AUDIO => $this->queueConfessionAudio($game),
+            default => null,
+        };
+    }
+
+    /**
+     * One job per accusation. Players who never accused get nothing, because
+     * there is no one for a character to be answering.
+     */
+    private function queueEpilogues(Game $game): void
+    {
+        foreach ($game->accusations()->get() as $accusation) {
+            $accusation->update(['epilogue_status' => Accusation::EPILOGUE_PENDING]);
+
+            SendEpilogue::dispatch($accusation->id);
+        }
+    }
+
+    private function queueConfessionAudio(Game $game): void
+    {
+        $game->update(['ending_audio_status' => Game::AUDIO_PENDING]);
+
+        GenerateEndingAudio::dispatch($game->id);
     }
 }

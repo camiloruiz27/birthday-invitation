@@ -25,6 +25,9 @@ class EndingRevealTest extends TestCase
 
     private const CASE_SLUG = 'caso-resuelto';
 
+    /** A fixture case whose culprit is still the PENDIENTE placeholder. */
+    private const UNWRITTEN_CASE_SLUG = 'caso-pendiente';
+
     private const CULPRIT = 'la-culpable';
 
     private const INNOCENT = 'el-inocente';
@@ -297,12 +300,13 @@ class EndingRevealTest extends TestCase
 
     public function test_a_game_master_cannot_reveal_a_case_with_no_written_solution(): void
     {
-        // The shipped case still has the PENDIENTE placeholder.
-        $this->app->singleton(CaseRegistry::class, fn () => new CaseRegistry());
-        config(['immersion.default_case' => 'steve-jacobs']);
+        // A fixture whose culprit is still the PENDIENTE placeholder. The
+        // accusation phase is open and the account owns the case: the only
+        // thing missing is an ending, and that alone must close the door.
+        config(['immersion.default_case' => self::UNWRITTEN_CASE_SLUG]);
 
-        $owner = $this->gameMaster();
-        [$game] = $this->gameOwnedBy($owner);
+        $owner = $this->gameMaster(self::UNWRITTEN_CASE_SLUG);
+        [$game] = $this->gameOwnedBy($owner, ['case_slug' => self::UNWRITTEN_CASE_SLUG]);
         $game->timelineEvents()->create([
             'type' => 'unlock',
             'trigger_offset_minutes' => 1,
