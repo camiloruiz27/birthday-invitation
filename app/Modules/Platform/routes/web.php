@@ -14,6 +14,7 @@ use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
 use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
+use App\Modules\Platform\Http\Controllers\RedeemCodeController;
 use App\Modules\Platform\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -73,8 +74,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/salir', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // Stand-in for checkout until a payment provider exists; 404s when the
-    // simulation is off (see config/platform.php).
+    // A real purchase always lands on review() first — what you're buying,
+    // any discount applied, the actual total — before store() ever runs.
+    // review() 404s when payments are off; store() is also the simulated
+    // stand-in's endpoint, so it stays reachable either way.
+    Route::get('/casos/{slug}/comprar', [CheckoutController::class, 'review'])
+        ->name('cases.checkout.review');
     Route::post('/casos/{slug}/adquirir', [CheckoutController::class, 'store'])
         ->name('cases.acquire');
 
@@ -89,7 +94,13 @@ Route::middleware('auth')->group(function () {
     // The AI credit wallet. The top-up is the same stand-in as case checkout
     // and 404s when the simulation is off.
     Route::get('/creditos', [CreditsController::class, 'index'])->name('credits');
+    Route::get('/creditos/comprar', [CreditsController::class, 'review'])->name('credits.checkout.review');
     Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])->name('credits.purchase');
+
+    // Gift codes only — a discount code is entered on the checkout screens
+    // themselves (it needs a price to discount), never here.
+    Route::get('/canjear', [RedeemCodeController::class, 'show'])->name('promo.redeem');
+    Route::post('/canjear', [RedeemCodeController::class, 'store'])->name('promo.redeem.store');
 
     // Platform administration. Granted only from the console
     // (php artisan platform:make-admin), never through a screen.

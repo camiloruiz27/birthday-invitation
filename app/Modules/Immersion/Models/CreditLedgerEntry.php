@@ -23,6 +23,8 @@ class CreditLedgerEntry extends Model
 
     public const REASON_ADJUST = 'adjust';
 
+    public const REASON_PROMO = 'promo';
+
     protected $table = 'ai_credit_ledger';
 
     /**

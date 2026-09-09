@@ -3,8 +3,10 @@
 namespace App\Modules\Platform;
 
 use App\Modules\Platform\Console\Commands\ClaimGames;
+use App\Modules\Platform\Console\Commands\CreatePromoCode;
 use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
+use App\Modules\Platform\Console\Commands\ListPromoCodes;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
@@ -52,6 +54,8 @@ class PlatformServiceProvider extends ServiceProvider
                 ExpireStaleOrders::class,
                 ReconcileOrder::class,
                 ReconcilePendingOrders::class,
+                CreatePromoCode::class,
+                ListPromoCodes::class,
             ]);
 
             $this->app->booted(function () {
