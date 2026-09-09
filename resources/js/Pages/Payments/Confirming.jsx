@@ -7,10 +7,12 @@ import Spinner from '../../components/ui/Spinner';
 import usePoll from '../../hooks/usePoll';
 
 /**
- * Where Bold sends the buyer back after checkout. The webhook is the one
- * thing that actually decides whether the order went through, and it can
- * land slightly after this page does — so this polls (same pattern as
- * Player/Inbox and Player/Accusation) until the order is no longer pending.
+ * Where Bold sends the buyer back after checkout.
+ *
+ * Every load of this page (the initial one, and every poll while pending)
+ * makes the backend actively re-check the order against Bold directly — not
+ * just wait for its webhook, which can be slow, misconfigured, or never
+ * arrive. See PaymentCallbackController for why.
  */
 export default function Confirming({ order }) {
     const [waitedLong, setWaitedLong] = useState(false);
@@ -26,14 +28,12 @@ export default function Confirming({ order }) {
     }, [order.status]);
 
     useEffect(() => {
-        if (order.status !== 'approved') return undefined;
+        // Credit purchases stay put so the buyer can actually read the new
+        // balance instead of being whisked away from it; a case purchase
+        // still jumps straight to the case, which is confirmation enough.
+        if (order.status !== 'approved' || order.type !== 'case' || !order.case_slug) return undefined;
 
-        const destination =
-            order.type === 'case' && order.case_slug
-                ? route('cases.show', order.case_slug)
-                : route('credits');
-
-        const timer = setTimeout(() => router.visit(destination), 1500);
+        const timer = setTimeout(() => router.visit(route('cases.show', order.case_slug)), 1500);
 
         return () => clearTimeout(timer);
     }, [order.status, order.type, order.case_slug]);
@@ -67,11 +67,29 @@ export default function Confirming({ order }) {
                     <>
                         <p className="text-3xl" aria-hidden="true">✓</p>
                         <h1 className="mt-3 text-lg font-semibold text-ink">Pago confirmado</h1>
-                        <p className="mt-2 text-sm text-ink-muted">
-                            {order.type === 'case'
-                                ? 'Ya está en tu biblioteca.'
-                                : 'Los créditos ya están en tu cuenta.'}
-                        </p>
+
+                        {order.type === 'case' ? (
+                            <p className="mt-2 text-sm text-ink-muted">Ya está en tu biblioteca.</p>
+                        ) : (
+                            <>
+                                <p className="mt-2 text-sm text-ink-muted">
+                                    Se añadieron{' '}
+                                    <span className="tabular font-semibold text-ink">
+                                        {order.credits_granted}
+                                    </span>{' '}
+                                    créditos a tu cuenta.
+                                </p>
+                                {order.wallet_available !== null && (
+                                    <p className="tabular mt-4 text-3xl font-semibold text-ink">
+                                        {order.wallet_available}
+                                        <span className="ml-1.5 text-sm font-normal text-ink-muted">
+                                            disponibles ahora
+                                        </span>
+                                    </p>
+                                )}
+                            </>
+                        )}
+
                         <Button
                             href={
                                 order.type === 'case' && order.case_slug

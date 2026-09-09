@@ -60,9 +60,11 @@ class StartCheckout
         ]);
 
         $callbackUrl = URL::route('payments.confirm', $order);
+        $link = $this->payments->createCheckoutLink($order, $callbackUrl);
 
         $order->update([
-            'checkout_url' => $this->payments->createCheckoutLink($order, $callbackUrl),
+            'checkout_url' => $link->url,
+            'provider_link_id' => $link->providerLinkId,
         ]);
 
         return $order;

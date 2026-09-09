@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  */
 class BoldPaymentProvider implements PaymentProvider
 {
-    public function createCheckoutLink(Order $order, string $callbackUrl): string
+    public function createCheckoutLink(Order $order, string $callbackUrl): PaymentCheckoutLink
     {
         $response = Http::baseUrl($this->baseUrl())
             ->withHeaders(['Authorization' => "x-api-key {$this->identityKey()}"])
@@ -42,11 +42,12 @@ class BoldPaymentProvider implements PaymentProvider
                 // rejected, so it is only sent when it actually qualifies.
                 // Bold still works without one — the buyer just has nothing
                 // to click after paying, so PaymentCallbackController's
-                // polling page is the only way to know it worked.
+                // active status check is the only way to know it worked.
                 'callback_url' => str_starts_with($callbackUrl, 'https://') ? $callbackUrl : null,
             ]));
 
         $url = $response->json('payload.url');
+        $linkId = $response->json('payload.payment_link');
 
         if (! $response->successful() || ! is_string($url) || $url === '') {
             Log::error('platform_payment_link_failed', [
@@ -60,7 +61,7 @@ class BoldPaymentProvider implements PaymentProvider
             );
         }
 
-        return $url;
+        return new PaymentCheckoutLink($url, is_string($linkId) ? $linkId : null);
     }
 
     /**
@@ -105,6 +106,54 @@ class BoldPaymentProvider implements PaymentProvider
             status: $status,
             providerPaymentId: isset($data['payment_id']) ? (string) $data['payment_id'] : null,
             raw: $payload,
+        );
+    }
+
+    /**
+     * GET /online/link/v1/{payment_link} — a different response shape than
+     * every other call here: it is NOT wrapped in "payload", and its own
+     * status vocabulary (ACTIVE/PROCESSING/PAID/REJECTED/CANCELLED/EXPIRED)
+     * is not the webhook's (SALE_APPROVED/...), so it gets its own mapping
+     * rather than reusing parseWebhookEvent.
+     */
+    public function checkStatus(Order $order): PaymentWebhookEvent
+    {
+        if (! $order->provider_link_id) {
+            // Nothing to ask about: this order predates provider_link_id
+            // being captured, or the link was never created. The webhook
+            // remains the only path for it.
+            return new PaymentWebhookEvent(null, 'unknown', null, []);
+        }
+
+        $response = Http::baseUrl($this->baseUrl())
+            ->withHeaders(['Authorization' => "x-api-key {$this->identityKey()}"])
+            ->timeout($this->timeout())
+            ->get("/online/link/v1/{$order->provider_link_id}");
+
+        if (! $response->successful()) {
+            Log::warning('platform_payment_status_check_failed', [
+                'order_id' => $order->id,
+                'status' => $response->status(),
+            ]);
+
+            return new PaymentWebhookEvent(null, 'unknown', null, []);
+        }
+
+        $body = (array) $response->json();
+
+        $status = match ($body['status'] ?? null) {
+            'PAID' => Order::STATUS_APPROVED,
+            'REJECTED', 'CANCELLED' => Order::STATUS_REJECTED,
+            'EXPIRED' => Order::STATUS_EXPIRED,
+            // ACTIVE, PROCESSING: still waiting on Bold's side.
+            default => 'unknown',
+        };
+
+        return new PaymentWebhookEvent(
+            reference: isset($body['reference']) ? (string) $body['reference'] : null,
+            status: $status,
+            providerPaymentId: isset($body['transaction_id']) ? (string) $body['transaction_id'] : null,
+            raw: $body,
         );
     }
 

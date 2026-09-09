@@ -6,6 +6,8 @@ use App\Modules\Platform\Console\Commands\ClaimGames;
 use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
+use App\Modules\Platform\Console\Commands\ReconcileOrder;
+use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
@@ -48,6 +50,8 @@ class PlatformServiceProvider extends ServiceProvider
                 ClaimGames::class,
                 MakeAdmin::class,
                 ExpireStaleOrders::class,
+                ReconcileOrder::class,
+                ReconcilePendingOrders::class,
             ]);
 
             $this->app->booted(function () {
@@ -58,6 +62,16 @@ class PlatformServiceProvider extends ServiceProvider
                 $schedule->command(ExpireStaleOrders::class)
                     ->daily()
                     ->withoutOverlapping();
+
+                // Catches a buyer who paid and closed the tab before the
+                // confirmation page's own check (or Bold's webhook) resolved
+                // it. Every 5 minutes so nobody's case or credits sit
+                // unclaimed for anywhere near the 24h expiry window.
+                if (config('platform.payments.enabled')) {
+                    $schedule->command(ReconcilePendingOrders::class)
+                        ->everyFiveMinutes()
+                        ->withoutOverlapping();
+                }
             });
         }
     }

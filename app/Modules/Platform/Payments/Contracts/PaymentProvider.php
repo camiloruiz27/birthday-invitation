@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Payments\Contracts;
 
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Payments\PaymentCheckoutLink;
 use App\Modules\Platform\Payments\PaymentWebhookEvent;
 
 /**
@@ -22,11 +23,10 @@ use App\Modules\Platform\Payments\PaymentWebhookEvent;
 interface PaymentProvider
 {
     /**
-     * Start a hosted checkout for this order and return the URL to send the
-     * buyer to. Card data is entered on the provider's own page and never
-     * reaches this application.
+     * Start a hosted checkout for this order. Card data is entered on the
+     * provider's own page and never reaches this application.
      */
-    public function createCheckoutLink(Order $order, string $callbackUrl): string;
+    public function createCheckoutLink(Order $order, string $callbackUrl): PaymentCheckoutLink;
 
     /**
      * Verify that a webhook body actually came from the provider, using the
@@ -42,4 +42,18 @@ interface PaymentProvider
      * field names or event vocabulary directly.
      */
     public function parseWebhookEvent(array $payload): PaymentWebhookEvent;
+
+    /**
+     * Actively ask the provider what happened to this order, instead of only
+     * ever waiting for a webhook.
+     *
+     * A webhook can be slow, misconfigured, or simply never arrive — it is a
+     * best-effort push, not a guarantee. Whoever calls this (the buyer's own
+     * return trip, or an operator running a reconcile command) gets the same
+     * normalised shape a webhook would have produced, so both paths settle an
+     * order through the identical, already-idempotent logic. Returns a
+     * PaymentWebhookEvent with status 'unknown' when the order has not
+     * resolved yet (still ACTIVE/PROCESSING on Bold's side).
+     */
+    public function checkStatus(Order $order): PaymentWebhookEvent;
 }
