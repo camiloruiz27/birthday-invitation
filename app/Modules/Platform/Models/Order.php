@@ -41,6 +41,7 @@ class Order extends Model
         'currency',
         'status',
         'reference',
+        'provider_link_id',
         'provider',
         'provider_payment_id',
         'checkout_url',
