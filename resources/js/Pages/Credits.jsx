@@ -50,8 +50,12 @@ function Figure({ label, value, hint, emphasis = false }) {
     );
 }
 
-function PackageCard({ pack, simulated }) {
+function PackageCard({ pack, canPurchase, simulated }) {
     const { post, processing } = useForm({ package: pack.id });
+
+    function purchase() {
+        post(route('credits.purchase'), canPurchase ? {} : { preserveScroll: true });
+    }
 
     return (
         <Card
@@ -75,15 +79,12 @@ function PackageCard({ pack, simulated }) {
             <p className="mt-3 flex-1 text-sm text-ink-muted">{pack.summary}</p>
 
             <div className="mt-5">
-                {simulated ? (
-                    <Button
-                        onClick={() =>
-                            post(route('credits.purchase'), { preserveScroll: true })
-                        }
-                        loading={processing}
-                        size="sm"
-                        className="w-full"
-                    >
+                {canPurchase ? (
+                    <Button onClick={purchase} loading={processing} size="sm" className="w-full">
+                        {processing ? 'Redirigiendo…' : 'Pagar con tarjeta'}
+                    </Button>
+                ) : simulated ? (
+                    <Button onClick={purchase} loading={processing} size="sm" className="w-full">
                         Recargar (simulado)
                     </Button>
                 ) : (
@@ -134,7 +135,7 @@ function LedgerRow({ entry }) {
     );
 }
 
-export default function Credits({ wallet, costs, packages, simulated, ledger, holds }) {
+export default function Credits({ wallet, costs, packages, simulated, canPurchase, ledger, holds }) {
     return (
         <AppLayout
             current="credits"
@@ -240,7 +241,7 @@ export default function Credits({ wallet, costs, packages, simulated, ledger, ho
                     Los créditos no caducan y se comparten entre todos tus casos.
                 </p>
 
-                {!simulated && (
+                {!canPurchase && !simulated && (
                     <Alert variant="info" className="mt-4">
                         La pasarela de pagos todavía no está conectada. Mientras tanto, escríbenos
                         y te recargamos la cuenta a mano.
@@ -249,7 +250,12 @@ export default function Credits({ wallet, costs, packages, simulated, ledger, ho
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {packages.map((pack) => (
-                        <PackageCard key={pack.id} pack={pack} simulated={simulated} />
+                        <PackageCard
+                            key={pack.id}
+                            pack={pack}
+                            canPurchase={canPurchase}
+                            simulated={simulated}
+                        />
                     ))}
                 </div>
             </section>

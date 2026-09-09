@@ -12,6 +12,8 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Bold's servers post here, not a browser with our CSRF cookie.
+        // Authenticated by BoldWebhookController's signature check instead.
+        'webhooks/bold',
     ];
 }

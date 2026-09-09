@@ -9,12 +9,12 @@ import Section from '../../components/public/Section';
 import { CaseFacts } from '../../components/public/CaseCard';
 import { formatPrice } from '../../lib/format';
 
-function PurchasePanel({ mysteryCase, owned, canSimulatePurchase }) {
+function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase }) {
     const { auth } = usePage().props;
     const { post, processing } = useForm({});
 
     function acquire() {
-        post(route('cases.acquire', mysteryCase.slug), { preserveScroll: true });
+        post(route('cases.acquire', mysteryCase.slug));
     }
 
     return (
@@ -50,6 +50,10 @@ function PurchasePanel({ mysteryCase, owned, canSimulatePurchase }) {
                             </Link>
                         </p>
                     </>
+                ) : canPurchase ? (
+                    <Button onClick={acquire} loading={processing} fullWidth>
+                        {processing ? 'Redirigiendo…' : 'Pagar con tarjeta'}
+                    </Button>
                 ) : canSimulatePurchase ? (
                     <>
                         <Button onClick={acquire} loading={processing} fullWidth>
@@ -89,7 +93,7 @@ function PurchasePanel({ mysteryCase, owned, canSimulatePurchase }) {
     );
 }
 
-export default function CaseDetail({ case: mysteryCase, owned, canSimulatePurchase }) {
+export default function CaseDetail({ case: mysteryCase, owned, canPurchase, canSimulatePurchase }) {
     return (
         <PublicLayout current="cases.index">
             <Head title={mysteryCase.name} />
@@ -138,6 +142,7 @@ export default function CaseDetail({ case: mysteryCase, owned, canSimulatePurcha
                             <PurchasePanel
                                 mysteryCase={mysteryCase}
                                 owned={owned}
+                                canPurchase={canPurchase}
                                 canSimulatePurchase={canSimulatePurchase}
                             />
                         </div>

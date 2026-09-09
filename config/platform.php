@@ -71,6 +71,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Real payments (Bold)
+    |--------------------------------------------------------------------------
+    |
+    | Independent of simulated_checkout on purpose, the same way an AI
+    | capability is switched off without touching the rest of the game
+    | (see immersion.ai.*_enabled). Both can be true in a dev environment that
+    | happens to have sandbox keys; only this flag decides whether a Game
+    | Master is offered a real card payment.
+    |
+    | Bold's Payment Link API is used rather than an embedded card form: the
+    | buyer is redirected to a page Bold hosts, so card data never reaches
+    | this server and PCI scope stays with Bold.
+    |
+    */
+
+    'payments' => [
+        'enabled' => (bool) env('PLATFORM_PAYMENTS_ENABLED', false),
+        'base_url' => env('BOLD_API_BASE_URL', 'https://integrations.api.bold.co'),
+        'identity_key' => env('BOLD_IDENTITY_KEY', ''),
+        'secret_key' => env('BOLD_SECRET_KEY', ''),
+        'timeout' => (int) env('BOLD_TIMEOUT', 15),
+
+        // An order left "pending" (checkout started, never finished) longer
+        // than this is data to clean up, not a customer to chase — it never
+        // granted anything, since only an approved webhook does that.
+        'stale_order_hours' => (int) env('PLATFORM_STALE_ORDER_HOURS', 24),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Search engine indexing
     |--------------------------------------------------------------------------
     |

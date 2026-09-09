@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\CreditLedgerEntry;
 use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Immersion\Support\GameCost;
-use Illuminate\Http\RedirectResponse;
+use App\Modules\Platform\Actions\StartCheckout;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 /**
  * The AI credit wallet: what you have, what it goes on, and how to get more.
@@ -42,6 +43,7 @@ class CreditsController extends Controller
 
             'packages' => array_values((array) config('platform.credit_packages', [])),
             'simulated' => (bool) config('platform.simulated_checkout'),
+            'canPurchase' => (bool) config('platform.payments.enabled'),
 
             // Recent history first: "where did my credits go" is the only
             // question this page really has to answer.
@@ -80,14 +82,13 @@ class CreditsController extends Controller
     }
 
     /**
-     * Stand-in for a real top-up, mirroring CheckoutController: no money, no
-     * payment details, and the credits land through the same single writer a
-     * paid top-up will use.
+     * A real Bold checkout for a credit package, or — while there is no
+     * payment provider configured — a simulated top-up that takes no money
+     * and lands through the same single writer (AiCredits::grant) a real
+     * purchase uses.
      */
-    public function purchase(Request $request, AiCredits $credits): RedirectResponse
+    public function purchase(Request $request, AiCredits $credits, StartCheckout $checkout): HttpResponse
     {
-        abort_unless(config('platform.simulated_checkout'), 404);
-
         $data = $request->validate([
             'package' => ['required', 'string'],
         ]);
@@ -100,6 +101,17 @@ class CreditsController extends Controller
                 'package' => 'Ese paquete de creditos no existe.',
             ]);
         }
+
+        if (config('platform.payments.enabled')) {
+            $order = $checkout->forCreditPackage($request->user(), $package);
+
+            // See CheckoutController::store for why this is Inertia::location()
+            // and not a plain redirect: it navigates the browser away to
+            // checkout.bold.co rather than following it as an XHR visit.
+            return Inertia::location($order->checkout_url);
+        }
+
+        abort_unless(config('platform.simulated_checkout'), 404);
 
         $credits->grant(
             $request->user(),

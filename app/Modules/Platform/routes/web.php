@@ -11,6 +11,8 @@ use App\Modules\Platform\Http\Controllers\CreditsController;
 use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
+use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
+use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
 use App\Modules\Platform\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
@@ -94,4 +96,24 @@ Route::middleware('auth')->group(function () {
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
     });
+
+    // Where Bold sends the buyer back after checkout. The page itself polls
+    // this same route (Inertia partial reload) while it waits for the
+    // webhook below to resolve the order.
+    Route::get('/pagos/{order}/confirmando', [PaymentCallbackController::class, 'show'])
+        ->whereNumber('order')
+        ->name('payments.confirm');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Payment provider webhook
+|--------------------------------------------------------------------------
+|
+| Bold, not a signed-in user: no `auth`, and excluded from CSRF verification
+| in VerifyCsrfToken::$except. The signature check inside the controller is
+| this route's real authentication.
+|
+*/
+
+Route::post('/webhooks/bold', BoldWebhookController::class)->name('payments.webhook.bold');

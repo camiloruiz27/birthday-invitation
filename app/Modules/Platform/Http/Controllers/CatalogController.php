@@ -32,6 +32,7 @@ class CatalogController extends Controller
         return Inertia::render('Public/CaseDetail', [
             'case' => CaseCardData::detail($case),
             'owned' => (bool) $request->user()?->ownsCase($case),
+            'canPurchase' => (bool) config('platform.payments.enabled'),
             'canSimulatePurchase' => (bool) config('platform.simulated_checkout'),
         ]);
     }
