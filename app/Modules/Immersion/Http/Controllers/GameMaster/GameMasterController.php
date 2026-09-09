@@ -386,8 +386,13 @@ class GameMasterController extends Controller
 
         $credits->release($game, "Partida eliminada: \"{$name}\"");
 
+        // Only recordings this game generated. Case audio is shipped with the
+        // case and shared by every table of it — deleting one game must never
+        // take a file out of the case package.
         $audioPaths = $game->timelineEvents()
             ->whereNotNull('audio_path')
+            ->get()
+            ->reject(fn (TimelineEvent $event) => $event->audioIsCaseAsset())
             ->pluck('audio_path')
             ->all();
 
