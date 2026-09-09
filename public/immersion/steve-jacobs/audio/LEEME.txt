@@ -1,0 +1,17 @@
+Audios de la linea de tiempo de este caso.
+
+Se graban FUERA de la plataforma y se despliegan con el caso, igual que las
+imagenes de public/immersion/steve-jacobs/gallery/. No se generan en tiempo de
+juego: son la misma grabacion para todas las mesas.
+
+Para obtener los guiones con su Scene y su Sample Context:
+
+    php artisan immersion:export-audio-scripts steve-jacobs
+
+Archivos esperados por el manifiesto (case.php, clave 'audio_file'):
+
+    lab-goddard.wav        Mensaje de voz - Laboratorio forense   (minuto 45)
+    llamada-anonima.wav    Llamada de numero desconocido          (minuto 50)
+
+Formato: .wav. Cualquier frecuencia sirve; el navegador y el correo los
+reproducen tal cual.

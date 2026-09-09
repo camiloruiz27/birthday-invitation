@@ -1,0 +1,202 @@
+import { useEffect, useState } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import Container from '../components/ui/Container';
+import Button from '../components/ui/Button';
+import Alert from '../components/ui/Alert';
+
+const NAV = [
+    { name: 'Casos', route: 'cases.index' },
+    { name: 'Mecánicas', route: 'mechanics' },
+    { name: 'Inteligencia artificial', route: 'ai' },
+    { name: 'Precios', route: 'pricing' },
+];
+
+function Brand({ onClick }) {
+    return (
+        <Link
+            href={route('home')}
+            onClick={onClick}
+            className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
+        >
+            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
+            Central de investigación
+        </Link>
+    );
+}
+
+/**
+ * Marketing shell.
+ *
+ * Open to everyone: a signed-in user browsing the catalog stays on the public
+ * pages instead of being bounced to their dashboard, so the header swaps its
+ * calls to action rather than the whole layout.
+ */
+export default function PublicLayout({ current, children }) {
+    const { props, url } = usePage();
+    const user = props.auth?.user;
+    const status = props.flash?.status;
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    // A navigation closes the mobile menu; otherwise it stays open over the
+    // new page.
+    useEffect(() => setMenuOpen(false), [url]);
+
+    return (
+        <div className="flex min-h-screen flex-col">
+            <a
+                href="#main"
+                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-inverse"
+            >
+                Saltar al contenido
+            </a>
+
+            <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
+                <Container width="wide">
+                    <div className="flex h-16 items-center justify-between gap-6">
+                        <Brand />
+
+                        <nav aria-label="Principal" className="hidden items-center gap-6 lg:flex">
+                            {NAV.map((item) => (
+                                <Link
+                                    key={item.route}
+                                    href={route(item.route)}
+                                    aria-current={current === item.route ? 'page' : undefined}
+                                    className={`text-sm transition-colors ${
+                                        current === item.route
+                                            ? 'font-medium text-ink'
+                                            : 'text-ink-muted hover:text-ink'
+                                    }`}
+                                >
+                                    {item.name}
+                                </Link>
+                            ))}
+                        </nav>
+
+                        <div className="hidden items-center gap-3 lg:flex">
+                            {user ? (
+                                <Button href={route('dashboard')} size="sm">
+                                    Mi panel
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button href={route('login')} variant="ghost" size="sm">
+                                        Ingresar
+                                    </Button>
+                                    <Button href={route('register')} size="sm">
+                                        Crear cuenta
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setMenuOpen((value) => !value)}
+                            aria-expanded={menuOpen}
+                            aria-controls="public-menu"
+                            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-control text-ink-muted hover:text-ink lg:hidden"
+                        >
+                            <span className="sr-only">
+                                {menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                            </span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                aria-hidden="true"
+                                className="h-5 w-5"
+                            >
+                                {menuOpen ? (
+                                    <path d="M6 6l12 12M18 6L6 18" />
+                                ) : (
+                                    <path d="M4 7h16M4 12h16M4 17h16" />
+                                )}
+                            </svg>
+                        </button>
+                    </div>
+                </Container>
+
+                {menuOpen && (
+                    <div id="public-menu" className="border-t border-line lg:hidden">
+                        <Container width="wide">
+                            <nav aria-label="Principal" className="flex flex-col py-2">
+                                {NAV.map((item) => (
+                                    <Link
+                                        key={item.route}
+                                        href={route(item.route)}
+                                        aria-current={current === item.route ? 'page' : undefined}
+                                        className={`flex min-h-12 items-center text-sm ${
+                                            current === item.route
+                                                ? 'font-medium text-ink'
+                                                : 'text-ink-muted'
+                                        }`}
+                                    >
+                                        {item.name}
+                                    </Link>
+                                ))}
+                            </nav>
+
+                            <div className="flex flex-col gap-2 border-t border-line py-4">
+                                {user ? (
+                                    <Button href={route('dashboard')} fullWidth>
+                                        Mi panel
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button href={route('register')} fullWidth>
+                                            Crear cuenta
+                                        </Button>
+                                        <Button href={route('login')} variant="secondary" fullWidth>
+                                            Ingresar
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </Container>
+                    </div>
+                )}
+            </header>
+
+            <main id="main" className="flex-1">
+                {status && (
+                    <Container width="wide" className="pt-6">
+                        <Alert variant="status">{status}</Alert>
+                    </Container>
+                )}
+
+                {children}
+            </main>
+
+            <footer className="mt-20 border-t border-line py-10">
+                <Container width="wide">
+                    <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
+                        <div className="max-w-xs">
+                            <Brand />
+                            <p className="mt-3 text-sm text-ink-muted">
+                                Misterios interactivos para jugar en equipo. Sin imprimir nada.
+                            </p>
+                        </div>
+
+                        <nav aria-label="Pie de página" className="flex flex-col gap-2.5">
+                            {NAV.map((item) => (
+                                <Link
+                                    key={item.route}
+                                    href={route(item.route)}
+                                    className="text-sm text-ink-muted hover:text-ink"
+                                >
+                                    {item.name}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
+
+                    <p className="mt-10 border-t border-line pt-6 text-xs text-ink-subtle">
+                        © {new Date().getFullYear()} Central de investigación
+                    </p>
+                </Container>
+            </footer>
+        </div>
+    );
+}

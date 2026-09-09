@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "20.19"
           cache: "npm"
 
       - name: Install dependencies
@@ -61,7 +61,14 @@ jobs:
             git reset --hard origin/main
             composer install --no-dev --optimize-autoloader --no-interaction
             php artisan migrate --force
+            # Idempotent: publishes newly installed case manifests into the
+            # catalog and refreshes their content fields. Prices and
+            # publication state set in the database are left untouched.
+            php artisan platform:sync-cases
             php artisan optimize:clear
+            # Workers hold the old code in memory; this tells the ones the
+            # scheduler starts to pick up this release.
+            php artisan queue:restart
             ls -la public/build/manifest.json
 
       # NOTA: no se puede gestionar el cron por SSH en este hosting compartido

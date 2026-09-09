@@ -3,102 +3,212 @@
 namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
-use App\Modules\Immersion\Services\SuspectInterrogationService;
-use App\Modules\Immersion\Support\CaseFileReader;
-use App\Modules\Immersion\Support\CaseSuspects;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
+use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\GameCost;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class InterrogationController extends Controller
 {
-    public function index(Player $player): View
+    public function __construct(
+        private AiCredits $credits,
+        private GameCost $cost,
+    ) {
+    }
+
+    public function index(Player $player): Response
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
 
-        $sessions = InterrogationSession::where('player_id', $player->id)->get()->keyBy('suspect_slug');
+        // Only the claiming player's NAME is shown to the others, so the
+        // related player is serialized with its credentials still hidden.
+        $sessions = InterrogationSession::where('game_id', $player->game_id)
+            ->with('player:id,name')
+            ->get()
+            ->keyBy('suspect_slug');
 
-        return view('immersion::player.interrogation-index', [
-            'player' => $player,
-            'suspects' => CaseSuspects::all(),
-            'victim' => CaseSuspects::victim(),
+        $case = $player->game->caseDefinition();
+
+        return Inertia::render('Player/InterrogationIndex', [
+            'player' => $player->revealCredentials(),
+            'game' => $player->game,
+            'suspects' => $case->suspects(),
+            'victim' => $case->victim(),
             'sessions' => $sessions,
-            'maxQuestions' => InterrogationSession::MAX_QUESTIONS,
+            'maxQuestions' => $case->interrogationQuestions(),
         ]);
     }
 
-    public function show(Player $player, string $slug): View
+    public function show(Player $player, string $slug): Response
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
-        $suspect = CaseSuspects::find($slug);
+
+        $case = $player->game->caseDefinition();
+        $suspect = $case->suspect($slug);
         abort_if(! $suspect, 404);
 
-        $session = InterrogationSession::firstOrCreate(
-            ['player_id' => $player->id, 'suspect_slug' => $slug],
-            ['game_id' => $player->game_id, 'started_at' => Carbon::now()]
-        );
+        $session = InterrogationSession::where('game_id', $player->game_id)
+            ->where('suspect_slug', $slug)
+            ->with(['messages', 'player:id,name'])
+            ->first();
 
-        $session->load('messages');
+        $lockedBy = null;
+        $revealTestimony = false;
 
-        return view('immersion::player.interrogation-chat', [
-            'player' => $player,
+        if ($session && ! $session->isOwnedBy($player)) {
+            $lockedBy = $session->player->name;
+            $revealTestimony = true;
+        } elseif ($session) {
+            $revealTestimony = $session->isClosed();
+        }
+
+        return Inertia::render('Player/InterrogationChat', [
+            'player' => $player->revealCredentials(),
+            'game' => $player->game,
             'slug' => $slug,
             'suspect' => $suspect,
-            'session' => $session,
-            'originalTestimonyHtml' => $session->isClosed()
-                ? CaseFileReader::renderFile($suspect['file'])
+            'session' => $session ?? [
+                'id' => null,
+                'player_id' => null,
+                'questions_used' => 0,
+                'max_questions' => $case->interrogationQuestions(),
+                'closed_at' => null,
+                'messages' => [],
+            ],
+            'lockedBy' => $lockedBy,
+            'originalTestimonyHtml' => $revealTestimony
+                ? $case->content()->renderFile($suspect['file'])
                 : null,
         ]);
     }
 
-    public function store(Request $request, Player $player, string $slug): RedirectResponse
+    public function ask(Request $request, Player $player, string $slug): JsonResponse
     {
         abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
-        $suspect = CaseSuspects::find($slug);
+
+        $case = $player->game->caseDefinition();
+        $suspect = $case->suspect($slug);
         abort_if(! $suspect, 404);
 
         $data = $request->validate([
             'question' => ['required', 'string', 'max:600'],
         ]);
 
-        $session = InterrogationSession::firstOrCreate(
-            ['player_id' => $player->id, 'suspect_slug' => $slug],
-            ['game_id' => $player->game_id, 'started_at' => Carbon::now()]
-        );
+        $session = $this->claimOrFindSession($player, $slug, $case->interrogationQuestions());
 
-        if ($session->isClosed()) {
-            return redirect()
-                ->route('immersion.player.interrogation.show', [$player->access_token, $slug])
-                ->with('status', 'Ya usaste tus 5 preguntas con esta persona.');
+        if (! $session->isOwnedBy($player)) {
+            return response()->json([
+                'message' => "Ya fue interrogado por {$session->player->name}.",
+                'locked' => true,
+                'locked_by' => $session->player->name,
+            ], 403);
         }
 
-        InterrogationMessage::create([
+        // Reserve the question slot BEFORE spending an AI call. A single
+        // conditional UPDATE is what actually enforces the budget: two
+        // concurrent asks from the same player (double click, two tabs) would
+        // otherwise both read the same questions_used and both write the same
+        // increment, letting the player exceed the limit.
+        if (! $session->reserveQuestion()) {
+            return response()->json([
+                'message' => "Ya usaste tus {$session->max_questions} preguntas con esta persona.",
+                'closed' => true,
+            ], 422);
+        }
+
+        // Charge the game's reservation before making the call. This should
+        // never fail — the whole question ceiling was frozen when the case
+        // started — so if it does, something released the hold underneath a
+        // running game and the honest thing is to say so rather than hand out
+        // a model call nobody paid for. The question slot just taken is given
+        // back, so the player loses nothing.
+        if (! $this->credits->spend($player->game, $this->cost->questionCost(), "Pregunta a {$suspect['name']}")) {
+            $session->releaseQuestion();
+
+            return response()->json([
+                'message' => 'Esta partida se quedo sin creditos de IA. Avisa al Game Master.',
+                'out_of_credits' => true,
+            ], 402);
+        }
+
+        $playerMessage = InterrogationMessage::create([
             'session_id' => $session->id,
             'role' => 'player',
             'content' => $data['question'],
         ]);
 
-        $reply = app(SuspectInterrogationService::class)->ask($session, $data['question']);
+        $reply = app(InterrogationProvider::class)->ask($session, $data['question']);
 
-        InterrogationMessage::create([
+        $suspectMessage = InterrogationMessage::create([
             'session_id' => $session->id,
             'role' => 'suspect',
             'content' => $reply,
         ]);
 
-        $session->questions_used++;
-
-        if ($session->questions_used >= InterrogationSession::MAX_QUESTIONS) {
+        if ($session->questionsRemaining() === 0 && ! $session->isClosed()) {
             $session->closed_at = Carbon::now();
             $session->transcript_revealed = true;
+            $session->save();
         }
 
-        $session->save();
+        return response()->json([
+            'player_message' => $playerMessage,
+            'suspect_message' => $suspectMessage,
+            'questions_used' => $session->questions_used,
+            'questions_remaining' => $session->questionsRemaining(),
+            'max_questions' => $session->max_questions,
+            'closed' => $session->isClosed(),
+            'original_testimony_html' => $session->isClosed()
+                ? $case->content()->renderFile($suspect['file'])
+                : null,
+        ]);
+    }
 
-        return redirect()->route('immersion.player.interrogation.show', [$player->access_token, $slug]);
+    /**
+     * Un sospechoso solo puede ser interrogado por el primer jugador que le
+     * mande una pregunta real (no por el primero que solo abra el chat). Usa
+     * el mismo patron de Jobs/DispatchTimelineEvent.php (transaccion corta +
+     * lockForUpdate) para que dos jugadores preguntando casi al mismo tiempo
+     * a un sospechoso nunca antes tocado no puedan reclamarlo ambos.
+     */
+    private function claimOrFindSession(Player $player, string $slug, int $maxQuestions): InterrogationSession
+    {
+        try {
+            return DB::transaction(function () use ($player, $slug, $maxQuestions) {
+                $session = InterrogationSession::where('game_id', $player->game_id)
+                    ->where('suspect_slug', $slug)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($session) {
+                    return $session;
+                }
+
+                return InterrogationSession::create([
+                    'game_id' => $player->game_id,
+                    'player_id' => $player->id,
+                    'suspect_slug' => $slug,
+                    'started_at' => Carbon::now(),
+                    // Anchor the case's budget on the session so that editing
+                    // the case never alters a game in progress.
+                    'max_questions' => $maxQuestions,
+                ]);
+            });
+        } catch (QueryException $exception) {
+            // Carrera perdida contra el unique(game_id, suspect_slug): otro
+            // jugador lo reclamo en el mismo instante.
+            return InterrogationSession::where('game_id', $player->game_id)
+                ->where('suspect_slug', $slug)
+                ->firstOrFail();
+        }
     }
 }

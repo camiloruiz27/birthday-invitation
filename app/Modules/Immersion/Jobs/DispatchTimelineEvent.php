@@ -2,11 +2,12 @@
 
 namespace App\Modules\Immersion\Jobs;
 
+use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
 use App\Modules\Immersion\Mail\CaseTimelineMail;
 use App\Modules\Immersion\Models\TimelineEvent;
-use App\Modules\Immersion\Services\GeminiAudioService;
 use App\Modules\Immersion\Support\TimelineRecipients;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,15 +16,32 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
-class DispatchTimelineEvent implements ShouldQueue
+class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * The event is claimed under a lock before anything slow happens, so a
+     * duplicate can never send twice; uniqueness just stops the queue filling
+     * with jobs that will immediately no-op.
+     */
+    public int $tries = 2;
+
+    public int $backoff = 30;
+
+    /** Long enough for text-to-speech plus the whole mailing round. */
+    public int $timeout = 240;
 
     public function __construct(public int $eventId)
     {
     }
 
-    public function handle(GeminiAudioService $audio): void
+    public function uniqueId(): string
+    {
+        return (string) $this->eventId;
+    }
+
+    public function handle(SpeechProvider $audio): void
     {
         // La reclamacion del evento (bloqueo + marcar sent_at) es una
         // transaccion corta, solo de base de datos. Las llamadas externas
@@ -54,10 +72,15 @@ class DispatchTimelineEvent implements ShouldQueue
             return;
         }
 
+        $this->unlockMechanics($event);
+
         $recipients = TimelineRecipients::resolve($event);
 
         if ($event->isAudio() && $event->audio_script && ! $event->audio_path) {
-            $event->audio_path = $audio->synthesize($event->id, $event->audio_script);
+            $event->audio_path = $audio->synthesize("event-{$event->id}", $event->audio_script);
+            $event->audio_status = $event->audio_path
+                ? TimelineEvent::AUDIO_READY
+                : TimelineEvent::AUDIO_FAILED;
             $this->saveWithReconnect($event);
         }
 
@@ -70,6 +93,30 @@ class DispatchTimelineEvent implements ShouldQueue
                 // ya quedo marcado como enviado, asi que no se reintentara solo.
                 report($exception);
             }
+        }
+    }
+
+    /**
+     * Opens up whatever this event is meant to make available.
+     *
+     * Only in automatic mode: with a directing Game Master, unlocking is their
+     * call and this must not take it away from them.
+     *
+     * An event flagged cta_interrogation is one that points players at the
+     * suspects, so it is by definition the moment interrogation becomes
+     * available. Reusing that flag means a case author controls the timing by
+     * placing it, with no extra schema.
+     */
+    private function unlockMechanics(TimelineEvent $event): void
+    {
+        $game = $event->game;
+
+        if (! $game->isAutomatic()) {
+            return;
+        }
+
+        if ($event->cta_interrogation && ! $game->interrogation_enabled) {
+            $game->update(['interrogation_enabled' => true]);
         }
     }
 

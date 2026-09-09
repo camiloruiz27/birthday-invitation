@@ -8,7 +8,7 @@
     <table role="presentation" width="100%" style="max-width:640px;margin:0 auto;background:#f5efe0;border:1px solid #8a7b57;">
         <tr>
             <td style="padding:18px 24px;background:#241f14;color:#e9e2d0;">
-                <p style="margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Caso SF 554301 &mdash; Confidencial</p>
+                <p style="margin:0;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Caso {{ $caseCode }} &mdash; Confidencial</p>
                 <h1 style="margin:6px 0 0;font-size:20px;">{{ $event->title }}</h1>
                 <p style="margin:8px 0 0;font-size:12px;color:#c9b98a;">Para: {{ $player->name }}</p>
             </td>
@@ -57,7 +57,7 @@
                                     <td width="50%" valign="top" style="padding:8px;">
                                         <table role="presentation" width="100%" style="background:#ffffff;border:1px solid #8a7b57;">
                                             <tr><td style="padding:6px;">
-                                                <img src="{{ $message->embed(public_path('immersion/gallery/'.$item['file'])) }}"
+                                                <img src="{{ $message->embed($assetPath($item['url'])) }}"
                                                      alt="{{ $item['caption'] }}" width="280" style="max-width:100%;display:block;">
                                             </td></tr>
                                             <tr><td style="padding:0 8px 8px;font-size:11px;line-height:1.4;color:#5c5236;">
@@ -83,7 +83,7 @@
                        style="display:inline-block;background:#241f14;color:#e9e2d0;text-decoration:none;padding:12px 24px;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;">
                         Interrogar a los sospechosos
                     </a>
-                    <p style="margin:8px 0 0;font-size:12px;color:#5c5236;">Tienes 5 preguntas por persona.</p>
+                    <p style="margin:8px 0 0;font-size:12px;color:#5c5236;">Tienes {{ $interrogationQuestions }} preguntas por persona.</p>
                 </td>
             </tr>
         @endif
@@ -104,7 +104,7 @@
         </tr>
         <tr>
             <td style="padding:14px 24px;background:#dcd2b4;font-size:11px;color:#5c5236;">
-                Uso oficial solamente. No redistribuir. &mdash; Departamento de Policia de San Francisco
+                Uso oficial solamente. No redistribuir. &mdash; {{ $caseAuthority }}
             </td>
         </tr>
     </table>

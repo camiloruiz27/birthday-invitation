@@ -1,34 +1,246 @@
 @import "tailwindcss";
 
-@theme {
-    --font-romantic: "Cormorant Garamond", serif;
-    --font-sans: "Montserrat", sans-serif;
+/*
+|------------------------------------------------------------------------------
+| Design tokens
+|------------------------------------------------------------------------------
+|
+| TWO SURFACES, on purpose.
+|
+| "Platform" is the product: catalog, account, dashboard, Game Master console.
+| A dark, quiet agency console — it should feel like software.
+|
+| "Case" is the fiction: the dossier a player reads. Light paper, typewriter,
+| sharp edges. A case may later ship its own palette; nothing in the platform
+| chrome depends on these values.
+|
+| The contrast between them is the point: you sit in a dark console and the
+| evidence you open is paper.
+|
+| Always use the semantic names (surface, text-muted, accent) rather than raw
+| colours, so a retheme is a change here and nowhere else.
+|
+*/
 
-    --color-romantic-50: #fff8fa;
-    --color-romantic-100: #ffeef3;
-    --color-romantic-200: #ffdce7;
-    --color-romantic-300: #ffb9cf;
-    --color-romantic-400: #ff86ad;
-    --color-romantic-500: #f94f88;
-    --color-romantic-600: #e72868;
-    --color-romantic-700: #c41950;
-    --color-romantic-800: #a41945;
-    --color-romantic-900: #891a3d;
+@theme {
+    /* ---- Type -------------------------------------------------------- */
+    --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    /* Fiction only. */
+    --font-stamp: "Special Elite", ui-monospace, monospace;
+    --font-case: "Courier Prime", ui-monospace, monospace;
+
+    /* ---- Platform surface -------------------------------------------- */
+    /* Deliberately not pure black: a blue-tinted charcoal reads as a screen,
+       not as a void, and keeps large areas from feeling like a hole. */
+    --color-surface: #14171d;
+    --color-surface-raised: #1c2029;
+    --color-surface-overlay: #22273180;
+    --color-surface-sunken: #0f1216;
+
+    --color-line: #2c313c;
+    --color-line-strong: #3d4451;
+
+    --color-ink: #e8eaee;
+    --color-ink-muted: #9aa2b1;
+    --color-ink-subtle: #6b7383;
+    --color-ink-inverse: #14171d;
+
+    /* Brass: archives and evidence tags, without going gold-plated. */
+    --color-accent: #d9a441;
+    --color-accent-strong: #e8b95d;
+    --color-accent-dim: #6b5222;
+
+    --color-danger: #e5484d;
+    --color-danger-dim: #5c1f21;
+    --color-success: #46a758;
+    --color-success-dim: #1e4527;
+    --color-warning: #f5a623;
+    --color-info: #5b9dd9;
+
+    /* ---- Case surface (fiction) -------------------------------------- */
+    --color-paper: #e9e2d0;
+    --color-paper-raised: #f5efe0;
+    --color-paper-sunken: #dcd2b4;
+    --color-paper-ink: #241f14;
+    --color-paper-muted: #5c5236;
+    --color-paper-line: #8a7b57;
+    --color-paper-accent: #c9b98a;
+
+    /* ---- Radius ------------------------------------------------------ */
+    /* Platform rounds softly; the case stays sharp, like paper. */
+    --radius-card: 0.5rem;
+    --radius-control: 0.375rem;
+
+    /* ---- Elevation --------------------------------------------------- */
+    /* Low-opacity and tight: enough to lift a card off the console, never a
+       glow. */
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+    --shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
 }
+
+/*
+|------------------------------------------------------------------------------
+| Base
+|------------------------------------------------------------------------------
+*/
 
 html {
     scroll-behavior: smooth;
+    /* Never let a fixed header hide the anchor it scrolls to. */
+    scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 body {
     margin: 0;
     min-height: 100vh;
-    overflow-x: hidden;
     font-family: var(--font-sans);
-    background: #fff8fa;
-    color: #3f1727;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
 }
 
-[x-cloak] {
-    display: none !important;
+/* A visible, consistent focus ring everywhere. Removing outlines without a
+   replacement makes the app unusable by keyboard. */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Numbers that change in place (game clock, question counters) must not make
+   the layout jitter. */
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+|------------------------------------------------------------------------------
+| Fiction surface
+|------------------------------------------------------------------------------
+|
+| Applied by PlayerLayout. Scoped to a class so the platform chrome is never
+| affected by the case's look.
+|
+*/
+
+.case-surface {
+    background: var(--color-paper);
+    color: var(--color-paper-ink);
+    font-family: var(--font-case);
+}
+
+.case-surface :focus-visible {
+    outline-color: var(--color-paper-ink);
+}
+
+.case-stamp {
+    font-family: var(--font-stamp);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+/*
+|------------------------------------------------------------------------------
+| Case prose
+|------------------------------------------------------------------------------
+|
+| Envelope and testimony markdown is rendered server-side, so it arrives as
+| bare HTML with no classes to hook onto. These rules are what make it legible.
+|
+*/
+
+.case-prose {
+    line-height: 1.75;
+}
+
+.case-prose > * + * {
+    margin-top: 1rem;
+}
+
+.case-prose h1,
+.case-prose h2,
+.case-prose h3 {
+    font-family: var(--font-stamp);
+    line-height: 1.3;
+    margin-top: 2rem;
+}
+
+.case-prose h1 { font-size: 1.25rem; }
+.case-prose h2 { font-size: 1.125rem; }
+.case-prose h3 { font-size: 1rem; }
+
+.case-prose strong {
+    font-weight: 700;
+}
+
+.case-prose ul,
+.case-prose ol {
+    padding-left: 1.5rem;
+}
+
+.case-prose ul { list-style: disc; }
+.case-prose ol { list-style: decimal; }
+
+.case-prose li + li {
+    margin-top: 0.375rem;
+}
+
+.case-prose hr {
+    border: 0;
+    border-top: 1px dashed var(--color-paper-line);
+    margin: 1.75rem 0;
+}
+
+.case-prose blockquote {
+    border-left: 3px solid var(--color-paper-line);
+    padding-left: 1rem;
+    color: var(--color-paper-muted);
+}
+
+.case-prose table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.case-prose th,
+.case-prose td {
+    border: 1px solid var(--color-paper-line);
+    padding: 0.5rem 0.625rem;
+    text-align: left;
+}
+
+/* Long evidence tables scroll inside themselves rather than making the whole
+   page scroll sideways on a phone. */
+.case-prose {
+    overflow-x: auto;
+}
+
+/*
+|------------------------------------------------------------------------------
+| Skeleton
+|------------------------------------------------------------------------------
+*/
+
+@keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.skeleton {
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+    background: var(--color-line);
+    border-radius: var(--radius-control);
 }
