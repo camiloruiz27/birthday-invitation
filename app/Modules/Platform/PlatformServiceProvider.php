@@ -13,6 +13,7 @@ use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
@@ -113,12 +114,47 @@ class PlatformServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * The password reset mail, in Spanish and signed as MisterioCode.
+     *
+     * Same reasoning as the verification mail above, and it matters more
+     * here: this one carries a link that changes a password, arrives
+     * unprompted as far as the reader can tell, and goes out from a sender
+     * named after the case's fictional police department. In English and
+     * signed "Laravel" it is indistinguishable from a phishing attempt, and
+     * the safe reaction — deleting it — locks the person out of the account
+     * they just paid for.
+     *
+     * The expiry is read from config rather than written into the sentence,
+     * so changing auth.passwords.users.expire cannot leave the mail telling
+     * people something that is no longer true.
+     */
+    private function registerPasswordResetMail(): void
+    {
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $minutes = config('auth.passwords.users.expire');
+
+            return (new MailMessage)
+                ->subject('Restablece tu contraseña — MisterioCode')
+                ->greeting("Hola, {$notifiable->name}")
+                ->line('Recibimos una solicitud para cambiar la contraseña de tu cuenta.')
+                ->action('Elegir una contraseña nueva', route('password.reset', [
+                    'token' => $token,
+                    'email' => $notifiable->getEmailForPasswordReset(),
+                ]))
+                ->line("El enlace caduca en {$minutes} minutos.")
+                ->line('Si no fuiste tú, puedes ignorar este mensaje: tu contraseña actual sigue funcionando y no se hará ningún cambio.')
+                ->salutation('MisterioCode');
+        });
+    }
+
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
 
         $this->registerPromoRateLimiter();
         $this->registerVerificationMail();
+        $this->registerPasswordResetMail();
 
         Route::middleware('web')->group(function () {
             $this->loadRoutesFrom(__DIR__.'/routes/web.php');

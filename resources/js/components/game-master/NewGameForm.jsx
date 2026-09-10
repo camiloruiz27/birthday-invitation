@@ -5,6 +5,7 @@ import Alert from '../ui/Alert';
 import { TextField, SelectField, CheckboxField } from '../ui/Field';
 import QuotaMeter from '../app/QuotaMeter';
 import PlayerRow from './PlayerRow';
+import TextLink from '../ui/TextLink';
 
 function emptyPlayer() {
     return { name: '', email: '' };
@@ -200,9 +201,9 @@ function CostEstimate({ credits, questions, interrogation, endingType }) {
             {short > 0 ? (
                 <Alert variant="warning" className="mt-3 mb-0">
                     Te faltan {short} créditos para iniciarla. Puedes crearla igual y{' '}
-                    <a href={route('credits')} className="text-accent underline">
+                    <TextLink href={route('credits')}>
                         recargar
-                    </a>{' '}
+                    </TextLink>{' '}
                     antes de empezar.
                 </Alert>
             ) : (

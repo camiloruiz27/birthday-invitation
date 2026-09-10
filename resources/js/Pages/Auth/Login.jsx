@@ -3,7 +3,8 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
-import { TextField, CheckboxField } from '../../components/ui/Field';
+import { TextField, PasswordField, CheckboxField } from '../../components/ui/Field';
+import TextLink from '../../components/ui/TextLink';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -33,9 +34,9 @@ export default function Login() {
             footer={
                 <>
                     ¿No tienes cuenta?{' '}
-                    <Link href={route('register')} className="font-medium text-accent underline">
+                    <TextLink href={route('register')}>
                         Crear una
-                    </Link>
+                    </TextLink>
                 </>
             }
         >
@@ -56,10 +57,9 @@ export default function Login() {
                     autoFocus
                 />
 
-                <TextField
+                <PasswordField
                     id="password"
                     label="Contraseña"
-                    type="password"
                     value={data.password}
                     onChange={(value) => setData('password', value)}
                     error={errors.password}

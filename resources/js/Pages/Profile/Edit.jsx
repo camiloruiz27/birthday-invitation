@@ -2,7 +2,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { TextField } from '../../components/ui/Field';
+import { TextField, PasswordField } from '../../components/ui/Field';
 
 function ProfileDetails({ user }) {
     const { data, setData, patch, processing, errors } = useForm({
@@ -75,10 +75,9 @@ function PasswordSection() {
             />
 
             <form onSubmit={submit} className="space-y-5">
-                <TextField
+                <PasswordField
                     id="current_password"
                     label="Contraseña actual"
-                    type="password"
                     value={data.current_password}
                     onChange={(value) => setData('current_password', value)}
                     error={errors.current_password}
@@ -86,10 +85,9 @@ function PasswordSection() {
                     required
                 />
 
-                <TextField
+                <PasswordField
                     id="password"
                     label="Contraseña nueva"
-                    type="password"
                     value={data.password}
                     onChange={(value) => setData('password', value)}
                     error={errors.password}
@@ -98,10 +96,9 @@ function PasswordSection() {
                     required
                 />
 
-                <TextField
+                <PasswordField
                     id="password_confirmation"
                     label="Repite la contraseña nueva"
-                    type="password"
                     value={data.password_confirmation}
                     onChange={(value) => setData('password_confirmation', value)}
                     error={errors.password_confirmation}

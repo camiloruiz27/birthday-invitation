@@ -158,7 +158,27 @@ export default function InboxItem({ item, playerToken, game }) {
                                 key: 'gallery',
                                 label: 'Fotos',
                                 badge: gallery.length,
-                                content: <GalleryGrid images={gallery} />,
+                                content: (
+                                    <>
+                                        {/* Part of this envelope arrived as
+                                            scans instead of text (see
+                                            gallery_excluded_headings in the
+                                            case manifest), and those sections
+                                            are deliberately not repeated in
+                                            the document. Without saying so, a
+                                            player who read the document first
+                                            meets a pile of images and cannot
+                                            tell whether they are illustrations
+                                            or evidence they have yet to
+                                            read. */}
+                                        <p className="mb-5 text-sm text-ink-muted">
+                                            Estas piezas llegaron escaneadas. Su contenido no se
+                                            repite en el documento, así que léelas: son parte del
+                                            expediente, no ilustraciones.
+                                        </p>
+                                        <GalleryGrid images={gallery} />
+                                    </>
+                                ),
                             },
                         ]}
                     />

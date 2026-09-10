@@ -82,7 +82,12 @@ return [
     |
     */
 
-    'locale' => 'en',
+    // The product is in Spanish end to end — every page, every email. This
+    // was still on the skeleton default, which is why framework-supplied
+    // strings ("Your password has been reset!") were reaching users in
+    // English. Only the keys under lang/es are translated so far; the rest
+    // fall through to lang/en below.
+    'locale' => 'es',
 
     /*
     |--------------------------------------------------------------------------

@@ -14,12 +14,18 @@ export default function AuthLayout({ title, description, footer, children }) {
     const errors = props.errors || {};
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
             <main className="w-full max-w-md">
                 <Brand className="mb-8 justify-center" />
 
                 <div className="rounded-card border border-line bg-surface-raised p-6 shadow-raised sm:p-8">
-                    <h1 className="text-lg font-semibold text-ink">{title}</h1>
+                    {/* Same face and weight as AppLayout's h1, one step down
+                        for the narrower column. It used to be 18px Inter —
+                        smaller than the title of the page you land on right
+                        after signing in, which read as a step backwards. */}
+                    <h1 className="font-display text-xl font-semibold tracking-tight text-ink">
+                        {title}
+                    </h1>
                     {description && <p className="mt-1.5 text-sm text-ink-muted">{description}</p>}
 
                     <div className="mt-6">

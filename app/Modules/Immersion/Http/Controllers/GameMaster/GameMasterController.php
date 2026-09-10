@@ -642,14 +642,26 @@ class GameMasterController extends Controller
             : 'Interrogatorio (Mecanica 7) deshabilitado.');
     }
 
-    public function interrogations(Game $game): Response
+    public function interrogations(Game $game, CaseRegistry $cases): Response
     {
+        // The slug is the join key, not something to show a person: every
+        // other screen names the suspect, and this one was printing
+        // "elizabeth-foster" at the Game Master. Resolved here rather than
+        // prettified in the page, because a slug is not reliably a name.
+        $names = collect($cases->find($game->case_slug)?->suspects() ?? [])
+            ->map(fn (array $suspect) => $suspect['name'] ?? null);
+
         return Inertia::render('GameMaster/Interrogations', [
             'game' => $game,
             'sessions' => fn () => InterrogationSession::where('game_id', $game->id)
                 ->with(['player:id,name', 'messages'])
                 ->orderBy('suspect_slug')
-                ->get(),
+                ->get()
+                ->map(function (InterrogationSession $session) use ($names) {
+                    $session->suspect_name = $names[$session->suspect_slug] ?? null;
+
+                    return $session;
+                }),
         ]);
     }
 }

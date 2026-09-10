@@ -1,7 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
-import { TextField } from '../../components/ui/Field';
+import { TextField, PasswordField } from '../../components/ui/Field';
 
 export default function ResetPassword({ token, email }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -36,10 +36,9 @@ export default function ResetPassword({ token, email }) {
                     required
                 />
 
-                <TextField
+                <PasswordField
                     id="password"
                     label="Contraseña nueva"
-                    type="password"
                     value={data.password}
                     onChange={(value) => setData('password', value)}
                     error={errors.password}
@@ -49,10 +48,9 @@ export default function ResetPassword({ token, email }) {
                     autoFocus
                 />
 
-                <TextField
+                <PasswordField
                     id="password_confirmation"
                     label="Repite la contraseña"
-                    type="password"
                     value={data.password_confirmation}
                     onChange={(value) => setData('password_confirmation', value)}
                     error={errors.password_confirmation}

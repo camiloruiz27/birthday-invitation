@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
-import { TextField } from '../../components/ui/Field';
+import { TextField, PasswordField } from '../../components/ui/Field';
+import TextLink from '../../components/ui/TextLink';
 
 export default function Register() {
     const { data, setData, post, processing, errors } = useForm({
@@ -36,9 +37,9 @@ export default function Register() {
             footer={
                 <>
                     ¿Ya tienes cuenta?{' '}
-                    <Link href={route('login')} className="font-medium text-accent underline">
+                    <TextLink href={route('login')}>
                         Ingresar
-                    </Link>
+                    </TextLink>
                 </>
             }
         >
@@ -67,10 +68,9 @@ export default function Register() {
                     required
                 />
 
-                <TextField
+                <PasswordField
                     id="password"
                     label="Contraseña"
-                    type="password"
                     value={data.password}
                     onChange={(value) => setData('password', value)}
                     error={errors.password}
@@ -79,10 +79,9 @@ export default function Register() {
                     required
                 />
 
-                <TextField
+                <PasswordField
                     id="password_confirmation"
                     label="Repite la contraseña"
-                    type="password"
                     value={data.password_confirmation}
                     onChange={(value) => setData('password_confirmation', value)}
                     error={errors.password_confirmation}

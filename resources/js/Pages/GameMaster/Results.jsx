@@ -4,6 +4,7 @@ import Card, { CardHeader } from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 import Badge from '../../components/ui/Badge';
 import Alert from '../../components/ui/Alert';
+import usePoll from '../../hooks/usePoll';
 import { formatDateTimeShort } from '../../lib/format';
 
 function Verdict({ correct }) {
@@ -18,6 +19,14 @@ function Verdict({ correct }) {
 
 export default function Results({ game, scoreboard, solution, reveal }) {
     const submitted = scoreboard.filter((row) => row.suspect_name);
+
+    // Accusations land while the GM is watching this page. Without polling
+    // the count sits frozen and the only way to see a new one is to know to
+    // reload — on the screen whose entire job is watching them come in.
+    usePoll(['scoreboard'], {
+        interval: 10000,
+        enabled: !game.ending_revealed_at && submitted.length < scoreboard.length,
+    });
     const correct = scoreboard.filter((row) => row.correct === true).length;
 
     return (

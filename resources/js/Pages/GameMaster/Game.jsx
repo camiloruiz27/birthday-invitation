@@ -47,17 +47,19 @@ function CheckIcon(props) {
 
 function PlayerLink({ player }) {
     const url = route('immersion.player.inbox', player.access_token);
-    const [copied, setCopied] = useState(false);
+    // 'idle' | 'copied' | 'failed' — a silent no-op used to be a real
+    // outcome here, and the GM had no way to tell it apart from success.
+    const [state, setState] = useState('idle');
 
     async function copy() {
         try {
             await navigator.clipboard.writeText(url);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setState('copied');
+            setTimeout(() => setState('idle'), 2000);
         } catch {
-            // Clipboard is unavailable outside a secure context; the link is
-            // shown in full below so it can still be copied by hand.
-            setCopied(false);
+            // Clipboard is unavailable outside a secure context. The link is
+            // shown in full beside the button, so say to use that.
+            setState('failed');
         }
     }
 
@@ -86,8 +88,19 @@ function PlayerLink({ player }) {
             </p>
             <div className="mt-1.5 flex items-center gap-2 rounded-control border border-line-strong bg-surface px-3 py-2">
                 <code className="min-w-0 flex-1 truncate font-mono text-xs text-ink-muted">{url}</code>
-                <Button variant="ghost" size="sm" onClick={copy} className="shrink-0">
-                    {copied ? (
+                {/* Not size="sm": handing each player their link is the whole
+                    job of this card, done once per person while everyone is
+                    already sitting down. */}
+                <Button
+                    variant="ghost"
+                    onClick={copy}
+                    // Six of these on a page, all previously announced as
+                    // just "Copiar" — useless when the whole task is telling
+                    // one player's link from another's.
+                    aria-label={`Copiar el enlace de ${player.name}`}
+                    className="shrink-0"
+                >
+                    {state === 'copied' ? (
                         <>
                             <CheckIcon className="h-3.5 w-3.5 text-success-strong" />
                             Copiado
@@ -97,6 +110,21 @@ function PlayerLink({ player }) {
                     )}
                 </Button>
             </div>
+
+            {/* Announced, not just shown: the confirmation was a silent
+                colour change, and the failure was nothing at all. */}
+            <p aria-live="polite" className="mt-1.5 text-xs">
+                {state === 'copied' && (
+                    <span className="text-success-strong">
+                        Enlace de {player.name} copiado.
+                    </span>
+                )}
+                {state === 'failed' && (
+                    <span className="text-danger-strong">
+                        No se pudo copiar. Selecciona el enlace de arriba y cópialo a mano.
+                    </span>
+                )}
+            </p>
         </li>
     );
 }
@@ -210,14 +238,17 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
     });
 
     const [confirming, setConfirming] = useState(null);
-    const [processing, setProcessing] = useState(false);
+    // WHICH action is in flight, not merely that one is: a single shared
+    // boolean meant pressing "Pausar" put the spinner on "Reactivar IA".
+    const [runningAction, setRunningAction] = useState(null);
+    const busy = runningAction !== null;
 
     function post(routeName, options = {}) {
-        setProcessing(true);
+        setRunningAction(routeName);
         router.post(route(routeName, game.id), {}, {
             preserveScroll: true,
             onFinish: () => {
-                setProcessing(false);
+                setRunningAction(null);
                 setConfirming(null);
             },
             ...options,
@@ -255,13 +286,22 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                     )}
 
                     {game.status === 'running' && (
-                        <Button variant="secondary" onClick={() => post('immersion.gm.game.pause')}>
+                        <Button
+                            variant="secondary"
+                            onClick={() => post('immersion.gm.game.pause')}
+                            loading={runningAction === 'immersion.gm.game.pause'}
+                        >
                             Pausar
                         </Button>
                     )}
 
                     {game.status === 'paused' && (
-                        <Button onClick={() => post('immersion.gm.game.resume')}>Reanudar</Button>
+                        <Button
+                            onClick={() => post('immersion.gm.game.resume')}
+                            loading={runningAction === 'immersion.gm.game.resume'}
+                        >
+                            Reanudar
+                        </Button>
                     )}
 
                     {can.reveal && (
@@ -306,7 +346,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 <CreditsCard
                     credits={credits}
                     status={game.status}
-                    processing={processing}
+                    processing={runningAction === 'immersion.gm.game.rearm-credits'}
                     onRearm={() => post('immersion.gm.game.rearm-credits')}
                 />
             )}
@@ -452,7 +492,12 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                                 Ocurre con partidas creadas antes de un arreglo anterior. Sin
                                 línea de tiempo no se enviará ningún correo.
                             </Alert>
-                            <Button onClick={() => post('immersion.gm.game.load-default-timeline')}>
+                            <Button
+                                onClick={() => post('immersion.gm.game.load-default-timeline')}
+                                loading={
+                                    runningAction === 'immersion.gm.game.load-default-timeline'
+                                }
+                            >
                                 Cargar línea de tiempo del caso
                             </Button>
                         </>
@@ -511,6 +556,9 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                                     variant="secondary"
                                     size="sm"
                                     onClick={() => post('immersion.gm.game.toggle-interrogation')}
+                                    loading={
+                                        runningAction === 'immersion.gm.game.toggle-interrogation'
+                                    }
                                 >
                                     {game.interrogation_enabled ? 'Deshabilitar' : 'Habilitar'}
                                 </Button>
@@ -541,7 +589,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 open={confirming === 'start'}
                 onClose={() => setConfirming(null)}
                 onConfirm={() => post('immersion.gm.game.start')}
-                processing={processing}
+                processing={busy}
                 title="¿Iniciar el caso?"
                 description={
                     isAutomatic
@@ -555,7 +603,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 open={confirming === 'force'}
                 onClose={() => setConfirming(null)}
                 onConfirm={() => post('immersion.gm.game.force-next')}
-                processing={processing}
+                processing={busy}
                 title="¿Forzar el siguiente evento?"
                 description="Envía ya el próximo evento pendiente sin esperar su minuto. Si es un audio puede tardar hasta un minuto en generarse."
                 confirmLabel="Forzar evento"
@@ -565,7 +613,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 open={confirming === 'reveal'}
                 onClose={() => setConfirming(null)}
                 onConfirm={() => post('immersion.gm.game.reveal')}
-                processing={processing}
+                processing={busy}
                 title="¿Revelar la solución?"
                 description={
                     isAutomatic
@@ -586,7 +634,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 open={confirming === 'finish'}
                 onClose={() => setConfirming(null)}
                 onConfirm={() => post('immersion.gm.game.finish')}
-                processing={processing}
+                processing={busy}
                 title="¿Cerrar el caso?"
                 description={
                     isAutomatic

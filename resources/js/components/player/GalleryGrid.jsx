@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 
@@ -15,6 +15,46 @@ import Modal from '../ui/Modal';
 export default function GalleryGrid({ images, className = '' }) {
     const [openIndex, setOpenIndex] = useState(null);
 
+    /**
+     * The open scan gets a history entry, so Android's back gesture — which
+     * is how everyone closes a full-screen image — closes the photo instead
+     * of navigating out of the game. The inbox already does this for the open
+     * envelope; a lightbox that ignored it was the one place the back button
+     * lost your place.
+     *
+     * Inertia keeps the page's props in history.state, so the existing state
+     * is spread through rather than replaced: dropping it would leave Inertia
+     * unable to restore this page on a forward navigation.
+     */
+    function open(index) {
+        setOpenIndex(index);
+        window.history.pushState({ ...window.history.state, galleryOpen: true }, '');
+    }
+
+    const close = useCallback(() => {
+        if (window.history.state?.galleryOpen) {
+            // Let popstate do the closing, so the entry is consumed instead
+            // of piling up every time a photo is opened and shut.
+            window.history.back();
+
+            return;
+        }
+
+        setOpenIndex(null);
+    }, []);
+
+    useEffect(() => {
+        if (openIndex === null) {
+            return undefined;
+        }
+
+        const handlePop = () => setOpenIndex(null);
+
+        window.addEventListener('popstate', handlePop);
+
+        return () => window.removeEventListener('popstate', handlePop);
+    }, [openIndex]);
+
     if (!images.length) {
         return null;
     }
@@ -28,7 +68,7 @@ export default function GalleryGrid({ images, className = '' }) {
                     <li key={image.url}>
                         <button
                             type="button"
-                            onClick={() => setOpenIndex(index)}
+                            onClick={() => open(index)}
                             className="group block w-full text-left"
                         >
                             {/* A fixed ratio, so eleven lazy-loading scans do
@@ -53,7 +93,7 @@ export default function GalleryGrid({ images, className = '' }) {
 
             <Modal
                 open={current !== null}
-                onClose={() => setOpenIndex(null)}
+                onClose={close}
                 size="lg"
                 title={current?.caption || 'Prueba'}
                 footer={
@@ -67,7 +107,7 @@ export default function GalleryGrid({ images, className = '' }) {
                         >
                             Abrir a tamaño completo
                         </Button>
-                        <Button variant="secondary" onClick={() => setOpenIndex(null)}>
+                        <Button variant="secondary" onClick={close}>
                             Cerrar
                         </Button>
                     </>

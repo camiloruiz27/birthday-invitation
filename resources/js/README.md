@@ -73,7 +73,7 @@ papel.
 | `Accordion` | Panel plegable. **Desmonta lo que cierra**, así que no sirve para nada que el usuario pueda querer buscar con `Ctrl+F` — para documentos de caso está `CaseDocument`. |
 | `Tabs` | Pestañas. Lleva dentro el `role="tablist"`, las flechas y el `aria-controls`: una fila de botones a mano pierde las tres cosas. |
 | `Container` | Ancho y gutters: `prose` \| `app` \| `wide`. |
-| `Field` | `TextField`, `TextArea`, `SelectField`, `CheckboxField`. |
+| `Field` | `TextField`, `PasswordField`, `TextArea`, `SelectField`, `CheckboxField`. Ninguna contraseña se pide con `TextField type="password"`: `PasswordField` trae el ojo para revelarla, que es lo que evita medio inicio de sesión fallido escrito a ciegas en un teclado de celular. |
 | `UserMenu` | Menú de cuenta. |
 | `Brand` | El único mark+wordmark de MisterioCode. Todo layout lo usa en vez de repetirlo inline — así el logo real, cuando exista como archivo, se reemplaza en un solo sitio. |
 | `Reveal` | Aparece con un desplazamiento suave la primera vez que entra en pantalla al hacer scroll. `delay` escalona un grupo de hermanos. |
