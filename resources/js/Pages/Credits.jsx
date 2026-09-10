@@ -24,6 +24,7 @@ const REASONS = {
     spend: { label: 'Consumo', tone: 'neutral' },
     release: { label: 'Devolución', tone: 'accent' },
     adjust: { label: 'Ajuste', tone: 'accent' },
+    promo: { label: 'Código', tone: 'success' },
 };
 
 function formatPrice(amount, currency) {
@@ -53,8 +54,11 @@ function Figure({ label, value, hint, emphasis = false }) {
 function PackageCard({ pack, canPurchase, simulated }) {
     const { post, processing } = useForm({ package: pack.id });
 
-    function purchase() {
-        post(route('credits.purchase'), canPurchase ? {} : { preserveScroll: true });
+    // The simulated stand-in tops up immediately — nothing to confirm about
+    // a top-up that costs nothing. A real purchase goes to the review screen
+    // first (see Payments/Review), never straight here.
+    function purchaseSimulated() {
+        post(route('credits.purchase'), { preserveScroll: true });
     }
 
     return (
@@ -80,11 +84,15 @@ function PackageCard({ pack, canPurchase, simulated }) {
 
             <div className="mt-5">
                 {canPurchase ? (
-                    <Button onClick={purchase} loading={processing} size="sm" className="w-full">
-                        {processing ? 'Redirigiendo…' : 'Pagar con tarjeta'}
+                    <Button
+                        href={route('credits.checkout.review', { package: pack.id })}
+                        size="sm"
+                        className="w-full"
+                    >
+                        Comprar
                     </Button>
                 ) : simulated ? (
-                    <Button onClick={purchase} loading={processing} size="sm" className="w-full">
+                    <Button onClick={purchaseSimulated} loading={processing} size="sm" className="w-full">
                         Recargar (simulado)
                     </Button>
                 ) : (
@@ -236,7 +244,12 @@ export default function Credits({ wallet, costs, packages, simulated, canPurchas
 
             {/* Top-up. */}
             <section className="mt-8">
-                <h2 className="text-base font-semibold text-ink">Recargar</h2>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h2 className="text-base font-semibold text-ink">Recargar</h2>
+                    <Link href={route('promo.redeem')} className="text-sm text-accent underline">
+                        ¿Tienes un código de regalo?
+                    </Link>
+                </div>
                 <p className="mt-1 text-sm text-ink-muted">
                     Los créditos no caducan y se comparten entre todos tus casos.
                 </p>

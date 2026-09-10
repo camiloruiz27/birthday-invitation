@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
+import Captcha from '../../components/ui/Captcha';
 import { TextField } from '../../components/ui/Field';
 
 export default function Register() {
@@ -9,7 +11,12 @@ export default function Register() {
         email: '',
         password: '',
         password_confirmation: '',
+        'cf-turnstile-response': '',
     });
+
+    // Bumped after every rejected attempt so the captcha issues a fresh
+    // token: the previous one was spent by the submission that failed.
+    const [captchaKey, setCaptchaKey] = useState(0);
 
     function submit(event) {
         event.preventDefault();
@@ -18,6 +25,7 @@ export default function Register() {
                 setData('password', '');
                 setData('password_confirmation', '');
             },
+            onError: () => setCaptchaKey((key) => key + 1),
         });
     }
 
@@ -82,13 +90,21 @@ export default function Register() {
                     required
                 />
 
+                <Captcha
+                    onToken={(token) => setData('cf-turnstile-response', token)}
+                    error={errors['cf-turnstile-response']}
+                    resetKey={captchaKey}
+                />
+
                 <Button type="submit" loading={processing} fullWidth>
                     {processing ? 'Creando…' : 'Crear cuenta'}
                 </Button>
 
                 <p className="text-xs text-ink-muted">
                     Crear una cuenta no incluye ningún caso. Los casos se adquieren por
-                    separado y quedan en tu biblioteca de forma permanente.
+                    separado y quedan en tu biblioteca de forma permanente. Te enviaremos
+                    un correo para confirmar tu dirección: sin confirmarla no podrás
+                    comprar ni canjear códigos.
                 </p>
             </form>
         </AuthLayout>

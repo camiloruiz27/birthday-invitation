@@ -77,7 +77,7 @@ Para que sea el caso por defecto de las partidas nuevas:
 |---|---|
 | `name`, `version` | Identidad; `version` se estampa en cada partida |
 | `code` | Referencia corta ("SF 554301"): asunto del correo y encabezados |
-| `authority` | Quién "envía" el material, en el pie del correo |
+| `authority` | Quién "envía" el material: pie del correo y también el nombre del remitente (`From`) del sobre de la línea de tiempo. La dirección de correo nunca cambia, solo este nombre |
 | `victim` | Nombre y foto de la víctima |
 | `mechanics` | Qué mecánicas existen en este caso |
 | `limits.interrogation_questions` | Presupuesto de preguntas por sospechoso |

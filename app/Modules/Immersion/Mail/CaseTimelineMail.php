@@ -24,10 +24,14 @@ class CaseTimelineMail extends Mailable
         $case = $this->player->game->caseDefinition();
         $code = $case->code();
 
-        // Sin ->from(...): usa MAIL_FROM_ADDRESS/MAIL_FROM_NAME del .env (el remitente
-        // real configurado), para que coincida con la cuenta SMTP autenticada y no
-        // termine en spam o rechazado por no coincidir con el dominio verificado.
+        // La dirección sigue siendo la unica cuenta SMTP autenticada
+        // (config('mail.from.address')) — eso nunca cambia. Solo el NOMBRE
+        // para mostrar varia por caso, tomado de su "autoridad" en el
+        // manifiesto (el mismo texto que ya aparece en el pie de página).
+        // Cambiar solo el nombre no afecta SPF/DKIM ni cae en spam; cambiar
+        // la dirección sí lo haría, y por eso esa nunca se toca.
         $mail = $this->subject(($code ? "[{$code}] " : '').$this->event->title)
+            ->from(config('mail.from.address'), $case->authority() ?: config('mail.from.name'))
             ->view('immersion::mail.case-timeline')
             ->with([
                 'event' => $this->event,

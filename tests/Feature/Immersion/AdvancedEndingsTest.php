@@ -347,6 +347,32 @@ class AdvancedEndingsTest extends TestCase
         Mail::assertSent(CaseEpilogueMail::class, 1);
     }
 
+    /**
+     * The epilogue arrives "from" the accused suspect by name — matching what
+     * the email already says inside ("La Culpable te escribió") — while the
+     * address stays the one configured SMTP account regardless of who wrote
+     * it. See the payment/mail-sender plan for why only the name may vary.
+     */
+    public function test_the_epilogue_email_is_sent_from_the_accused_suspects_name(): void
+    {
+        config(['mail.from.address' => 'hello@example.com', 'mail.from.name' => 'Nombre Generico De La App']);
+        Http::fake(['*' => Http::response(['message' => 'Acertaste. Fui yo.'], 200)]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+        $accusation = $game->accusations()->where('suspect_slug', self::CULPRIT)->firstOrFail();
+
+        (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+
+        // Mail::fake() records the Mailable as constructed, without ever
+        // calling build() (see MailFake::send()) — so the `from` header
+        // only exists on a mailable that is built directly, the same
+        // accusation data the job itself would have used.
+        $mail = (new CaseEpilogueMail($accusation->fresh()))->build();
+
+        $this->assertSame('hello@example.com', $mail->from[0]['address']);
+        $this->assertSame('La Culpable', $mail->from[0]['name']);
+    }
+
     public function test_the_job_does_not_rewrite_an_epilogue_already_delivered(): void
     {
         Http::fake(['*' => Http::response(['message' => 'Primera version.'], 200)]);

@@ -28,9 +28,14 @@ class CaseEpilogueMail extends Mailable
         $suspect = $case->suspect($this->accusation->suspect_slug);
         $name = $suspect['name'] ?? $this->accusation->suspect_name;
 
-        // No ->from(...): uses the configured MAIL_FROM_* so the sender matches
-        // the authenticated SMTP account, as with every other case email.
+        // The address stays the one authenticated SMTP account
+        // (config('mail.from.address')) — that never changes. Only the
+        // display NAME changes, to the accused suspect's own name, matching
+        // what the email already says inside ("Rachel Miller te escribió").
+        // Changing only the name is safe for SPF/DKIM/spam; changing the
+        // address would not be, which is why that stays fixed.
         return $this->subject("Un mensaje de {$name}")
+            ->from(config('mail.from.address'), $name)
             ->view('immersion::mail.case-epilogue')
             ->with([
                 'accusation' => $this->accusation,

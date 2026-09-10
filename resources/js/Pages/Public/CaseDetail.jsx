@@ -13,7 +13,10 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
     const { auth } = usePage().props;
     const { post, processing } = useForm({});
 
-    function acquire() {
+    // The simulated stand-in acquires immediately — there is nothing to
+    // confirm about a purchase that costs nothing. A real purchase goes to
+    // the review screen first (see Payments/Review), never straight here.
+    function acquireSimulated() {
         post(route('cases.acquire', mysteryCase.slug));
     }
 
@@ -51,12 +54,12 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
                         </p>
                     </>
                 ) : canPurchase ? (
-                    <Button onClick={acquire} loading={processing} fullWidth>
-                        {processing ? 'Redirigiendo…' : 'Pagar con tarjeta'}
+                    <Button href={route('cases.checkout.review', mysteryCase.slug)} fullWidth>
+                        Comprar
                     </Button>
                 ) : canSimulatePurchase ? (
                     <>
-                        <Button onClick={acquire} loading={processing} fullWidth>
+                        <Button onClick={acquireSimulated} loading={processing} fullWidth>
                             {processing ? 'Añadiendo…' : 'Añadir a mi biblioteca'}
                         </Button>
                         {/* Never let a simulated acquisition look like a real

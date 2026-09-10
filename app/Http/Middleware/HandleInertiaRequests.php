@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\Platform\Support\Captcha;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,11 +43,18 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => fn () => $request->user()
                     ? $request->user()->only(['id', 'name', 'email', 'is_admin'])
+                        + ['email_verified' => $request->user()->hasVerifiedEmail()]
                     : null,
             ],
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],
+
+            // Public by definition — the widget needs it in the page to draw
+            // itself. The secret key is what must never leave the server, and
+            // it is not here. Empty means no captcha is configured, which is
+            // how the widget knows to render nothing.
+            'captchaSiteKey' => fn () => app(Captcha::class)->siteKey(),
         ]);
     }
 }

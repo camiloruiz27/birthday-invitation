@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -81,6 +82,31 @@ class FullJourneyTest extends TestCase
 
         $this->get(route('library'))->assertOk();
         $this->get(route('profile.edit'))->assertOk();
+
+        /* ---------------------------------------------------------------
+         | 2b. Confirm the email address
+         |
+         | A fresh account can look around, but buying is behind `verified`.
+         | Walking that here rather than seeding a verified user is the whole
+         | point of this test: it is the step a real buyer cannot skip, and a
+         | dead end here would strand every new customer before their first
+         | purchase.
+         |-------------------------------------------------------------- */
+
+        $this->post(route('cases.acquire', 'steve-jacobs'))
+            ->assertRedirect(route('verification.notice'));
+
+        $this->get(route('verification.notice'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Auth/VerifyEmail'));
+
+        // The same signed URL the notification puts in the mail.
+        $this->get(URL::temporarySignedRoute('verification.verify', now()->addHour(), [
+            'id' => $gameMaster->id,
+            'hash' => sha1($gameMaster->email),
+        ]))->assertRedirect(route('dashboard'));
+
+        $this->assertTrue($gameMaster->fresh()->hasVerifiedEmail());
 
         /* ---------------------------------------------------------------
          | 3. Acquire a case

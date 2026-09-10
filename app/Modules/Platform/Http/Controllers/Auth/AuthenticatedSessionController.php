@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Platform\Rules\CaptchaRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +26,7 @@ class AuthenticatedSessionController extends Controller
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
             'remember' => ['boolean'],
-        ]);
+        ] + CaptchaRule::rules($request->ip()));
 
         if (! Auth::attempt(
             ['email' => $data['email'], 'password' => $data['password']],

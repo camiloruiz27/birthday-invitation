@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
+import Captcha from '../../components/ui/Captcha';
 import { TextField, CheckboxField } from '../../components/ui/Field';
 
 export default function Login() {
@@ -8,12 +10,20 @@ export default function Login() {
         email: '',
         password: '',
         remember: false,
+        'cf-turnstile-response': '',
     });
+
+    // Bumped after every rejected attempt so the captcha issues a fresh
+    // token: the previous one was spent by the submission that failed.
+    const [captchaKey, setCaptchaKey] = useState(0);
 
     function submit(event) {
         event.preventDefault();
         // Never keep the password in form state after an attempt.
-        post(route('login'), { onFinish: () => setData('password', '') });
+        post(route('login'), {
+            onFinish: () => setData('password', ''),
+            onError: () => setCaptchaKey((key) => key + 1),
+        });
     }
 
     return (
@@ -72,6 +82,12 @@ export default function Login() {
                         Olvidé mi contraseña
                     </Link>
                 </div>
+
+                <Captcha
+                    onToken={(token) => setData('cf-turnstile-response', token)}
+                    error={errors['cf-turnstile-response']}
+                    resetKey={captchaKey}
+                />
 
                 <Button type="submit" loading={processing} fullWidth>
                     {processing ? 'Verificando…' : 'Ingresar'}
