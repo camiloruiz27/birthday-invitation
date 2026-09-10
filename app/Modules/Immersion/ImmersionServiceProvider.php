@@ -121,9 +121,16 @@ class ImmersionServiceProvider extends ServiceProvider
                 // withoutOverlapping: the command only enqueues now, but a
                 // slow database must never let two ticks pile up on top of
                 // each other.
+                //
+                // The 10 is the lock's expiry in minutes, and it matters more
+                // than it looks: the default is 24 HOURS, so a tick killed
+                // mid-flight (a shared host cutting off a long process) would
+                // leave the lock behind and freeze every running game's
+                // timeline for a full day, silently. Ten minutes is far longer
+                // than a healthy tick and short enough to self-heal.
                 $schedule->command(ProcessImmersionTimeline::class)
                     ->everyMinute()
-                    ->withoutOverlapping();
+                    ->withoutOverlapping(10);
 
                 // Shared hosting has no daemon, so the worker is a scheduled
                 // short-lived process: it drains the queue and exits before
@@ -131,7 +138,7 @@ class ImmersionServiceProvider extends ServiceProvider
                 if (config('queue.default') !== 'sync') {
                     $schedule->command('queue:work --stop-when-empty --max-time=50 --tries=2 --quiet')
                         ->everyMinute()
-                        ->withoutOverlapping();
+                        ->withoutOverlapping(10);
                 }
 
                 // Credits frozen by games nobody closed come back on their own.

@@ -2,11 +2,11 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import { CaseFacts } from '../components/public/CaseCard';
 import TextLink from '../components/ui/TextLink';
+import QuotaMeter from '../components/app/QuotaMeter';
 
 function LibraryCase({ mysteryCase }) {
     return (
@@ -21,12 +21,7 @@ function LibraryCase({ mysteryCase }) {
             )}
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <h2 className="font-semibold text-ink">{mysteryCase.name}</h2>
-                    <Badge tone={mysteryCase.quota.full ? 'danger' : 'neutral'}>
-                        {mysteryCase.quota.used}/{mysteryCase.quota.limit} partidas
-                    </Badge>
-                </div>
+                <h2 className="text-lg font-semibold text-ink">{mysteryCase.name}</h2>
 
                 {mysteryCase.tagline && (
                     <p className="mt-2 text-sm text-ink-muted">{mysteryCase.tagline}</p>
@@ -41,15 +36,11 @@ function LibraryCase({ mysteryCase }) {
                     </Alert>
                 ) : (
                     <>
-                        {mysteryCase.quota.full && (
-                            <p className="mt-3 text-xs text-danger-strong">
-                                Sin cupo. Elimina una partida de este caso para crear otra.
-                            </p>
-                        )}
+                        <QuotaMeter quota={mysteryCase.quota} className="mt-4" />
 
                         <div className="mt-5 flex flex-wrap gap-2">
                             {mysteryCase.quota.full ? (
-                                <Button size="sm" disabled title="Sin cupo para este caso">
+                                <Button size="sm" disabled>
                                     Crear partida
                                 </Button>
                             ) : (

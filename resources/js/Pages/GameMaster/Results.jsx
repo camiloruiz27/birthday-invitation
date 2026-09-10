@@ -7,13 +7,34 @@ import Alert from '../../components/ui/Alert';
 import usePoll from '../../hooks/usePoll';
 import { formatDateTimeShort } from '../../lib/format';
 
-function Verdict({ correct }) {
-    if (correct === null) {
+/**
+ * Where one player stands, in a single badge.
+ *
+ * The phone cards and the desktop table render the same five fields, and
+ * this branch used to be written out in both — so a change to what a state
+ * is called had to be remembered twice.
+ *
+ * "Pendiente" and "Sin acusar" are deliberately different words for what
+ * looks like one state: before the reveal an accusation can still arrive,
+ * after it the silence is final.
+ */
+function AccusationStatus({ row, solved }) {
+    if (! solved) {
+        return (
+            <Badge tone={row.suspect_name ? 'success' : 'neutral'}>
+                {row.suspect_name ? 'Enviada' : 'Pendiente'}
+            </Badge>
+        );
+    }
+
+    if (row.correct === null) {
         return <Badge tone="neutral">Sin acusar</Badge>;
     }
 
     return (
-        <Badge tone={correct ? 'success' : 'danger'}>{correct ? 'Acertó' : 'Falló'}</Badge>
+        <Badge tone={row.correct ? 'success' : 'danger'}>
+            {row.correct ? 'Acertó' : 'Falló'}
+        </Badge>
     );
 }
 
@@ -92,7 +113,10 @@ export default function Results({ game, scoreboard, solution, reveal }) {
 
                 {scoreboard.length === 0 ? (
                     <div className="p-5 pt-0 sm:p-6 sm:pt-0">
-                        <EmptyState title="Esta partida no tiene jugadores" />
+                        <EmptyState
+                            title="Esta partida no tiene jugadores"
+                            description="Nadie puede acusar todavía porque no hay a quién invitar."
+                        />
                     </div>
                 ) : (
                     <>
@@ -103,28 +127,26 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                             {scoreboard.map((row) => (
                                 <li key={row.player_id} className="p-4">
                                     <div className="flex items-center justify-between gap-3">
-                                        <span className="font-medium text-ink">{row.player_name}</span>
-                                        {solution ? (
-                                            <Verdict correct={row.correct} />
-                                        ) : (
-                                            <Badge tone={row.suspect_name ? 'success' : 'neutral'}>
-                                                {row.suspect_name ? 'Enviada' : 'Pendiente'}
-                                            </Badge>
-                                        )}
+                                        <span className="min-w-0 truncate font-medium text-ink">
+                                            {row.player_name}
+                                        </span>
+                                        <span className="shrink-0">
+                                            <AccusationStatus row={row} solved={Boolean(solution)} />
+                                        </span>
                                     </div>
 
                                     {row.suspect_name && (
                                         <dl className="mt-3 space-y-2 text-sm">
                                             <div>
-                                                <dt className="text-xs text-ink-muted">Sospechoso</dt>
+                                                <dt className="text-sm text-ink-muted">Sospechoso</dt>
                                                 <dd className="text-ink">{row.suspect_name}</dd>
                                             </div>
                                             <div>
-                                                <dt className="text-xs text-ink-muted">Arma o método</dt>
+                                                <dt className="text-sm text-ink-muted">Arma o método</dt>
                                                 <dd className="text-ink">{row.weapon}</dd>
                                             </div>
                                             <div>
-                                                <dt className="text-xs text-ink-muted">Motivo</dt>
+                                                <dt className="text-sm text-ink-muted">Motivo</dt>
                                                 <dd className="text-ink">{row.motive}</dd>
                                             </div>
                                         </dl>
@@ -166,13 +188,10 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                                 </td>
                                             )}
                                             <td className="whitespace-nowrap px-5 py-3">
-                                                {solution ? (
-                                                    <Verdict correct={row.correct} />
-                                                ) : (
-                                                    <Badge tone={row.suspect_name ? 'success' : 'neutral'}>
-                                                        {row.suspect_name ? 'Enviada' : 'Pendiente'}
-                                                    </Badge>
-                                                )}
+                                                <AccusationStatus
+                                                    row={row}
+                                                    solved={Boolean(solution)}
+                                                />
                                             </td>
                                         </tr>
                                     ))}
