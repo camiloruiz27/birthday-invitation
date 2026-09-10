@@ -1,14 +1,25 @@
+import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
+import Captcha from '../../components/ui/Captcha';
 import { TextField } from '../../components/ui/Field';
 
 export default function ForgotPassword() {
-    const { data, setData, post, processing, errors } = useForm({ email: '' });
+    const { data, setData, post, processing, errors } = useForm({
+        email: '',
+        'cf-turnstile-response': '',
+    });
+
+    // Bumped after every rejected attempt so the captcha issues a fresh
+    // token: the previous one was spent by the submission that failed.
+    const [captchaKey, setCaptchaKey] = useState(0);
 
     function submit(event) {
         event.preventDefault();
-        post(route('password.email'));
+        post(route('password.email'), {
+            onError: () => setCaptchaKey((key) => key + 1),
+        });
     }
 
     return (
@@ -34,6 +45,12 @@ export default function ForgotPassword() {
                     autoComplete="email"
                     required
                     autoFocus
+                />
+
+                <Captcha
+                    onToken={(token) => setData('cf-turnstile-response', token)}
+                    error={errors['cf-turnstile-response']}
+                    resetKey={captchaKey}
                 />
 
                 <Button type="submit" loading={processing} fullWidth>

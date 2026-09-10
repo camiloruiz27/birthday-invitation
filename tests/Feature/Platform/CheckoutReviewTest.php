@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Platform;
 
+use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\PromoCodeRedemption;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,7 +76,7 @@ class CheckoutReviewTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('promo_code', null)
-                ->where('promo_error', 'Ese código no existe.')
+                ->where('promo_error', RedeemPromoCode::UNUSABLE)
             );
     }
 

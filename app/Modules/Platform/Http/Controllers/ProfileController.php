@@ -29,12 +29,29 @@ class ProfileController extends Controller
 
         $user->fill($data);
 
-        // Changing the address invalidates any previous verification.
-        if ($user->isDirty('email')) {
+        // Changing the address invalidates any previous verification: the
+        // proof was about the OLD address. Without this, changing the email
+        // after confirming would be a way to end up "verified" on an address
+        // nobody ever proved they own.
+        $emailChanged = $user->isDirty('email');
+
+        if ($emailChanged) {
             $user->email_verified_at = null;
         }
 
         $user->save();
+
+        if ($emailChanged) {
+            // Sent immediately rather than leaving them to find the resend
+            // button: they did not lose their verification by mistake, but
+            // they did lose it, and buying is blocked until it comes back.
+            $user->sendEmailVerificationNotification();
+
+            return back()->with(
+                'status',
+                "Perfil actualizado. Te enviamos un correo a {$user->email} para confirmar la dirección nueva."
+            );
+        }
 
         return back()->with('status', 'Perfil actualizado.');
     }

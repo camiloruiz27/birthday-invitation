@@ -69,8 +69,16 @@ class BoldPaymentProvider implements PaymentProvider
      * it with the secret key, and compare against x-bold-signature. Must run
      * against the exact bytes Bold sent — never a re-encoded/parsed body.
      *
+     * An unset BOLD_SECRET_KEY does NOT fail closed on its own, which is why
+     * it is refused explicitly below: hash_hmac() with an empty key still
+     * returns a perfectly valid signature that anyone able to read this file
+     * can compute. Without the guard, a deploy that lost the key would turn
+     * this check into a rubber stamp — and a forged SALE_APPROVED would hand
+     * out cases and credits for free, recorded as a genuine sale.
+     *
      * Sandbox note: Bold signs test-mode webhooks with an empty secret key,
-     * so this same code path verifies real and sandbox webhooks alike.
+     * so an empty secret is still honoured outside production — the one
+     * environment where it is a real configuration rather than a mistake.
      */
     public function verifyWebhookSignature(string $rawBody, ?string $signatureHeader): bool
     {
@@ -78,7 +86,21 @@ class BoldPaymentProvider implements PaymentProvider
             return false;
         }
 
-        $expected = hash_hmac('sha256', base64_encode($rawBody), $this->secretKey());
+        $secret = $this->secretKey();
+
+        if ($secret === '') {
+            if (app()->environment('production')) {
+                Log::error('platform_payment_webhook_secret_missing');
+
+                return false;
+            }
+
+            // Never silent, even where it is allowed: a developer who forgot
+            // the key should not mistake "sandbox mode" for "verified".
+            Log::warning('platform_payment_webhook_unsigned_secret_outside_production');
+        }
+
+        $expected = hash_hmac('sha256', base64_encode($rawBody), $secret);
 
         return hash_equals($expected, $signatureHeader);
     }

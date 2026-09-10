@@ -2,6 +2,7 @@
 
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
 use App\Modules\Platform\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Modules\Platform\Http\Controllers\Auth\RegisteredUserController;
@@ -74,14 +75,23 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/salir', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-    // A real purchase always lands on review() first — what you're buying,
-    // any discount applied, the actual total — before store() ever runs.
-    // review() 404s when payments are off; store() is also the simulated
-    // stand-in's endpoint, so it stays reachable either way.
-    Route::get('/casos/{slug}/comprar', [CheckoutController::class, 'review'])
-        ->name('cases.checkout.review');
-    Route::post('/casos/{slug}/adquirir', [CheckoutController::class, 'store'])
-        ->name('cases.acquire');
+    /*
+    | Email verification. Not itself behind `verified`, obviously — this is
+    | how an account stops being unverified.
+    |
+    | `signed` is what authenticates the link in the mail; the throttles are
+    | because `resend` makes our SMTP server send mail on request.
+    */
+    Route::get('/verificar-correo', [EmailVerificationController::class, 'notice'])
+        ->name('verification.notice');
+
+    Route::get('/verificar-correo/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:'.config('platform.rate_limits.verify_email')])
+        ->name('verification.verify');
+
+    Route::post('/verificar-correo/reenviar', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:'.config('platform.rate_limits.verify_email_resend'))
+        ->name('verification.send');
 
     Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
@@ -91,16 +101,54 @@ Route::middleware('auth')->group(function () {
     Route::get('/panel', DashboardController::class)->name('dashboard');
     Route::get('/biblioteca', LibraryController::class)->name('library');
 
-    // The AI credit wallet. The top-up is the same stand-in as case checkout
-    // and 404s when the simulation is off.
+    // The AI credit wallet. Reading the balance and the ledger needs no
+    // confirmed address; spending money does — see the group below.
     Route::get('/creditos', [CreditsController::class, 'index'])->name('credits');
-    Route::get('/creditos/comprar', [CreditsController::class, 'review'])->name('credits.checkout.review');
-    Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])->name('credits.purchase');
 
     // Gift codes only — a discount code is entered on the checkout screens
     // themselves (it needs a price to discount), never here.
     Route::get('/canjear', [RedeemCodeController::class, 'show'])->name('promo.redeem');
-    Route::post('/canjear', [RedeemCodeController::class, 'store'])->name('promo.redeem.store');
+
+    /*
+    |----------------------------------------------------------------------
+    | Anything that spends money or claims value
+    |----------------------------------------------------------------------
+    |
+    | `verified` is the line: an address nobody has proved they own must not
+    | be able to buy. It is not squeamishness about spam — it is that the
+    | receipt, the player links and the password recovery for that purchase
+    | all go to an address the buyer may not be able to read, and a payment
+    | that lands nowhere is the worst kind of support ticket to receive.
+    |
+    | `throttle:promo` only counts requests that actually carry a code, so a
+    | buyer walking through the review screen without one is never charged an
+    | attempt (see PlatformServiceProvider::registerPromoRateLimiter).
+    |
+    */
+    Route::middleware('verified')->group(function () {
+        // A real purchase always lands on review() first — what you're
+        // buying, any discount applied, the actual total — before store()
+        // ever runs. review() 404s when payments are off; store() is also
+        // the simulated stand-in's endpoint, so it stays reachable either
+        // way.
+        Route::get('/casos/{slug}/comprar', [CheckoutController::class, 'review'])
+            ->middleware('throttle:promo')
+            ->name('cases.checkout.review');
+        Route::post('/casos/{slug}/adquirir', [CheckoutController::class, 'store'])
+            ->middleware('throttle:promo')
+            ->name('cases.acquire');
+
+        Route::get('/creditos/comprar', [CreditsController::class, 'review'])
+            ->middleware('throttle:promo')
+            ->name('credits.checkout.review');
+        Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])
+            ->middleware('throttle:promo')
+            ->name('credits.purchase');
+
+        Route::post('/canjear', [RedeemCodeController::class, 'store'])
+            ->middleware('throttle:promo')
+            ->name('promo.redeem.store');
+    });
 
     // Platform administration. Granted only from the console
     // (php artisan platform:make-admin), never through a screen.

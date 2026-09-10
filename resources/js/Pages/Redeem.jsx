@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import Card, { CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Captcha from '../components/ui/Captcha';
 import { TextField } from '../components/ui/Field';
 
 /**
@@ -11,11 +13,21 @@ import { TextField } from '../components/ui/Field';
  * RedeemPromoCode and surfaced as a normal validation error on this form.
  */
 export default function Redeem() {
-    const { data, setData, post, processing, errors } = useForm({ code: '' });
+    const { data, setData, post, processing, errors } = useForm({
+        code: '',
+        'cf-turnstile-response': '',
+    });
+
+    // Bumped after every rejected attempt so the captcha issues a fresh
+    // token: the previous one was spent by the submission that failed.
+    const [captchaKey, setCaptchaKey] = useState(0);
 
     function submit(event) {
         event.preventDefault();
-        post(route('promo.redeem.store'), { preserveScroll: true });
+        post(route('promo.redeem.store'), {
+            preserveScroll: true,
+            onError: () => setCaptchaKey((key) => key + 1),
+        });
     }
 
     return (
@@ -38,6 +50,12 @@ export default function Redeem() {
                         placeholder="LANZAMIENTO2026"
                         autoComplete="off"
                         required
+                    />
+
+                    <Captcha
+                        onToken={(token) => setData('cf-turnstile-response', token)}
+                        error={errors['cf-turnstile-response']}
+                        resetKey={captchaKey}
                     />
 
                     <Button type="submit" loading={processing} fullWidth>

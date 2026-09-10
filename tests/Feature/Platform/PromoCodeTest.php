@@ -112,7 +112,9 @@ class PromoCodeTest extends TestCase
         }
 
         $this->assertNotNull($caught);
-        $this->assertStringContainsString('límite de usos', $caught->getMessage());
+        // The same words as "does not exist": telling an exhausted code apart
+        // from an unknown one confirms to a guesser that they hit a real code.
+        $this->assertSame(RedeemPromoCode::UNUSABLE, $caught->getMessage());
         $this->assertSame(1, $promo->fresh()->redemptions_count);
         $this->assertSame(0, app(AiCredits::class)->walletFor($second)->available());
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Platform\Rules\CaptchaRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -20,7 +21,10 @@ class PasswordResetLinkController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'string', 'email'],
-        ]);
+        ] + CaptchaRule::rules($request->ip()));
+
+        // Only the address; the captcha token is not part of what we look up.
+        $data = ['email' => $data['email']];
 
         Password::sendResetLink($data);
 

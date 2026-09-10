@@ -13,7 +13,12 @@ use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,6 +33,54 @@ use Illuminate\Support\ServiceProvider;
  */
 class PlatformServiceProvider extends ServiceProvider
 {
+    /**
+     * The throttle behind every screen where a promo code can be typed.
+     *
+     * A named limiter rather than a plain `throttle:10,10` because two of
+     * those screens are the ordinary checkout review — reached with no code
+     * at all by every real buyer. Charging them an attempt would rate-limit
+     * people for trying to pay. `Limit::none()` lets that traffic through
+     * untouched and only starts counting once a code is actually submitted.
+     *
+     * Two limits, not one: the per-account cap is the tight one, and the
+     * per-IP cap is what stops the obvious way around it — registering
+     * throwaway accounts to get a fresh allowance each time.
+     */
+    private function registerPromoRateLimiter(): void
+    {
+        RateLimiter::for('promo', function (Request $request) {
+            // `code` is the gift screen's field, `promo_code` the checkout
+            // review's. Either one means a guess is being made.
+            if (! $request->filled('code') && ! $request->filled('promo_code')) {
+                return Limit::none();
+            }
+
+            return [
+                $this->limitFrom('promo', '10,10')->by('promo-user:'.$request->user()?->id),
+                $this->limitFrom('promo_ip', '30,10')->by('promo-ip:'.$request->ip()),
+            ];
+        });
+    }
+
+    /**
+     * Reads one of the config's "attempts,minutes" pairs into a Limit,
+     * falling back to $default if it is missing or malformed — a typo in the
+     * environment must not silently remove the limit altogether.
+     */
+    private function limitFrom(string $key, string $default): Limit
+    {
+        $pair = explode(',', (string) config("platform.rate_limits.{$key}", $default));
+
+        $attempts = (int) ($pair[0] ?? 0);
+        $minutes = (int) ($pair[1] ?? 0);
+
+        if ($attempts < 1 || $minutes < 1) {
+            [$attempts, $minutes] = array_map('intval', explode(',', $default));
+        }
+
+        return Limit::perMinutes($minutes, $attempts);
+    }
+
     public function register(): void
     {
         // Bound directly, not behind a config switch like the AI providers:
@@ -37,9 +90,35 @@ class PlatformServiceProvider extends ServiceProvider
         $this->app->bind(PaymentProvider::class, BoldPaymentProvider::class);
     }
 
+    /**
+     * The confirmation mail, written here instead of shipping Laravel's.
+     *
+     * The stock notification is in English and signs off as "Laravel". This
+     * is the first mail a buyer ever receives from the platform, and one that
+     * arrives in the wrong language from an unfamiliar name is one people
+     * report as phishing — which is the opposite of what a verification mail
+     * is for.
+     */
+    private function registerVerificationMail(): void
+    {
+        VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
+            return (new MailMessage)
+                ->subject('Confirma tu correo — Central de investigación')
+                ->greeting("Hola, {$notifiable->name}")
+                ->line('Confirma que esta dirección es tuya para poder adquirir casos y canjear códigos.')
+                ->action('Confirmar mi correo', $url)
+                ->line('El enlace caduca en 60 minutos.')
+                ->line('Si no creaste esta cuenta, puedes ignorar este mensaje: no se hará nada.')
+                ->salutation('Central de investigación');
+        });
+    }
+
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/Database/Migrations');
+
+        $this->registerPromoRateLimiter();
+        $this->registerVerificationMail();
 
         Route::middleware('web')->group(function () {
             $this->loadRoutesFrom(__DIR__.'/routes/web.php');

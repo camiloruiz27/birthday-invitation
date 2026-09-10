@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +14,18 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+/**
+ * Implements MustVerifyEmail, which does two things worth naming.
+ *
+ * It sends the confirmation mail on registration, and it makes the `verified`
+ * middleware meaningful — applied only to the routes that spend money or
+ * claim a code (see the Platform routes). An unconfirmed account can still
+ * browse, sign in and look at its panel; what it cannot do is buy, because
+ * an address nobody proved they own is where a purchase goes wrong in the
+ * ways that are expensive: the receipt, the game links and the password
+ * recovery all land somewhere the buyer cannot read.
+ */
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 

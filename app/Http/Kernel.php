@@ -30,6 +30,9 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'web' => [
+            // First: it generates the CSP nonce, and the nonce has to exist
+            // before any view renders a <script> that needs it.
+            \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,

@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Exceptions\PromoCodeException;
+use App\Modules\Platform\Rules\CaptchaRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +32,7 @@ class RedeemCodeController extends Controller
     {
         $data = $request->validate([
             'code' => ['required', 'string', 'max:60'],
-        ]);
+        ] + CaptchaRule::rules($request->ip()));
 
         try {
             $promo = $promos->redeemGift($request->user(), $data['code']);

@@ -23,6 +23,23 @@ use Illuminate\Support\Facades\DB;
  */
 class RedeemPromoCode
 {
+    /**
+     * One message for every reason a code cannot be used that would otherwise
+     * reveal whether it EXISTS: unknown, switched off, or all used up.
+     *
+     * Distinct messages there turn any code field into an enumeration oracle —
+     * "no existe" versus "ya alcanzó su límite" tells an attacker they guessed
+     * a real code, which is exactly the signal a brute-force run needs. The
+     * throttle on these routes is the other half of the same fix; this is what
+     * makes each attempt worthless even when one gets through.
+     *
+     * The two rejections that survive with their own wording are the ones that
+     * leak nothing: "ya usaste este código" can only be reached by someone who
+     * already redeemed it, and the gift/discount mix-up is only reachable by
+     * someone holding a real code who typed it on the wrong screen.
+     */
+    public const UNUSABLE = 'Ese código no es válido o ya no se puede usar.';
+
     public function __construct(private GrantCaseAccess $access, private AiCredits $credits)
     {
     }
@@ -126,7 +143,7 @@ class RedeemPromoCode
         $promo = PromoCode::where('code', strtoupper(trim($code)))->first();
 
         if (! $promo) {
-            throw new PromoCodeException('Ese código no existe.');
+            throw new PromoCodeException(self::UNUSABLE);
         }
 
         $this->validateLimits($promo, $user);
@@ -152,7 +169,7 @@ class RedeemPromoCode
         $promo = PromoCode::where('code', strtoupper(trim($code)))->lockForUpdate()->first();
 
         if (! $promo) {
-            throw new PromoCodeException('Ese código no existe.');
+            throw new PromoCodeException(self::UNUSABLE);
         }
 
         $this->validateLimits($promo, $user);
@@ -164,15 +181,18 @@ class RedeemPromoCode
      * Existence aside (callers look the row up their own way, locked or
      * not), everything else a code can be rejected for regardless of kind:
      * turned off, exhausted, or already used up by this person.
+     *
+     * The first two answer with the same words as "does not exist" on
+     * purpose — see the UNUSABLE constant.
      */
     private function validateLimits(PromoCode $promo, User $user): void
     {
         if (! $promo->active) {
-            throw new PromoCodeException('Ese código ya no está activo.');
+            throw new PromoCodeException(self::UNUSABLE);
         }
 
         if ($promo->isExhausted()) {
-            throw new PromoCodeException('Ese código ya alcanzó su límite de usos.');
+            throw new PromoCodeException(self::UNUSABLE);
         }
 
         if ($promo->max_redemptions_per_user !== null) {

@@ -127,6 +127,73 @@ return [
         'register' => env('PLATFORM_THROTTLE_REGISTER', '5,10'),
         'password_email' => env('PLATFORM_THROTTLE_PASSWORD_EMAIL', '3,10'),
         'password_reset' => env('PLATFORM_THROTTLE_PASSWORD_RESET', '5,10'),
+
+        // Confirming an address, and asking for the mail again. The second is
+        // the one that matters: without it the resend button is a way to make
+        // our SMTP server send mail on demand.
+        'verify_email' => env('PLATFORM_THROTTLE_VERIFY_EMAIL', '6,1'),
+        'verify_email_resend' => env('PLATFORM_THROTTLE_VERIFY_RESEND', '3,10'),
+
+        // Guessing promo codes. Consumed only by requests that actually carry
+        // a code (see PlatformServiceProvider::registerPromoRateLimiter), so
+        // an ordinary trip through the checkout review costs nothing.
+        //
+        // Per account first, then per IP so that making new accounts does not
+        // hand out a fresh allowance each time.
+        'promo' => env('PLATFORM_THROTTLE_PROMO', '10,10'),
+        'promo_ip' => env('PLATFORM_THROTTLE_PROMO_IP', '30,10'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Captcha (Cloudflare Turnstile)
+    |--------------------------------------------------------------------------
+    |
+    | Guards the endpoints an automated script can point at the platform from
+    | outside: creating accounts, guessing passwords, making us send mail, and
+    | guessing promo codes. Rate limits already cap how fast ONE origin can
+    | try; this is what stops a botnet spreading the same attack across
+    | thousands of addresses, where a per-IP limit never trips.
+    |
+    | Off unless BOTH keys are present, which is what keeps local development
+    | and the test suite running with no Cloudflare account: the validation
+    | rule passes and the widget renders nothing. That means a production
+    | deploy without these keys silently has no captcha — deliberate, because
+    | the alternative is a missing key locking every user out of registering.
+    | The rate limits stand on their own either way.
+    |
+    | Keys: https://dash.cloudflare.com → Turnstile → add the site. The site
+    | key is public (it ships in the page); the secret key never leaves here.
+    |
+    */
+
+    'captcha' => [
+        'site_key' => env('TURNSTILE_SITE_KEY', ''),
+        'secret_key' => env('TURNSTILE_SECRET_KEY', ''),
+        'verify_url' => env(
+            'TURNSTILE_VERIFY_URL',
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        ),
+        'timeout' => (int) env('TURNSTILE_TIMEOUT', 10),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Security headers
+    |--------------------------------------------------------------------------
+    |
+    | See App\Http\Middleware\SecurityHeaders. Everything except the Content
+    | Security Policy is unconditional — those headers cannot break a page.
+    |
+    | The CSP can, so it ships in report-only mode: browsers report what it
+    | WOULD have blocked (visible in the console) without blocking anything.
+    | Turn PLATFORM_CSP_ENFORCE on once a walk through checkout, the console
+    | and a player inbox reports nothing.
+    |
+    */
+
+    'csp' => [
+        'enforce' => (bool) env('PLATFORM_CSP_ENFORCE', false),
     ],
 
 ];
