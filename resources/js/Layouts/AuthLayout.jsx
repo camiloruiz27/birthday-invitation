@@ -1,5 +1,6 @@
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
+import Brand from '../components/ui/Brand';
 
 /**
  * Centred single-column shell for the account screens.
@@ -15,13 +16,7 @@ export default function AuthLayout({ title, description, footer, children }) {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
             <main className="w-full max-w-md">
-                <Link
-                    href={route('home')}
-                    className="mb-8 flex items-center justify-center gap-2.5 text-sm font-semibold text-ink"
-                >
-                    <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
-                    Central de investigación
-                </Link>
+                <Brand className="mb-8 justify-center" />
 
                 <div className="rounded-card border border-line bg-surface-raised p-6 shadow-raised sm:p-8">
                     <h1 className="text-lg font-semibold text-ink">{title}</h1>

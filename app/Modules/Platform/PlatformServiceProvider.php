@@ -103,13 +103,13 @@ class PlatformServiceProvider extends ServiceProvider
     {
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
             return (new MailMessage)
-                ->subject('Confirma tu correo — Central de investigación')
+                ->subject('Confirma tu correo — MisterioCode')
                 ->greeting("Hola, {$notifiable->name}")
                 ->line('Confirma que esta dirección es tuya para poder adquirir casos y canjear códigos.')
                 ->action('Confirmar mi correo', $url)
                 ->line('El enlace caduca en 60 minutos.')
                 ->line('Si no creaste esta cuenta, puedes ignorar este mensaje: no se hará nada.')
-                ->salutation('Central de investigación');
+                ->salutation('MisterioCode');
         });
     }
 

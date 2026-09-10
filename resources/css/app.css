@@ -25,8 +25,12 @@
 @theme {
     /* ---- Type -------------------------------------------------------- */
     --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    /* Fiction only. */
-    --font-stamp: "Special Elite", ui-monospace, monospace;
+    /* System titles: the one serif voice, used with restraint (H1/H2). */
+    --font-display: "Playfair Display", Georgia, serif;
+    /* Codes, timestamps, status labels, stamps — both surfaces. Precision,
+       not decoration: this is the "system" showing through. */
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    /* Fiction only: the body of an actual document. */
     --font-case: "Courier Prime", ui-monospace, monospace;
 
     /* ---- Platform surface -------------------------------------------- */
@@ -147,7 +151,7 @@ body {
 }
 
 .case-stamp {
-    font-family: var(--font-stamp);
+    font-family: var(--font-mono);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -173,7 +177,10 @@ body {
 .case-prose h1,
 .case-prose h2,
 .case-prose h3 {
-    font-family: var(--font-stamp);
+    /* A heading inside a document is still part of that document — bolder
+       and larger, not a different typeface pretending to be a stamp. */
+    font-family: var(--font-case);
+    font-weight: 700;
     line-height: 1.3;
     margin-top: 2rem;
 }

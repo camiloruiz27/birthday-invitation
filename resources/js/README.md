@@ -13,7 +13,7 @@ Esto es lo primero que hay que entender.
 | Qué es | El producto: catálogo, cuenta, panel, consola del GM | La ficción: el expediente que lee el jugador |
 | Se siente | Consola de agencia, oscura, moderna | Papel, mecanografiado, bordes duros |
 | Tokens | `surface`, `ink`, `line`, `accent` | `paper`, `paper-ink`, `paper-line`, `paper-accent` |
-| Tipografía | `--font-sans` (Inter) | `--font-case` (Courier Prime), `--font-stamp` (Special Elite) |
+| Tipografía | `--font-sans` (Inter), `--font-display` (Playfair Display) | `--font-case` (Courier Prime) |
 | Bordes | Redondeados (`rounded-card`, `rounded-control`) | Rectos, `border-2` |
 | Layouts | `AppLayout`, `GameMasterLayout`, `AuthLayout` | `PlayerLayout` |
 
@@ -40,6 +40,10 @@ accent / accent-strong / accent-dim                           latón: acentos
 danger / success / warning / info (+ -dim)                    estados
 ```
 
+`--font-mono` (IBM Plex Mono) es la voz de datos: códigos, timestamps, estados.
+Se usa en las dos superficies (`DataTag`, `.case-stamp`) — es lo que representa
+"el sistema" incluso dentro del papel.
+
 ## Componentes
 
 `components/ui/`
@@ -58,6 +62,8 @@ danger / success / warning / info (+ -dim)                    estados
 | `Container` | Ancho y gutters: `prose` \| `app` \| `wide`. |
 | `Field` | `TextField`, `TextArea`, `SelectField`, `CheckboxField`. |
 | `UserMenu` | Menú de cuenta. |
+| `Brand` | El único mark+wordmark de MisterioCode. Todo layout lo usa en vez de repetirlo inline — así el logo real, cuando exista como archivo, se reemplaza en un solo sitio. |
+| `DataTag` | Código, timestamp o estado en `--font-mono` (`MC-001`, `01:17:42`). Sin radio, a propósito — es la contraparte "dato" de `Badge` (control, con radio). |
 
 ### Formularios
 

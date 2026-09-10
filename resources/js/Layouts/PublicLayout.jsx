@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
+import Brand from '../components/ui/Brand';
 
 const NAV = [
     { name: 'Casos', route: 'cases.index' },
@@ -10,19 +11,6 @@ const NAV = [
     { name: 'Inteligencia artificial', route: 'ai' },
     { name: 'Precios', route: 'pricing' },
 ];
-
-function Brand({ onClick }) {
-    return (
-        <Link
-            href={route('home')}
-            onClick={onClick}
-            className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
-        >
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
-            Central de investigación
-        </Link>
-    );
-}
 
 /**
  * Marketing shell.

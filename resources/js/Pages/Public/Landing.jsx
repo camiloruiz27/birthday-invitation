@@ -5,25 +5,41 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Accordion from '../../components/ui/Accordion';
 import EmptyState from '../../components/ui/EmptyState';
+import DataTag from '../../components/ui/DataTag';
 import Section from '../../components/public/Section';
 import CaseCard from '../../components/public/CaseCard';
+import { formatDuration } from '../../lib/format';
 
-const STEPS = [
+/**
+ * The session, as phases rather than absolute minutes — every case has its
+ * own real `duration_minutes` on its own page, and this page names three or
+ * more cases at once, so a single "00:10, 00:45…" timeline would be a
+ * platform-wide claim that is only ever true for one case at a time.
+ */
+const CASE_CLOCK = [
     {
-        title: 'Elige un caso',
-        body: 'Compras el misterio una vez y queda en tu biblioteca para siempre. Puedes dirigirlo las veces que quieras, con grupos distintos.',
+        label: 'Caso abierto',
+        body: 'Cada jugador entra con su propio enlace. Nadie necesita cuenta ni instala nada.',
     },
     {
-        title: 'Invita a tu equipo',
-        body: 'Cada jugador recibe su propio enlace. No necesitan crear cuenta ni instalar nada: abren el enlace en su teléfono y ya están dentro.',
+        label: 'Primera evidencia',
+        body: 'Llega el primer correo del expediente: el caso empieza a abrirse.',
     },
     {
-        title: 'Inicia la investigación',
-        body: 'El caso arranca y el expediente empieza a llegar por partes. Tú decides el ritmo: puedes pausar, reanudar o adelantar un evento.',
+        label: 'Interrogatorios',
+        body: 'Cada quien elige a quién preguntarle, con un número limitado de preguntas.',
     },
     {
-        title: 'Acusen',
-        body: 'Al final cada jugador entrega su acusación: quién, con qué y por qué. Tú las ves todas juntas antes de revelar la solución.',
+        label: 'Nueva información',
+        body: 'El correo sigue llegando mientras investigan — no todo de una vez.',
+    },
+    {
+        label: 'Acusaciones',
+        body: 'Cada jugador dice quién fue, con qué y por qué.',
+    },
+    {
+        label: 'La verdad',
+        body: 'Se revela la solución, y quién de la mesa acertó.',
     },
 ];
 
@@ -54,20 +70,72 @@ const FAQ = [
     },
 ];
 
+function CaseClock() {
+    return (
+        <Section id="el-reloj" kicker="El reloj" title="Así avanza una partida" tone="sunken">
+            <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                {CASE_CLOCK.map((phase, index) => (
+                    <li key={phase.label} className="border-t-2 border-accent-dim pt-4">
+                        <DataTag>{`Fase ${index + 1}/${CASE_CLOCK.length}`}</DataTag>
+                        <h3 className="mt-3 font-semibold text-ink">{phase.label}</h3>
+                        <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{phase.body}</p>
+                    </li>
+                ))}
+            </ol>
+
+            <p className="mt-10 text-sm text-ink-muted">
+                La duración exacta depende del caso — cada uno indica la suya en su propia
+                página.
+            </p>
+        </Section>
+    );
+}
+
+/**
+ * A flat, non-interactive sample of the real interrogation chat — not a
+ * glossy phone mockup, not a screenshot. "Sospechoso 02" and its lines are
+ * an invented example for this page only: a real suspect's name or a real
+ * line of testimony has no place on a public page, since it would spoil an
+ * actual case before anyone bought it.
+ */
+function InterrogationSample() {
+    return (
+        <div className="overflow-hidden border-2 border-paper-ink bg-paper-raised font-case">
+            <div className="flex items-center justify-between bg-paper-ink px-4 py-2.5 text-paper">
+                <span className="case-stamp text-xs">Sospechoso 02 · Testigo</span>
+                <span className="case-stamp text-xs">2/5 preguntas</span>
+            </div>
+            <div className="space-y-3 p-4 text-sm text-paper-ink">
+                <p className="ml-auto max-w-[85%] border border-paper-line bg-paper px-3 py-2">
+                    ¿Dónde estaba esa noche?
+                </p>
+                <p className="mr-auto max-w-[85%] border border-paper-line bg-paper-raised px-3 py-2">
+                    Ya se lo dije a la policía: en la oficina, solo. Nadie puede
+                    confirmarlo, lo sé.
+                </p>
+            </div>
+        </div>
+    );
+}
+
 export default function Landing({ featured, mechanics }) {
     return (
         <PublicLayout current="home">
-            <Head title="Misterios interactivos para jugar en equipo" />
+            <Head title="MisterioCode — Casos de misterio para jugar en equipo" />
 
-            {/* Hero */}
+            {/* 01 / El caso */}
             <div className="border-b border-line">
                 <Container width="wide" className="py-20 sm:py-28">
                     <div className="max-w-3xl">
-                        <p className="text-xs font-medium uppercase tracking-widest text-accent">
-                            Misterios interactivos
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DataTag tone="accent">MisterioCode</DataTag>
+                            <DataTag tone="success">Estado · Activo</DataTag>
+                            {featured[0]?.duration_minutes && (
+                                <DataTag>{formatDuration(featured[0].duration_minutes)}</DataTag>
+                            )}
+                        </div>
 
-                        <h1 className="mt-4 text-3xl font-semibold leading-tight text-ink sm:text-5xl">
+                        <h1 className="mt-6 font-display text-4xl font-semibold leading-tight text-ink sm:text-6xl">
                             Un caso sin resolver, tu equipo y un reloj corriendo.
                         </h1>
 
@@ -79,27 +147,35 @@ export default function Landing({ featured, mechanics }) {
 
                         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
                             <Button href={route('cases.index')} size="lg">
-                                Ver los casos
+                                Abrir el expediente →
                             </Button>
-                            <Button href={route('mechanics')} variant="secondary" size="lg">
+
+                            {/* A same-page anchor, not a Button/Link: it must
+                                never trigger an Inertia visit, only scroll —
+                                app.css already sets scroll-behavior: smooth
+                                and scroll-padding-top for exactly this. */}
+                            <a
+                                href="#el-reloj"
+                                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-line-strong bg-surface-raised px-6 py-3 text-base text-ink transition-colors hover:bg-line"
+                            >
                                 Cómo funciona
-                            </Button>
+                            </a>
                         </div>
                     </div>
                 </Container>
             </div>
 
-            {/* Why it is different */}
+            {/* 02 / La evidencia */}
             <Section
-                kicker="Qué lo hace distinto"
-                title="La diferencia es que el caso te llega a ti"
+                kicker="La evidencia"
+                title="El caso no se lee. Se investiga."
                 description="En un juego de misterio impreso, alguien reparte hojas. Aquí cada jugador tiene su propia bandeja, su propio material y sus propios interrogatorios — y no todos reciben lo mismo."
-                tone="sunken"
             >
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {mechanics.map((mechanic) => (
+                    {mechanics.map((mechanic, index) => (
                         <Card key={mechanic.slug} as="article">
-                            <h3 className="font-semibold text-ink">{mechanic.name}</h3>
+                            <DataTag>{`EV-${String(index + 1).padStart(2, '0')}`}</DataTag>
+                            <h3 className="mt-3 font-semibold text-ink">{mechanic.name}</h3>
                             <p className="mt-2 text-sm leading-relaxed text-ink-muted">
                                 {mechanic.summary}
                             </p>
@@ -116,34 +192,61 @@ export default function Landing({ featured, mechanics }) {
                 </p>
             </Section>
 
-            {/* How it works */}
-            <Section kicker="Cómo funciona" title="Cuatro pasos, de la compra a la acusación">
-                <ol className="grid gap-6 sm:grid-cols-2">
-                    {STEPS.map((step, index) => (
-                        <li key={step.title} className="flex gap-4">
-                            <span
-                                aria-hidden="true"
-                                className="tabular flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-accent-dim bg-accent-dim text-sm font-semibold text-accent-strong"
-                            >
-                                {index + 1}
-                            </span>
-                            <div>
-                                <h3 className="font-semibold text-ink">{step.title}</h3>
-                                <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
-                                    {step.body}
-                                </p>
-                            </div>
-                        </li>
-                    ))}
-                </ol>
+            {/* 03 / El reloj */}
+            <CaseClock />
+
+            {/* 04 / Interrogatorios */}
+            <Section kicker="Interrogatorios" title="Le preguntas, y te responde">
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                    <div className="space-y-4 text-base leading-relaxed text-ink-muted">
+                        <p>
+                            Cada sospechoso tiene su propio testimonio. Puedes preguntarle
+                            directamente, con un número limitado de preguntas — así que hay que
+                            elegir bien.
+                        </p>
+                        <p>
+                            El sospechoso que interroga un jugador queda suyo: nadie más puede
+                            repetirle la pregunta después. Al final, todos comparan lo que
+                            averiguaron.
+                        </p>
+                    </div>
+
+                    <InterrogationSample />
+                </div>
             </Section>
 
-            {/* Featured cases */}
+            {/* 05 / La mesa — sin fotografía todavía */}
             <Section
-                kicker="Casos"
-                title="Elige tu misterio"
+                kicker="La mesa"
+                title="Se juega entre personas, no contra la pantalla"
                 tone="sunken"
             >
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                    <div className="space-y-4 text-base leading-relaxed text-ink-muted">
+                        <p>
+                            Cada quien tiene su teléfono, su propio material y sus propias
+                            preguntas. La mesa se arma comparando lo que cada uno averiguó, no
+                            leyendo lo mismo al mismo tiempo.
+                        </p>
+                        <p>
+                            Quien dirige ve todo; quien juega, solo lo suyo — hasta que llega el
+                            momento de acusar.
+                        </p>
+                    </div>
+
+                    <div className="overflow-hidden rounded-card border border-line bg-surface-sunken">
+                        <img
+                            src="/brand/mesa-01.png"
+                            alt=""
+                            loading="lazy"
+                            className="aspect-[4/3] w-full object-cover"
+                        />
+                    </div>
+                </div>
+            </Section>
+
+            {/* 06 / Los casos */}
+            <Section kicker="Los casos" title="Elige tu misterio">
                 {featured.length === 0 ? (
                     <EmptyState
                         title="Todavía no hay casos publicados"
@@ -152,8 +255,13 @@ export default function Landing({ featured, mechanics }) {
                 ) : (
                     <>
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {featured.map((item) => (
-                                <CaseCard key={item.slug} mysteryCase={item} />
+                            {featured.map((item, index) => (
+                                <div key={item.slug} className="flex flex-col gap-3">
+                                    <DataTag tone="accent">
+                                        {`MC-${String(index + 1).padStart(3, '0')}`}
+                                    </DataTag>
+                                    <CaseCard mysteryCase={item} />
+                                </div>
                             ))}
                         </div>
 
@@ -166,8 +274,8 @@ export default function Landing({ featured, mechanics }) {
                 )}
             </Section>
 
-            {/* Game Master */}
-            <Section kicker="Para quien dirige" title="Tú controlas la partida">
+            {/* Para quien dirige */}
+            <Section kicker="Para quien dirige" title="Tú controlas la partida" tone="sunken">
                 <div className="grid gap-10 lg:grid-cols-2">
                     <div className="space-y-4 text-base leading-relaxed text-ink-muted">
                         <p>
@@ -203,8 +311,8 @@ export default function Landing({ featured, mechanics }) {
                 </div>
             </Section>
 
-            {/* AI, stated plainly */}
-            <Section kicker="Inteligencia artificial" title="Dónde usamos IA, y dónde no" tone="sunken">
+            {/* IA, dicho sin rodeos */}
+            <Section kicker="Inteligencia artificial" title="Dónde usamos IA, y dónde no">
                 <div className="max-w-2xl space-y-4 text-base leading-relaxed text-ink-muted">
                     <p>
                         Usamos IA en dos sitios concretos: para que los sospechosos respondan
@@ -224,8 +332,8 @@ export default function Landing({ featured, mechanics }) {
                 </div>
             </Section>
 
-            {/* FAQ */}
-            <Section kicker="Preguntas" title="Lo que suelen preguntar" width="prose">
+            {/* Preguntas */}
+            <Section kicker="Preguntas" title="Lo que suelen preguntar" width="prose" tone="sunken">
                 <div className="space-y-3">
                     {FAQ.map((item) => (
                         <Accordion key={item.question} summary={item.question}>
@@ -235,19 +343,18 @@ export default function Landing({ featured, mechanics }) {
                 </div>
             </Section>
 
-            {/* Closing call to action */}
-            <Section tone="sunken">
+            {/* 07 / Cierre */}
+            <Section>
                 <div className="rounded-card border border-line bg-surface-raised px-6 py-12 text-center sm:px-12">
-                    <h2 className="text-2xl font-semibold text-ink sm:text-3xl">
-                        ¿Listo para abrir tu primer caso?
+                    <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
+                        La investigación empieza cuando tú lo digas.
                     </h2>
                     <p className="mx-auto mt-4 max-w-xl text-base text-ink-muted">
-                        Crea tu cuenta, elige un misterio e invita a tu equipo. La investigación
-                        empieza cuando tú lo digas.
+                        Crea tu cuenta, elige un misterio e invita a tu equipo.
                     </p>
                     <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                         <Button href={route('cases.index')} size="lg">
-                            Ver los casos
+                            Elegir un caso →
                         </Button>
                         <Button href={route('register')} variant="secondary" size="lg">
                             Crear cuenta

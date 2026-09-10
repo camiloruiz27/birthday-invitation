@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MisterioCode isotype: favicon / avatar.
+
+  Hand built, not traced: no production file of the real logo exists, only
+  screenshots of a moodboard. This restates the same geometry as
+  resources/js/components/ui/Brand.jsx's inline mark, with two differences a
+  standalone file needs: a solid background fill (a favicon has no page
+  behind it to blend into) and literal hex colours instead of CSS custom
+  properties (an externally loaded SVG cannot read this app's stylesheet).
+  If Brand.jsx's mark changes, update this file to match by hand.
+
+  Colours: 14171d is the carbon surface, 3d4451 the strong line, e9e2d0 the
+  cream paper tone, d9a441 the brass accent.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <rect x="0" y="0" width="32" height="32" rx="7" fill="#14171d" />
+    <rect x="1" y="1" width="30" height="30" rx="6" fill="none" stroke="#3d4451" stroke-width="1.25" />
+    <text x="4" y="22.5" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="16" fill="#e9e2d0">M</text>
+    <text x="15.5" y="23.5" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="16" fill="#e9e2d0">C</text>
+    <line x1="23" y1="3" x2="7" y2="29" stroke="#d9a441" stroke-width="1.5" stroke-linecap="round" />
+</svg>

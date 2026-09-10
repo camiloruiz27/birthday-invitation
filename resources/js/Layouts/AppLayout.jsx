@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Alert from '../components/ui/Alert';
 import UserMenu from '../components/ui/UserMenu';
+import Brand from '../components/ui/Brand';
 
 /**
  * Shell for the signed-in platform: the investigation agency's console.
@@ -59,16 +60,7 @@ export default function AppLayout({
                 <Container width={width}>
                     <div className="flex h-16 items-center justify-between gap-6">
                         <div className="flex min-w-0 items-center gap-8">
-                            <Link
-                                href={route('dashboard')}
-                                className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="h-2 w-2 shrink-0 rounded-full bg-accent"
-                                />
-                                <span className="hidden sm:inline">Central de investigación</span>
-                            </Link>
+                            <Brand href={route('dashboard')} hideWordmarkOnMobile />
 
                             {/* Only a handful of sections, so they fit on a
                                 phone without needing a drawer. */}

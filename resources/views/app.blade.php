@@ -7,17 +7,44 @@
 
     {{-- Overridden per page by Inertia's <Head title>; kept case-neutral so
          the shell does not name one particular mystery. --}}
-    <title inertia>Central de investigación</title>
+    <title inertia>MisterioCode</title>
 
     {{-- Paints the browser chrome to match the console surface instead of
          leaving a white bar above a dark page on mobile. --}}
     <meta name="theme-color" content="#14171d">
 
+    {{-- SVG first (crisp at any size, what current browsers actually use);
+         the .ico stays as "alternate" for the handful that don't support an
+         SVG favicon, and for OS bookmark icons that expect one. --}}
+    <link rel="icon" type="image/svg+xml" href="/brand/isotipo.svg">
+    <link rel="alternate icon" href="/favicon.ico">
+
+    {{-- What a shared link shows on WhatsApp/Twitter/Facebook. One image and
+         one description for the whole site — a page with something more
+         specific to say (a case's own cover art) can override these with its
+         own <Head> tags later; nothing does yet. The image carries no text of
+         its own on purpose: the title and description below are real text,
+         not pixels, so they never come out garbled the way AI-generated text
+         inside an image does. --}}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MisterioCode">
+    <meta property="og:title" content="MisterioCode — Casos de misterio para jugar en equipo">
+    <meta property="og:description" content="El expediente llega en tiempo real. Investigan, interrogan y acusan — la solución la escribió una persona, no una IA.">
+    <meta property="og:image" content="{{ url('/brand/social-network.png') }}">
+    <meta property="og:image:width" content="1731">
+    <meta property="og:image:height" content="909">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MisterioCode — Casos de misterio para jugar en equipo">
+    <meta name="twitter:description" content="El expediente llega en tiempo real. Investigan, interrogan y acusan — la solución la escribió una persona, no una IA.">
+    <meta name="twitter:image" content="{{ url('/brand/social-network.png') }}">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    {{-- Inter carries the platform UI; Special Elite and Courier Prime are
-         used only by the case (fiction) surface. --}}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    {{-- Inter carries the platform UI; Playfair Display is the one serif
+         voice for system titles; IBM Plex Mono is every code/timestamp/status
+         label in both surfaces; Courier Prime is the fiction surface's own
+         document body (envelopes, testimony). --}}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 
     {{-- Both emit an inline <script>, so both carry the CSP nonce that
          SecurityHeaders puts on the response. Ziggy takes it as its second
