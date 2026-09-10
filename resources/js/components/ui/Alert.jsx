@@ -7,7 +7,11 @@ const VARIANTS = {
         politeness: 'polite',
     },
     error: {
-        classes: 'border-danger bg-danger-dim/40 text-ink',
+        // -strong border: the base danger hex is calibrated for ~7:1 on
+        // Papel, not for sitting directly on this dark surface — see the
+        // token comment in app.css. The body text stays text-ink (Papel),
+        // never tinted by the tone.
+        classes: 'border-danger-strong bg-danger-dim/40 text-ink',
         role: 'alert',
         politeness: 'assertive',
     },

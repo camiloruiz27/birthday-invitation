@@ -12,7 +12,10 @@ const CONTROL_BASE =
     'placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:opacity-60';
 
 function controlClasses(error, className) {
-    return `${CONTROL_BASE} ${error ? 'border-danger' : 'border-line-strong'} ${className}`;
+    // -strong: the base danger hex is calibrated for ~7:1 on Papel, and
+    // measures under 3:1 as a border directly on this dark control — see
+    // the token comment in app.css.
+    return `${CONTROL_BASE} ${error ? 'border-danger-strong' : 'border-line-strong'} ${className}`;
 }
 
 function Label({ htmlFor, children, required }) {
@@ -20,7 +23,7 @@ function Label({ htmlFor, children, required }) {
         <label htmlFor={htmlFor} className="block text-sm font-medium text-ink">
             {children}
             {required && (
-                <span className="ml-1 text-danger" aria-hidden="true">
+                <span className="ml-1 text-danger-strong" aria-hidden="true">
                     *
                 </span>
             )}
@@ -37,7 +40,7 @@ function Messages({ id, hint, error }) {
                 </p>
             )}
             {error && (
-                <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-danger">
+                <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-danger-strong">
                     {error}
                 </p>
             )}

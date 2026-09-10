@@ -5,10 +5,10 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Accordion from '../../components/ui/Accordion';
 import EmptyState from '../../components/ui/EmptyState';
-import DataTag from '../../components/ui/DataTag';
+import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
 import CaseCard from '../../components/public/CaseCard';
-import { formatDuration } from '../../lib/format';
+import Icon from '../../lib/mechanicIcons';
 
 /**
  * The session, as phases rather than absolute minutes — every case has its
@@ -75,18 +75,22 @@ function CaseClock() {
         <Section id="el-reloj" kicker="El reloj" title="Así avanza una partida" tone="sunken">
             <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {CASE_CLOCK.map((phase, index) => (
-                    <li key={phase.label} className="border-t-2 border-accent-dim pt-4">
-                        <DataTag>{`Fase ${index + 1}/${CASE_CLOCK.length}`}</DataTag>
-                        <h3 className="mt-3 font-semibold text-ink">{phase.label}</h3>
+                    <Reveal key={phase.label} as="li" delay={index * 0.1} className="border-t-2 border-accent-dim pt-4">
+                        <h3 className="font-semibold text-ink">{phase.label}</h3>
                         <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">{phase.body}</p>
-                    </li>
+                    </Reveal>
                 ))}
             </ol>
 
-            <p className="mt-10 text-sm text-ink-muted">
-                La duración exacta depende del caso — cada uno indica la suya en su propia
-                página.
-            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-between gap-4">
+                <p className="text-sm text-ink-muted">
+                    La duración exacta depende del caso — cada uno indica la suya en su propia
+                    página.
+                </p>
+                <Button href={route('cases.index')} variant="secondary">
+                    Ver los casos →
+                </Button>
+            </div>
         </Section>
     );
 }
@@ -120,32 +124,39 @@ function InterrogationSample() {
 
 export default function Landing({ featured, mechanics }) {
     return (
-        <PublicLayout current="home">
+        <PublicLayout current="home" bleed>
             <Head title="MisterioCode — Casos de misterio para jugar en equipo" />
 
-            {/* 01 / El caso */}
-            <div className="border-b border-line">
-                <Container width="wide" className="py-20 sm:py-28">
+            {/* 01 / El caso — full-bleed photo behind the headline. The
+                image sits at opacity-40 over the Carbón background rather
+                than under a gradient overlay: the same technique keeps the
+                dark palette consistent instead of adding a second dark
+                treatment on top of another. Works with no photo yet too —
+                an empty <img> src renders nothing and the Carbón background
+                alone carries the hero until public/brand/hero-01.png exists. */}
+            <header className="relative flex min-h-[90vh] items-center overflow-hidden border-b border-line bg-surface">
+                <div className="absolute inset-0 opacity-40">
+                    <img src="/brand/hero-01.png" alt="" className="h-full w-full object-cover" />
+                </div>
+
+                <Container width="wide" className="relative z-10 pb-20 pt-40 sm:pb-28 sm:pt-48">
                     <div className="max-w-3xl">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <DataTag tone="accent">MisterioCode</DataTag>
-                            <DataTag tone="success">Estado · Activo</DataTag>
-                            {featured[0]?.duration_minutes && (
-                                <DataTag>{formatDuration(featured[0].duration_minutes)}</DataTag>
-                            )}
-                        </div>
+                        <Reveal>
+                            <h1 className="font-display text-5xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-7xl lg:text-8xl">
+                                Un caso sin resolver.{' '}
+                                <span className="text-ink-muted">Tu equipo. El reloj corriendo.</span>
+                            </h1>
+                        </Reveal>
 
-                        <h1 className="mt-6 font-display text-4xl font-semibold leading-tight text-ink sm:text-6xl">
-                            Un caso sin resolver, tu equipo y un reloj corriendo.
-                        </h1>
+                        <Reveal delay={0.2}>
+                            <p className="mt-8 max-w-2xl text-lg leading-relaxed text-ink-muted sm:text-xl">
+                                No es un PDF para imprimir. El expediente llega por correo mientras
+                                juegan, la evidencia se ve como evidencia, los sospechosos responden
+                                cuando los interrogan y al final hay que acusar a alguien.
+                            </p>
+                        </Reveal>
 
-                        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-muted">
-                            No es un PDF para imprimir. El expediente llega por correo mientras
-                            juegan, la evidencia se ve como evidencia, los sospechosos responden
-                            cuando los interrogan y al final hay que acusar a alguien.
-                        </p>
-
-                        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+                        <Reveal delay={0.3} className="mt-10 flex flex-col gap-3 sm:flex-row">
                             <Button href={route('cases.index')} size="lg">
                                 Abrir el expediente →
                             </Button>
@@ -156,14 +167,14 @@ export default function Landing({ featured, mechanics }) {
                                 and scroll-padding-top for exactly this. */}
                             <a
                                 href="#el-reloj"
-                                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-control border border-line-strong bg-surface-raised px-6 py-3 text-base text-ink transition-colors hover:bg-line"
+                                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-line-strong bg-surface-raised/80 px-7 py-3 text-base text-ink backdrop-blur-sm transition-colors hover:bg-line-strong"
                             >
                                 Cómo funciona
                             </a>
-                        </div>
+                        </Reveal>
                     </div>
                 </Container>
-            </div>
+            </header>
 
             {/* 02 / La evidencia */}
             <Section
@@ -173,13 +184,17 @@ export default function Landing({ featured, mechanics }) {
             >
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                     {mechanics.map((mechanic, index) => (
-                        <Card key={mechanic.slug} as="article">
-                            <DataTag>{`EV-${String(index + 1).padStart(2, '0')}`}</DataTag>
-                            <h3 className="mt-3 font-semibold text-ink">{mechanic.name}</h3>
-                            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                                {mechanic.summary}
-                            </p>
-                        </Card>
+                        <Reveal key={mechanic.slug} delay={index * 0.1}>
+                            <Card as="article" className="group transition-shadow hover:shadow-overlay">
+                                <span className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-sunken text-ink-muted transition-all duration-500 group-hover:-rotate-6 group-hover:bg-accent group-hover:text-ink-inverse">
+                                    <Icon slug={mechanic.slug} />
+                                </span>
+                                <h3 className="mt-4 font-semibold text-ink">{mechanic.name}</h3>
+                                <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                                    {mechanic.summary}
+                                </p>
+                            </Card>
+                        </Reveal>
                     ))}
                 </div>
 
@@ -198,7 +213,7 @@ export default function Landing({ featured, mechanics }) {
             {/* 04 / Interrogatorios */}
             <Section kicker="Interrogatorios" title="Le preguntas, y te responde">
                 <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-                    <div className="space-y-4 text-base leading-relaxed text-ink-muted">
+                    <Reveal className="space-y-4 text-base leading-relaxed text-ink-muted">
                         <p>
                             Cada sospechoso tiene su propio testimonio. Puedes preguntarle
                             directamente, con un número limitado de preguntas — así que hay que
@@ -209,9 +224,11 @@ export default function Landing({ featured, mechanics }) {
                             repetirle la pregunta después. Al final, todos comparan lo que
                             averiguaron.
                         </p>
-                    </div>
+                    </Reveal>
 
-                    <InterrogationSample />
+                    <Reveal delay={0.15}>
+                        <InterrogationSample />
+                    </Reveal>
                 </div>
             </Section>
 
@@ -222,7 +239,7 @@ export default function Landing({ featured, mechanics }) {
                 tone="sunken"
             >
                 <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-                    <div className="space-y-4 text-base leading-relaxed text-ink-muted">
+                    <Reveal className="space-y-4 text-base leading-relaxed text-ink-muted">
                         <p>
                             Cada quien tiene su teléfono, su propio material y sus propias
                             preguntas. La mesa se arma comparando lo que cada uno averiguó, no
@@ -232,16 +249,30 @@ export default function Landing({ featured, mechanics }) {
                             Quien dirige ve todo; quien juega, solo lo suyo — hasta que llega el
                             momento de acusar.
                         </p>
-                    </div>
+                    </Reveal>
 
-                    <div className="overflow-hidden rounded-card border border-line bg-surface-sunken">
-                        <img
-                            src="/brand/mesa-01.png"
-                            alt=""
-                            loading="lazy"
-                            className="aspect-[4/3] w-full object-cover"
-                        />
-                    </div>
+                    <Reveal delay={0.15} className="relative">
+                        <div className="overflow-hidden rounded-hero border border-line bg-surface-sunken shadow-overlay">
+                            <img
+                                src="/brand/mesa-01.png"
+                                alt=""
+                                loading="lazy"
+                                className="aspect-4/3 w-full object-cover"
+                            />
+                        </div>
+
+                        {/* Breaks out of the photo's corner on purpose — the
+                            same device the reference uses to overlap a data
+                            panel on an image, adapted to MisterioCode's own
+                            surface/accent colours instead of copying its
+                            black-on-white treatment. */}
+                        <div className="absolute -bottom-6 -right-4 max-w-52 rounded-card border border-line-strong bg-surface-raised p-5 shadow-overlay sm:-right-8">
+                            <p className="text-sm font-semibold text-ink">Jugadores</p>
+                            <p className="mt-1.5 text-sm leading-snug text-ink-muted">
+                                Cada uno con su enlace, su bandeja y sus propias preguntas.
+                            </p>
+                        </div>
+                    </Reveal>
                 </div>
             </Section>
 
@@ -256,12 +287,9 @@ export default function Landing({ featured, mechanics }) {
                     <>
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             {featured.map((item, index) => (
-                                <div key={item.slug} className="flex flex-col gap-3">
-                                    <DataTag tone="accent">
-                                        {`MC-${String(index + 1).padStart(3, '0')}`}
-                                    </DataTag>
+                                <Reveal key={item.slug} delay={index * 0.1}>
                                     <CaseCard mysteryCase={item} />
-                                </div>
+                                </Reveal>
                             ))}
                         </div>
 
@@ -276,77 +304,109 @@ export default function Landing({ featured, mechanics }) {
 
             {/* Para quien dirige */}
             <Section kicker="Para quien dirige" title="Tú controlas la partida" tone="sunken">
-                <div className="grid gap-10 lg:grid-cols-2">
-                    <div className="space-y-4 text-base leading-relaxed text-ink-muted">
-                        <p>
-                            Dirigir no es leer un guion. Tienes una consola donde ves el reloj de
-                            la partida, qué le ha llegado a cada jugador y qué está a punto de
-                            pasar.
-                        </p>
-                        <p>
-                            Si el grupo va rápido, adelantas un evento. Si necesitan un respiro,
-                            pausas y el reloj se detiene. Puedes leer todos los interrogatorios
-                            mientras ocurren y comparar las acusaciones al final.
-                        </p>
-                    </div>
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                    <Reveal>
+                        <div className="overflow-hidden rounded-hero border border-line bg-surface-sunken shadow-overlay">
+                            <img
+                                src="/brand/direccion-01.png"
+                                alt=""
+                                loading="lazy"
+                                className="aspect-4/3 w-full object-cover"
+                            />
+                        </div>
+                    </Reveal>
 
-                    <Card>
-                        <ul className="space-y-3 text-sm">
-                            {[
-                                'Reloj de partida con pausa y reanudación',
-                                'Línea de tiempo con lo enviado y lo pendiente',
-                                'Enlace de acceso de cada jugador, listo para copiar',
-                                'Todos los interrogatorios, en vivo',
-                                'Las acusaciones de la mesa, una al lado de la otra',
-                            ].map((item) => (
-                                <li key={item} className="flex gap-3 text-ink-muted">
-                                    <span aria-hidden="true" className="text-accent">
-                                        —
-                                    </span>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </Card>
+                    <div className="space-y-8">
+                        <Reveal delay={0.1} className="space-y-4 text-base leading-relaxed text-ink-muted">
+                            <p>
+                                Dirigir no es leer un guion. Tienes una consola donde ves el reloj
+                                de la partida, qué le ha llegado a cada jugador y qué está a punto
+                                de pasar.
+                            </p>
+                            <p>
+                                Si el grupo va rápido, adelantas un evento. Si necesitan un
+                                respiro, pausas y el reloj se detiene. Puedes leer todos los
+                                interrogatorios mientras ocurren y comparar las acusaciones al
+                                final.
+                            </p>
+                        </Reveal>
+
+                        <Reveal delay={0.2}>
+                            <Card>
+                                <ul className="space-y-3 text-sm">
+                                    {[
+                                        'Reloj de partida con pausa y reanudación',
+                                        'Línea de tiempo con lo enviado y lo pendiente',
+                                        'Enlace de acceso de cada jugador, listo para copiar',
+                                        'Todos los interrogatorios, en vivo',
+                                        'Las acusaciones de la mesa, una al lado de la otra',
+                                    ].map((item) => (
+                                        <li key={item} className="flex gap-3 text-ink-muted">
+                                            <span aria-hidden="true" className="text-accent">
+                                                —
+                                            </span>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </Card>
+                        </Reveal>
+                    </div>
                 </div>
             </Section>
 
             {/* IA, dicho sin rodeos */}
             <Section kicker="Inteligencia artificial" title="Dónde usamos IA, y dónde no">
-                <div className="max-w-2xl space-y-4 text-base leading-relaxed text-ink-muted">
-                    <p>
-                        Usamos IA en dos sitios concretos: para que los sospechosos respondan
-                        cuando los interrogan, y para poner voz a los mensajes de audio.
-                    </p>
-                    <p>
-                        El resto del caso — la historia, la evidencia, los testimonios, la
-                        solución — está escrito por personas. La IA no inventa hechos del caso:
-                        cada sospechoso solo conoce su propia declaración.
-                    </p>
-                </div>
+                <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+                    <div>
+                        <Reveal className="space-y-4 text-base leading-relaxed text-ink-muted">
+                            <p>
+                                Usamos IA en dos sitios concretos: para que los sospechosos
+                                respondan cuando los interrogan, y para poner voz a los mensajes
+                                de audio.
+                            </p>
+                            <p>
+                                El resto del caso — la historia, la evidencia, los testimonios, la
+                                solución — está escrito por personas. La IA no inventa hechos del
+                                caso: cada sospechoso solo conoce su propia declaración.
+                            </p>
+                        </Reveal>
 
-                <div className="mt-8">
-                    <Button href={route('ai')} variant="secondary">
-                        Cómo funciona exactamente
-                    </Button>
+                        <div className="mt-8">
+                            <Button href={route('ai')} variant="secondary">
+                                Cómo funciona exactamente
+                            </Button>
+                        </div>
+                    </div>
+
+                    <Reveal delay={0.15}>
+                        <div className="overflow-hidden rounded-hero border border-line bg-surface-sunken shadow-overlay">
+                            <img
+                                src="/brand/ia-01.png"
+                                alt=""
+                                loading="lazy"
+                                className="aspect-4/3 w-full object-cover"
+                            />
+                        </div>
+                    </Reveal>
                 </div>
             </Section>
 
             {/* Preguntas */}
             <Section kicker="Preguntas" title="Lo que suelen preguntar" width="prose" tone="sunken">
-                <div className="space-y-3">
+                <Reveal className="space-y-3">
                     {FAQ.map((item) => (
                         <Accordion key={item.question} summary={item.question}>
                             <p className="text-sm leading-relaxed text-ink-muted">{item.answer}</p>
                         </Accordion>
                     ))}
-                </div>
+                </Reveal>
             </Section>
 
             {/* 07 / Cierre */}
             <Section>
-                <div className="rounded-card border border-line bg-surface-raised px-6 py-12 text-center sm:px-12">
-                    <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
+                <Reveal as="div" className="rounded-hero border border-line bg-surface-raised px-6 py-16 text-center sm:px-12">
+                    <h2 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
                         La investigación empieza cuando tú lo digas.
                     </h2>
                     <p className="mx-auto mt-4 max-w-xl text-base text-ink-muted">
@@ -360,7 +420,7 @@ export default function Landing({ featured, mechanics }) {
                             Crear cuenta
                         </Button>
                     </div>
-                </div>
+                </Reveal>
             </Section>
         </PublicLayout>
     );

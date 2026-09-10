@@ -39,7 +39,7 @@ export default function PlayerRow({ index, player, error, onChange, onRemove, ca
                         onChange={(event) => onChange({ ...player, email: event.target.value })}
                         aria-invalid={error ? 'true' : undefined}
                         className={`mt-1 w-full rounded-control border bg-surface-sunken px-3 py-2.5 text-base text-ink placeholder:text-ink-subtle sm:mt-0 ${
-                            error ? 'border-danger' : 'border-line-strong'
+                            error ? 'border-danger-strong' : 'border-line-strong'
                         }`}
                     />
                 </div>
@@ -60,7 +60,7 @@ export default function PlayerRow({ index, player, error, onChange, onRemove, ca
                 </button>
             </div>
 
-            {error && <p className="mt-1.5 text-xs font-medium text-danger">{error}</p>}
+            {error && <p className="mt-1.5 text-xs font-medium text-danger-strong">{error}</p>}
         </div>
     );
 }

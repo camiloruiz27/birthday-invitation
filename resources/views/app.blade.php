@@ -13,10 +13,9 @@
          leaving a white bar above a dark page on mobile. --}}
     <meta name="theme-color" content="#14171d">
 
-    {{-- SVG first (crisp at any size, what current browsers actually use);
-         the .ico stays as "alternate" for the handful that don't support an
-         SVG favicon, and for OS bookmark icons that expect one. --}}
-    <link rel="icon" type="image/svg+xml" href="/brand/isotipo.svg">
+    {{-- The real isotype now that one exists; the .ico stays as "alternate"
+         for the handful of browsers/OS bookmark icons that expect one. --}}
+    <link rel="icon" type="image/png" href="/brand/isotipo.png">
     <link rel="alternate icon" href="/favicon.ico">
 
     {{-- What a shared link shows on WhatsApp/Twitter/Facebook. One image and
@@ -40,11 +39,11 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    {{-- Inter carries the platform UI; Playfair Display is the one serif
-         voice for system titles; IBM Plex Mono is every code/timestamp/status
-         label in both surfaces; Courier Prime is the fiction surface's own
-         document body (envelopes, testimony). --}}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    {{-- Inter carries the platform UI; Outfit is the clean geometric sans
+         for system titles (H1/H2); IBM Plex Mono is every code/timestamp/
+         status label in both surfaces; Courier Prime is the fiction
+         surface's own document body (envelopes, testimony). --}}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 
     {{-- Both emit an inline <script>, so both carry the CSP nonce that
          SecurityHeaders puts on the response. Ziggy takes it as its second

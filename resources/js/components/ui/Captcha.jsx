@@ -119,7 +119,7 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
                 </p>
             )}
 
-            {error && <p className="mt-1.5 text-xs font-medium text-danger">{error}</p>}
+            {error && <p className="mt-1.5 text-xs font-medium text-danger-strong">{error}</p>}
         </div>
     );
 }

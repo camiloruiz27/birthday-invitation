@@ -23,7 +23,7 @@ function Metric({ label, value, hint, tone = 'default' }) {
         <div className="rounded-card border border-line bg-surface-raised p-4">
             <p
                 className={`tabular text-2xl font-semibold ${
-                    tone === 'alert' && value > 0 ? 'text-danger' : 'text-ink'
+                    tone === 'alert' && value > 0 ? 'text-danger-strong' : 'text-ink'
                 }`}
             >
                 {value}

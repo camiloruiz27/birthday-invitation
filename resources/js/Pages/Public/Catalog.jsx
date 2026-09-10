@@ -4,6 +4,7 @@ import Section from '../../components/public/Section';
 import CaseCard from '../../components/public/CaseCard';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
+import Reveal from '../../components/ui/Reveal';
 
 export default function Catalog({ cases }) {
     return (
@@ -27,8 +28,10 @@ export default function Catalog({ cases }) {
                     />
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {cases.map((item) => (
-                            <CaseCard key={item.slug} mysteryCase={item} />
+                        {cases.map((item, index) => (
+                            <Reveal key={item.slug} delay={(index % 3) * 0.1}>
+                                <CaseCard mysteryCase={item} />
+                            </Reveal>
                         ))}
                     </div>
                 )}

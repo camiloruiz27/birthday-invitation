@@ -41,8 +41,8 @@ danger / success / warning / info (+ -dim)                    estados
 ```
 
 `--font-mono` (IBM Plex Mono) es la voz de datos: códigos, timestamps, estados.
-Se usa en las dos superficies (`DataTag`, `.case-stamp`) — es lo que representa
-"el sistema" incluso dentro del papel.
+Se usa en `.case-stamp` — es lo que representa "el sistema" incluso dentro del
+papel.
 
 ## Componentes
 
@@ -63,7 +63,7 @@ Se usa en las dos superficies (`DataTag`, `.case-stamp`) — es lo que represent
 | `Field` | `TextField`, `TextArea`, `SelectField`, `CheckboxField`. |
 | `UserMenu` | Menú de cuenta. |
 | `Brand` | El único mark+wordmark de MisterioCode. Todo layout lo usa en vez de repetirlo inline — así el logo real, cuando exista como archivo, se reemplaza en un solo sitio. |
-| `DataTag` | Código, timestamp o estado en `--font-mono` (`MC-001`, `01:17:42`). Sin radio, a propósito — es la contraparte "dato" de `Badge` (control, con radio). |
+| `Reveal` | Aparece con un desplazamiento suave la primera vez que entra en pantalla al hacer scroll. `delay` escalona un grupo de hermanos. |
 
 ### Formularios
 

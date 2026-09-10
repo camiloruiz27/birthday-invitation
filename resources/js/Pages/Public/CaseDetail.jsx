@@ -5,8 +5,10 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Alert from '../../components/ui/Alert';
+import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
 import { CaseFacts } from '../../components/public/CaseCard';
+import Icon from '../../lib/mechanicIcons';
 import { formatPrice } from '../../lib/format';
 
 function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase }) {
@@ -31,16 +33,9 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
 
             <div className="mt-6">
                 {owned ? (
-                    <>
-                        <Badge tone="success">En tu biblioteca</Badge>
-                        <Button
-                            href={route('dashboard')}
-                            fullWidth
-                            className="mt-4"
-                        >
-                            Crear una partida
-                        </Button>
-                    </>
+                    <Button href={route('dashboard')} fullWidth>
+                        Crear una partida
+                    </Button>
                 ) : !auth?.user ? (
                     <>
                         <Button href={route('register')} fullWidth>
@@ -112,12 +107,23 @@ export default function CaseDetail({ case: mysteryCase, owned, canPurchase, canS
 
                     <div className="mt-6 grid gap-10 lg:grid-cols-[1.5fr_1fr]">
                         <div>
-                            <h1 className="text-3xl font-semibold leading-tight text-ink sm:text-4xl">
-                                {mysteryCase.name}
-                            </h1>
+                            {/* No two-tone split here the way the landing hero
+                                has one: a case's own name is dynamic content,
+                                and forcing an arbitrary colour split into a
+                                sentence we didn't write would break for a
+                                short or punctuation-free title. The tagline
+                                already carries the same "full tone, then
+                                muted" read as a separate, safer element. */}
+                            <Reveal>
+                                <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
+                                    {mysteryCase.name}
+                                </h1>
+                            </Reveal>
 
                             {mysteryCase.tagline && (
-                                <p className="mt-4 text-lg text-ink-muted">{mysteryCase.tagline}</p>
+                                <Reveal delay={0.2}>
+                                    <p className="mt-4 text-lg text-ink-muted">{mysteryCase.tagline}</p>
+                                </Reveal>
                             )}
 
                             <CaseFacts mysteryCase={mysteryCase} className="mt-6" />
@@ -159,16 +165,21 @@ export default function CaseDetail({ case: mysteryCase, owned, canPurchase, canS
                 description="No todos los casos usan las mismas. Estas son las de este."
             >
                 <div className="grid gap-5 sm:grid-cols-2">
-                    {mysteryCase.mechanics.map((mechanic) => (
-                        <Card key={mechanic.slug} as="article">
-                            <div className="flex items-start justify-between gap-3">
-                                <h3 className="font-semibold text-ink">{mechanic.name}</h3>
-                                {mechanic.ai && <Badge tone="accent">IA</Badge>}
-                            </div>
-                            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-                                {mechanic.detail}
-                            </p>
-                        </Card>
+                    {mysteryCase.mechanics.map((mechanic, index) => (
+                        <Reveal key={mechanic.slug} delay={index * 0.1}>
+                            <Card as="article" className="group transition-shadow hover:shadow-overlay">
+                                <div className="flex items-start justify-between gap-3">
+                                    <span className="flex h-12 w-12 items-center justify-center rounded-card bg-surface-sunken text-ink-muted transition-all duration-500 group-hover:-rotate-6 group-hover:bg-accent group-hover:text-ink-inverse">
+                                        <Icon slug={mechanic.slug} />
+                                    </span>
+                                    {mechanic.ai && <Badge tone="accent">IA</Badge>}
+                                </div>
+                                <h3 className="mt-4 font-semibold text-ink">{mechanic.name}</h3>
+                                <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                                    {mechanic.detail}
+                                </p>
+                            </Card>
+                        </Reveal>
                     ))}
                 </div>
 

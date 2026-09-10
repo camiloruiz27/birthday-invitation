@@ -127,9 +127,9 @@ function LedgerRow({ entry }) {
                 <p
                     className={`tabular text-sm font-semibold ${
                         entry.delta > 0
-                            ? 'text-success'
+                            ? 'text-success-strong'
                             : entry.delta < 0
-                              ? 'text-danger'
+                              ? 'text-danger-strong'
                               : 'text-ink-subtle'
                     }`}
                 >

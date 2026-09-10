@@ -41,7 +41,7 @@ function LibraryCase({ mysteryCase }) {
                 ) : (
                     <>
                         {mysteryCase.quota.full && (
-                            <p className="mt-3 text-xs text-danger">
+                            <p className="mt-3 text-xs text-danger-strong">
                                 Sin cupo. Elimina una partida de este caso para crear otra.
                             </p>
                         )}

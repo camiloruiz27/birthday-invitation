@@ -12,6 +12,39 @@ import TimelineEventRow from '../../components/game-master/TimelineEventRow';
 import DeleteGameButton from '../../components/game-master/DeleteGameButton';
 import usePoll from '../../hooks/usePoll';
 
+/** First letter of up to two words — the avatar's fallback, there's no photo. */
+function initials(name) {
+    const letters = name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('');
+
+    return letters || '?';
+}
+
+function KeyIcon(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" {...props}>
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.5 10.5a3.5 3.5 0 10-3.397 3.5L5 20.103V22h2.5l1-1h2v-2h2l1.5-1.5v-2h1.5l1-1-.966-.966A3.48 3.48 0 0014.5 10.5z"
+            />
+            <circle cx="15" cy="8" r="0.75" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+function CheckIcon(props) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" {...props}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+    );
+}
+
 function PlayerLink({ player }) {
     const url = route('immersion.player.inbox', player.access_token);
     const [copied, setCopied] = useState(false);
@@ -29,19 +62,39 @@ function PlayerLink({ player }) {
     }
 
     return (
-        <li className="border-b border-line py-3 last:border-0">
-            <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-ink">{player.name}</p>
-                {player.is_owner && <Badge tone="accent">Tú</Badge>}
-            </div>
-            <p className="truncate text-xs text-ink-muted">{player.email}</p>
+        <li className="rounded-card border border-line bg-surface-sunken p-4 transition-colors hover:border-line-strong">
+            <div className="flex items-start gap-3">
+                <span
+                    aria-hidden="true"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-dim font-display text-sm font-semibold text-accent-strong"
+                >
+                    {initials(player.name)}
+                </span>
 
-            <div className="mt-2 flex items-center gap-2">
-                <code className="min-w-0 flex-1 truncate rounded-control bg-surface-sunken px-2 py-1.5 text-xs text-ink-muted">
-                    {url}
-                </code>
-                <Button variant="secondary" size="sm" onClick={copy}>
-                    {copied ? 'Copiado' : 'Copiar'}
+                <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-medium text-ink">{player.name}</p>
+                        {player.is_owner && <Badge tone="accent">Tú</Badge>}
+                    </div>
+                    <p className="truncate text-xs text-ink-muted">{player.email}</p>
+                </div>
+            </div>
+
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-subtle">
+                <KeyIcon className="h-3.5 w-3.5 shrink-0" />
+                Enlace de acceso
+            </p>
+            <div className="mt-1.5 flex items-center gap-2 rounded-control border border-line-strong bg-surface px-3 py-2">
+                <code className="min-w-0 flex-1 truncate font-mono text-xs text-ink-muted">{url}</code>
+                <Button variant="ghost" size="sm" onClick={copy} className="shrink-0">
+                    {copied ? (
+                        <>
+                            <CheckIcon className="h-3.5 w-3.5 text-success-strong" />
+                            Copiado
+                        </>
+                    ) : (
+                        'Copiar'
+                    )}
                 </Button>
             </div>
         </li>
@@ -474,7 +527,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         {game.players.length === 0 ? (
                             <EmptyState title="Esta partida no tiene jugadores" />
                         ) : (
-                            <ul>
+                            <ul className="space-y-3">
                                 {game.players.map((player) => (
                                     <PlayerLink key={player.id} player={player} />
                                 ))}
@@ -522,7 +575,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 confirmLabel="Revelar"
             >
                 {ending.pending_accusations > 0 && (
-                    <p className="text-sm text-danger">
+                    <p className="text-sm text-danger-strong">
                         Faltan {ending.pending_accusations} de {ending.players} acusaciones. Quien
                         no haya acusado ya no podrá hacerlo.
                     </p>
