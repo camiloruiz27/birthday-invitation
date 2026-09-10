@@ -12,7 +12,10 @@ const VARIANTS = {
     primary: {
         base: 'bg-accent text-ink-inverse border-transparent font-semibold',
         fill: 'bg-surface',
-        hoverText: 'group-hover:text-ink',
+        // Written out rather than derived from the hover class at runtime:
+        // Tailwind scans the source statically and never sees a class name
+        // that only exists after a string operation.
+        hoverText: 'group-hover:text-ink group-active:text-ink',
     },
     secondary: {
         base: 'bg-surface-raised text-ink border-line-strong',
@@ -56,6 +59,7 @@ export default function Button({
     variant = 'primary',
     size = 'md',
     href = null,
+    external = false,
     type = 'button',
     loading = false,
     disabled = false,
@@ -81,15 +85,39 @@ export default function Button({
             {fill && (
                 <span
                     aria-hidden="true"
-                    className={`absolute inset-0 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100 ${fill}`}
+                    /* group-active too: hover never fires on a touch screen,
+                       so without it the loudest control in the app gives no
+                       feedback at all when a thumb presses it. */
+                    className={`absolute inset-0 origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100 group-active:scale-x-100 ${fill}`}
                 />
             )}
-            <span className={`relative z-10 inline-flex items-center gap-2 transition-colors duration-500 ${hoverText || ''}`}>
+            <span
+                className={`relative z-10 inline-flex items-center gap-2 transition-colors duration-500 ${
+                    hoverText || ''
+                }`}
+            >
                 {loading && <Spinner size={size === 'lg' ? 'md' : 'sm'} label={null} />}
                 {children}
             </span>
         </>
     );
+
+    // Anything that is not an Inertia page — a file download, an evidence
+    // scan, an outside site. Inertia's Link intercepts the click regardless
+    // of target and would try to parse the response as a page visit, so
+    // these have to be a plain anchor.
+    if (href && external) {
+        return (
+            <a
+                href={href}
+                className={classes}
+                aria-disabled={disabled || loading || undefined}
+                {...props}
+            >
+                {content}
+            </a>
+        );
+    }
 
     if (href) {
         return (

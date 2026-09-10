@@ -124,6 +124,12 @@
        glow. */
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
+
+    /* A sheet of paper lying ON the dark desk. Deeper and tighter than
+       --shadow-raised, which is tuned for a dark card on a dark surface:
+       paper over Carbón needs a real cast shadow or it reads as a hole cut
+       into the desk rather than something resting on it. */
+    --shadow-sheet: 0 2px 4px rgb(0 0 0 / 0.35), 0 10px 28px rgb(0 0 0 / 0.45);
 }
 
 /*
@@ -154,7 +160,11 @@ html {
 
 body {
     margin: 0;
-    min-height: 100vh;
+    /* dvh, not vh: on a phone 100vh is the LARGE viewport (URL bar
+       retracted), so with the bar showing every page is taller than what is
+       visible and the bottom of the layout starts life under browser
+       chrome. */
+    min-height: 100dvh;
     font-family: var(--font-sans);
     background: var(--color-surface);
     color: var(--color-ink);
@@ -212,6 +222,25 @@ body {
 
 .case-prose {
     line-height: 1.75;
+    /* Case documents are the one prose surface that carries content nobody
+       on this team wrote — AI testimony, epilogues — plus URLs and tokens
+       from the case files. A single unbreakable run used to be contained by
+       `overflow-x: auto` on this element; that rule is gone (see
+       .case-scroll-x below) and nothing else stops it, so the page itself
+       would scroll sideways under the fixed bottom bar. */
+    overflow-wrap: anywhere;
+}
+
+/* Preflight leaves `pre { white-space: pre }`, which on a 360px screen means
+   one terminal dump or ASCII floor plan takes the whole layout with it. */
+.case-prose pre {
+    white-space: pre-wrap;
+}
+
+.case-prose a {
+    color: var(--color-paper-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .case-prose > * + * {
@@ -273,10 +302,29 @@ body {
     text-align: left;
 }
 
+/* CaseDocument splits a document into sections and lifts each heading out of
+   the flow to use as the section's own label, so the first element of a
+   section body must not keep the 2rem top margin it had mid-document. */
+.case-prose > :first-child {
+    margin-top: 0;
+}
+
 /* Long evidence tables scroll inside themselves rather than making the whole
-   page scroll sideways on a phone. */
-.case-prose {
+   page scroll sideways on a phone.
+   This used to be `overflow-x: auto` on .case-prose itself, which was wrong
+   twice over: per the overflow spec, setting one axis to a non-visible value
+   computes the other to `auto` too, so every document silently became a
+   two-axis scroll container that clipped anything reaching outside it (a
+   stamp over an edge, a sticky header). And it never worked anyway, because
+   `table { width: 100% }` shrinks the table to fit instead of overflowing.
+   CaseDocument wraps each table in this class as it parses. */
+.case-scroll-x {
     overflow-x: auto;
+}
+
+.case-scroll-x > table {
+    width: auto;
+    min-width: 100%;
 }
 
 /*
@@ -317,4 +365,53 @@ body {
 
 .animate-reveal {
     animation: reveal-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/*
+|------------------------------------------------------------------------------
+| Case document sections
+|------------------------------------------------------------------------------
+|
+| Deliberately not .animate-reveal: its 36px lift is tuned for a card entering
+| the viewport, and on a panel that is already pushing the rest of the page
+| down it reads as a jolt. prefers-reduced-motion is handled globally above.
+|
+*/
+
+@keyframes case-sheet-open {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.case-sheet-open {
+    animation: case-sheet-open 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+|------------------------------------------------------------------------------
+| Phone affordances
+|------------------------------------------------------------------------------
+|
+| Players are on phones — that is the whole audience for the case screens, not
+| an adaptation of a desktop layout.
+|
+*/
+
+/* Filter and tab strips scroll sideways instead of stacking into three rows
+   of chrome above the content they filter. */
+.no-scrollbar {
+    scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* A bar pinned to the bottom of the viewport lands on top of the form when
+   the soft keyboard opens — right over the submit button of the accusation,
+   which is the last thing a player does in a two-hour game. */
+@media (max-width: 639px) {
+    body:has(input:focus, textarea:focus, select:focus) .player-bottom-nav {
+        display: none;
+    }
 }

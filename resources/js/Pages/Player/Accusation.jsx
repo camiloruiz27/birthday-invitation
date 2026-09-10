@@ -1,25 +1,77 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
+import Alert from '../../components/ui/Alert';
+import Button from '../../components/ui/Button';
+import Card, { CardHeader } from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
+import { TextField, TextArea } from '../../components/ui/Field';
 import usePoll from '../../hooks/usePoll';
 
-function CaseField({ id, label, error, children }) {
+/**
+ * Picking the culprit as a board of people rather than a dropdown.
+ *
+ * A <select> holding nine names is the wrong control for the most dramatic
+ * decision in the game: it hides eight of the options and reads like a
+ * shipping form. These are radios — real ones, so the arrow keys and the
+ * label association come from the browser — dressed as cards.
+ */
+function SuspectChoice({ suspects, value, onChange, error }) {
     return (
-        <div>
-            <label htmlFor={id} className="case-stamp block text-xs">
-                {label}
-            </label>
-            {children}
+        <fieldset>
+            <legend className="text-sm font-medium text-ink">
+                ¿Quién?
+                <span className="ml-1 text-danger-strong" aria-hidden="true">
+                    *
+                </span>
+            </legend>
+
+            <div
+                className="mt-2.5 grid gap-2.5 sm:grid-cols-2"
+                aria-describedby={error ? 'suspect_slug-error' : undefined}
+            >
+                {suspects.map((suspect) => {
+                    const selected = value === suspect.slug;
+
+                    return (
+                        <label
+                            key={suspect.slug}
+                            className={`flex cursor-pointer items-start gap-3 rounded-card border p-3.5 transition-colors ${
+                                selected
+                                    ? 'border-accent bg-accent-dim/40'
+                                    : 'border-line bg-surface-raised hover:border-line-strong'
+                            }`}
+                        >
+                            <input
+                                type="radio"
+                                name="suspect_slug"
+                                value={suspect.slug}
+                                checked={selected}
+                                onChange={() => onChange(suspect.slug)}
+                                required
+                                className="mt-1 h-4 w-4 shrink-0 border-line-strong bg-surface-sunken"
+                            />
+                            <span className="min-w-0">
+                                <span className="block font-semibold text-ink">{suspect.name}</span>
+                                {/* Plain, not a 10px tracked stamp: the role
+                                    is what tells two suspects apart, on the
+                                    most consequential tap of the game. */}
+                                <span className="mt-0.5 block text-sm text-ink-muted">
+                                    {suspect.role}
+                                </span>
+                            </span>
+                        </label>
+                    );
+                })}
+            </div>
+
             {error && (
-                <p id={`${id}-error`} className="mt-1 text-xs font-bold text-red-800">
+                <p id="suspect_slug-error" className="mt-1.5 text-xs font-medium text-danger-strong">
                     {error}
                 </p>
             )}
-        </div>
+        </fieldset>
     );
 }
-
-const CONTROL =
-    'mt-1.5 w-full border-2 bg-white px-3 py-2.5 text-base';
 
 export default function Accusation({ player, game, unlocked, locked, suspects, pending }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -29,6 +81,7 @@ export default function Accusation({ player, game, unlocked, locked, suspects, p
     });
 
     const alreadySent = Boolean(player.accusation);
+    const chosen = suspects.find((suspect) => suspect.slug === data.suspect_slug);
 
     // The ending can be published by someone else finishing their accusation,
     // so the page has to notice without a reload.
@@ -37,10 +90,6 @@ export default function Accusation({ player, game, unlocked, locked, suspects, p
     function submit(event) {
         event.preventDefault();
         post(route('immersion.player.accusation.store', player.access_token));
-    }
-
-    function border(field) {
-        return errors[field] ? 'border-red-800' : 'border-paper-ink';
     }
 
     return (
@@ -54,111 +103,96 @@ export default function Accusation({ player, game, unlocked, locked, suspects, p
             <Head title="Acusación final" />
 
             {game.ending_revealed_at ? (
-                <div className="border-2 border-paper-ink bg-paper-raised px-6 py-10 text-center">
-                    <p className="case-stamp text-sm">El caso está resuelto</p>
-                    <p className="mx-auto mt-2 max-w-sm text-sm text-paper-muted">
-                        Ya se reveló quién fue y quiénes acertaron.
-                    </p>
-                    <Link
-                        href={route('immersion.player.solution', player.access_token)}
-                        className="case-stamp mt-6 inline-block min-h-12 border-2 border-paper-ink bg-paper-ink px-6 py-3 text-sm text-paper"
-                    >
-                        Ver la solución
-                    </Link>
-                </div>
+                <EmptyState
+                    title="El caso está resuelto"
+                    description="Ya se reveló quién fue y quiénes acertaron."
+                    action={
+                        <Button href={route('immersion.player.solution', player.access_token)}>
+                            Ver la solución
+                        </Button>
+                    }
+                />
             ) : !unlocked ? (
-                <div className="border-2 border-dashed border-paper-line px-6 py-12 text-center">
-                    <p className="case-stamp text-sm">Todavía no disponible</p>
-                    <p className="mx-auto mt-2 max-w-sm text-sm text-paper-muted">
-                        El formulario se habilita cuando la investigación llega a su fase
-                        final. Sigue revisando tu bandeja.
-                    </p>
-                </div>
+                <EmptyState
+                    title="Todavía no disponible"
+                    description="El formulario se habilita cuando la investigación llega a su fase final. Sigue revisando tu bandeja."
+                    action={
+                        <Button
+                            variant="secondary"
+                            href={route('immersion.player.inbox', player.access_token)}
+                        >
+                            Volver a la bandeja
+                        </Button>
+                    }
+                />
             ) : locked ? (
-                <div className="border-2 border-dashed border-paper-line px-6 py-12 text-center">
-                    <p className="case-stamp text-sm">Las acusaciones se cerraron</p>
-                    <p className="mx-auto mt-2 max-w-sm text-sm text-paper-muted">
-                        El Game Master dio por terminado el caso.
-                    </p>
-                </div>
+                <EmptyState
+                    title="Las acusaciones se cerraron"
+                    description="El Game Master dio por terminado el caso."
+                />
             ) : (
-                <div className="border-2 border-paper-ink bg-paper-raised p-4 sm:p-6">
-                    <h2 className="case-stamp text-sm">Tu acusación, {player.name}</h2>
-                    <p className="mt-2 text-sm text-paper-muted">
-                        {alreadySent
-                            ? 'Ya enviaste tu acusación. Puedes cambiarla hasta que se revele la solución.'
-                            : 'Puedes cambiarla hasta que se revele la solución.'}
-                    </p>
+                <Card as="section">
+                    <CardHeader
+                        title={`Tu acusación, ${player.name}`}
+                        description={
+                            alreadySent
+                                ? 'Ya la enviaste. Puedes cambiarla hasta que se revele la solución.'
+                                : 'Puedes cambiarla hasta que se revele la solución.'
+                        }
+                    />
 
                     {alreadySent && pending > 0 && (
-                        <p className="mt-3 border-t border-dashed border-paper-line pt-3 text-sm">
-                            Faltan <strong>{pending}</strong>{' '}
+                        <Alert variant="info">
+                            Faltan <strong className="text-ink">{pending}</strong>{' '}
                             {pending === 1 ? 'investigador' : 'investigadores'} por acusar. La
                             solución se revela sola cuando estén todas.
-                        </p>
+                        </Alert>
                     )}
 
-                    <form onSubmit={submit} className="mt-6 space-y-5">
-                        <CaseField id="suspect_slug" label="¿Quién?" error={errors.suspect_slug}>
-                            <select
-                                id="suspect_slug"
-                                name="suspect_slug"
-                                required
-                                value={data.suspect_slug}
-                                onChange={(event) => setData('suspect_slug', event.target.value)}
-                                aria-invalid={errors.suspect_slug ? 'true' : undefined}
-                                className={`${CONTROL} ${border('suspect_slug')}`}
-                            >
-                                <option value="" disabled>
-                                    Elige a una persona…
-                                </option>
-                                {suspects.map((suspect) => (
-                                    <option key={suspect.slug} value={suspect.slug}>
-                                        {suspect.name} — {suspect.role}
-                                    </option>
-                                ))}
-                            </select>
-                        </CaseField>
+                    <form onSubmit={submit} className="space-y-6">
+                        <SuspectChoice
+                            suspects={suspects}
+                            value={data.suspect_slug}
+                            onChange={(slug) => setData('suspect_slug', slug)}
+                            error={errors.suspect_slug}
+                        />
 
-                        <CaseField id="weapon" label="¿Con qué?" error={errors.weapon}>
-                            <input
-                                id="weapon"
-                                name="weapon"
-                                type="text"
-                                required
-                                value={data.weapon}
-                                onChange={(event) => setData('weapon', event.target.value)}
-                                aria-invalid={errors.weapon ? 'true' : undefined}
-                                className={`${CONTROL} ${border('weapon')}`}
-                            />
-                        </CaseField>
+                        <TextField
+                            id="weapon"
+                            label="¿Con qué?"
+                            value={data.weapon}
+                            onChange={(value) => setData('weapon', value)}
+                            error={errors.weapon}
+                            hint="El método o el arma: qué usó para hacerlo."
+                            required
+                        />
 
-                        <CaseField id="motive" label="¿Por qué?" error={errors.motive}>
-                            <textarea
-                                id="motive"
-                                name="motive"
-                                rows={5}
-                                required
-                                value={data.motive}
-                                onChange={(event) => setData('motive', event.target.value)}
-                                aria-invalid={errors.motive ? 'true' : undefined}
-                                className={`${CONTROL} ${border('motive')}`}
-                            />
-                        </CaseField>
+                        <TextArea
+                            id="motive"
+                            label="¿Por qué?"
+                            rows={5}
+                            value={data.motive}
+                            onChange={(value) => setData('motive', value)}
+                            error={errors.motive}
+                            hint="Tu razonamiento. Lo leerán los demás cuando se revele la solución."
+                            required
+                        />
 
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="case-stamp min-h-12 w-full border-2 border-paper-ink bg-paper-ink px-4 py-3 text-sm text-paper disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {processing
-                                ? 'Enviando…'
-                                : alreadySent
-                                  ? 'Actualizar acusación'
-                                  : 'Enviar acusación'}
-                        </button>
+                        {/* Reading the accusation back as one sentence is the
+                            last chance to notice it does not hold together. */}
+                        {chosen && data.weapon && (
+                            <p className="rounded-card border border-line bg-surface-sunken p-4 text-sm text-ink-muted">
+                                Vas a acusar a{' '}
+                                <strong className="text-ink">{chosen.name}</strong>, con{' '}
+                                <strong className="text-ink">{data.weapon}</strong>.
+                            </p>
+                        )}
+
+                        <Button type="submit" loading={processing} fullWidth size="lg">
+                            {alreadySent ? 'Actualizar acusación' : 'Enviar acusación'}
+                        </Button>
                     </form>
-                </div>
+                </Card>
             )}
         </PlayerLayout>
     );

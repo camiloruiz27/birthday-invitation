@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- viewport-fit=cover is what makes env(safe-area-inset-*) return a real
+         value; without it the player's fixed bottom navigation sits under the
+         iPhone home indicator, which eats the first tap. --}}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="@if (config('platform.indexable'))index, follow@else noindex, nofollow @endif">
 
     {{-- Overridden per page by Inertia's <Head title>; kept case-neutral so
@@ -11,7 +14,9 @@
 
     {{-- Paints the browser chrome to match the console surface instead of
          leaving a white bar above a dark page on mobile. --}}
-    <meta name="theme-color" content="#14171d">
+    {{-- Must match --color-surface, or Android Chrome's URL bar renders a
+         visibly different dark than the header right underneath it. --}}
+    <meta name="theme-color" content="#080f14">
 
     {{-- The real isotype now that one exists; the .ico stays as "alternate"
          for the handful of browsers/OS bookmark icons that expect one. --}}
