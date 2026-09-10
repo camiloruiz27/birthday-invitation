@@ -4,6 +4,7 @@ namespace App\Modules\Platform;
 
 use App\Modules\Platform\Console\Commands\ClaimGames;
 use App\Modules\Platform\Console\Commands\CreatePromoCode;
+use App\Modules\Platform\Console\Commands\CronStatus;
 use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
 use App\Modules\Platform\Console\Commands\ListPromoCodes;
@@ -19,6 +20,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +36,9 @@ use Illuminate\Support\ServiceProvider;
  */
 class PlatformServiceProvider extends ServiceProvider
 {
+    /** Where the scheduler leaves proof that it ran. Read by platform:cron-status. */
+    public const HEARTBEAT_KEY = 'platform:scheduler-heartbeat';
+
     /**
      * The throttle behind every screen where a promo code can be typed.
      *
@@ -163,6 +168,7 @@ class PlatformServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncMysteryCases::class,
+                CronStatus::class,
                 GrantCaseAccessCommand::class,
                 ClaimGames::class,
                 MakeAdmin::class,
@@ -175,6 +181,24 @@ class PlatformServiceProvider extends ServiceProvider
 
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
+
+                // The scheduler's heartbeat.
+                //
+                // Laravel records nothing about having run, so "is the cron
+                // working?" is otherwise unanswerable without SSH — you can
+                // only infer it from symptoms, days later, from a table that
+                // waited for an envelope. This writes a timestamp every
+                // minute and `platform:cron-status` reads it.
+                //
+                // Deliberately the cheapest thing in the schedule: one cache
+                // write, no database, no lock. If this stops being current,
+                // the cron itself stopped.
+                $schedule->call(function () {
+                    Cache::put(self::HEARTBEAT_KEY, now()->toIso8601String(), now()->addDays(7));
+                })
+                    ->everyMinute()
+                    ->name('platform:scheduler-heartbeat')
+                    ->withoutOverlapping(5);
 
                 // A pending order never granted anything, so cleaning it up
                 // late costs nothing — daily is plenty.
