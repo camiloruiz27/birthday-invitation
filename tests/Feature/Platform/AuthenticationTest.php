@@ -3,8 +3,10 @@
 namespace Tests\Feature\Platform;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -177,6 +179,69 @@ class AuthenticationTest extends TestCase
             $known->getSession()->get('status'),
             $unknown->getSession()->get('status'),
         );
+    }
+
+    /**
+     * The whole recovery round trip, because until now nothing covered it:
+     * the notification goes out, the link in it works, and the new password
+     * is the one that logs in afterwards.
+     */
+    public function test_a_user_can_recover_their_password(): void
+    {
+        Notification::fake();
+
+        $user = $this->user();
+
+        $this->post(route('password.email'), ['email' => 'gm@example.com'])
+            ->assertSessionHas('status');
+
+        $token = null;
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use (&$token) {
+            $token = $notification->token;
+
+            return true;
+        });
+
+        $this->get(route('password.reset', ['token' => $token, 'email' => 'gm@example.com']))
+            ->assertOk();
+
+        $this->post(route('password.store'), [
+            'token' => $token,
+            'email' => 'gm@example.com',
+            'password' => 'a-brand-new-passphrase',
+            'password_confirmation' => 'a-brand-new-passphrase',
+        ])->assertRedirect(route('login'));
+
+        $this->post(route('login'), [
+            'email' => 'gm@example.com',
+            'password' => 'a-brand-new-passphrase',
+        ])->assertRedirect(route('dashboard'));
+    }
+
+    /**
+     * A password-reset link that arrives in English signed "Laravel", from a
+     * sender named after the case's fictional police department, reads as
+     * phishing — and the safe reaction, deleting it, locks the buyer out.
+     * Same reasoning as the verification mail; this one is easier to lose.
+     */
+    public function test_the_password_reset_mail_is_in_spanish_and_signed_as_the_platform(): void
+    {
+        Notification::fake();
+
+        $user = $this->user();
+
+        $this->post(route('password.email'), ['email' => 'gm@example.com']);
+
+        Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            $mail = $notification->toMail($user);
+            $body = implode(' ', array_merge($mail->introLines, $mail->outroLines));
+
+            return $mail->subject === 'Restablece tu contraseña — MisterioCode'
+                && $mail->salutation === 'MisterioCode'
+                && str_contains($body, 'contraseña')
+                && ! str_contains($body, 'password');
+        });
     }
 
     public function test_login_is_rate_limited(): void

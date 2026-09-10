@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
 import { TextField } from '../../components/ui/Field';
+import TextLink from '../../components/ui/TextLink';
 
 export default function ForgotPassword() {
     const { data, setData, post, processing, errors } = useForm({
@@ -27,9 +28,9 @@ export default function ForgotPassword() {
             title="Recuperar contraseña"
             description="Te enviamos un enlace para elegir una contraseña nueva."
             footer={
-                <Link href={route('login')} className="underline hover:text-ink">
+                <TextLink href={route('login')}>
                     Volver a ingresar
-                </Link>
+                </TextLink>
             }
         >
             <Head title="Recuperar contraseña" />

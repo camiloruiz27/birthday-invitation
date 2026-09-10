@@ -64,7 +64,7 @@ export default function RetryAudioButton({ game, event }) {
                 <p
                     role="status"
                     className={`max-w-xs text-xs sm:text-right ${
-                        failed ? 'text-danger' : 'text-ink-muted'
+                        failed ? 'text-danger-strong' : 'text-ink-muted'
                     }`}
                 >
                     {message}

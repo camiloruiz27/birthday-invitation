@@ -1,20 +1,20 @@
 import { Link } from '@inertiajs/react';
 import AppLayout from './AppLayout';
 import Badge, { GAME_STATUS_TONE } from '../components/ui/Badge';
-
-const STATUS_LABELS = {
-    draft: 'Sin iniciar',
-    running: 'En curso',
-    paused: 'Pausada',
-    finished: 'Terminada',
-};
+// Imported, not redeclared: this file used to keep its own copy of the same
+// four labels, directly under GameRow's comment saying the point of having
+// them in one place is that a state never reads two ways.
+import { STATUS_LABELS } from '../components/app/GameRow';
 
 function GameTab({ href, active, children }) {
     return (
         <Link
             href={href}
             aria-current={active ? 'page' : undefined}
-            className={`-mb-px shrink-0 border-b-2 px-1 pb-2.5 text-sm transition-colors ${
+            // px-1 left about four pixels between adjacent tabs and the row
+            // was ~34px tall; both matter on the screen a GM runs the table
+            // from, one-handed, while the clock is going.
+            className={`-mb-px inline-flex min-h-11 shrink-0 items-center border-b-2 px-2 pb-2.5 text-sm transition-colors ${
                 active
                     ? 'border-accent font-medium text-ink'
                     : 'border-transparent text-ink-muted hover:text-ink'
@@ -45,7 +45,7 @@ export default function GameMasterLayout({ game, tab, title, actions, can = {}, 
                 <div className="mb-6">
                     <Link
                         href={route('immersion.gm.games.index')}
-                        className="text-sm text-ink-muted hover:text-ink"
+                        className="inline-flex min-h-11 items-center text-sm text-ink-muted hover:text-ink"
                     >
                         ← Todas las partidas
                     </Link>

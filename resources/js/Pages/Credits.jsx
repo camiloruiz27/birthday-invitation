@@ -5,6 +5,12 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
+// The shared one, not a local copy: the copy that used to live here did not
+// divide by the currency's minor unit, so the day a package is priced in
+// anything but COP this screen would have shown 100x the price the checkout
+// screen charges.
+import { formatPrice } from '../lib/format';
+import TextLink from '../components/ui/TextLink';
 
 const ENDING_LABELS = {
     classic: 'Final clásico',
@@ -26,14 +32,6 @@ const REASONS = {
     adjust: { label: 'Ajuste', tone: 'accent' },
     promo: { label: 'Código', tone: 'success' },
 };
-
-function formatPrice(amount, currency) {
-    return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency,
-        maximumFractionDigits: 0,
-    }).format(amount);
-}
 
 function Figure({ label, value, hint, emphasis = false }) {
     return (
@@ -127,9 +125,9 @@ function LedgerRow({ entry }) {
                 <p
                     className={`tabular text-sm font-semibold ${
                         entry.delta > 0
-                            ? 'text-success'
+                            ? 'text-success-strong'
                             : entry.delta < 0
-                              ? 'text-danger'
+                              ? 'text-danger-strong'
                               : 'text-ink-subtle'
                     }`}
                 >
@@ -246,9 +244,9 @@ export default function Credits({ wallet, costs, packages, simulated, canPurchas
             <section className="mt-8">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                     <h2 className="text-base font-semibold text-ink">Recargar</h2>
-                    <Link href={route('promo.redeem')} className="text-sm text-accent underline">
+                    <TextLink href={route('promo.redeem')} className="text-sm">
                         ¿Tienes un código de regalo?
-                    </Link>
+                    </TextLink>
                 </div>
                 <p className="mt-1 text-sm text-ink-muted">
                     Los créditos no caducan y se comparten entre todos tus casos.

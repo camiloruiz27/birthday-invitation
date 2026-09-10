@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import { CaseFacts } from '../components/public/CaseCard';
+import TextLink from '../components/ui/TextLink';
 
 function LibraryCase({ mysteryCase }) {
     return (
@@ -41,7 +42,7 @@ function LibraryCase({ mysteryCase }) {
                 ) : (
                     <>
                         {mysteryCase.quota.full && (
-                            <p className="mt-3 text-xs text-danger">
+                            <p className="mt-3 text-xs text-danger-strong">
                                 Sin cupo. Elimina una partida de este caso para crear otra.
                             </p>
                         )}
@@ -108,9 +109,9 @@ export default function Library({ cases }) {
 
             <p className="mt-3 text-sm text-ink-muted">
                 ¿Buscas otro misterio?{' '}
-                <Link href={route('cases.index')} className="text-accent underline">
+                <TextLink href={route('cases.index')}>
                     Mira el catálogo completo
-                </Link>
+                </TextLink>
                 .
             </p>
         </AppLayout>

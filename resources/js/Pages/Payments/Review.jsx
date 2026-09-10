@@ -101,7 +101,7 @@ export default function Review({
                     {codeApplied && (
                         <div className="flex items-baseline justify-between">
                             <dt className="text-ink-muted">Código {promo_code}</dt>
-                            <dd className="tabular text-success">
+                            <dd className="tabular text-success-strong">
                                 -{formatPrice(discount_amount, currency)}
                             </dd>
                         </div>

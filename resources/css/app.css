@@ -25,37 +25,81 @@
 @theme {
     /* ---- Type -------------------------------------------------------- */
     --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    /* Fiction only. */
-    --font-stamp: "Special Elite", ui-monospace, monospace;
+    /* System titles (H1/H2) — a clean geometric sans, not a serif: the
+       brand's own colour and motion carry the "editorial" feeling now, so
+       the display face can stay legible and modern instead of ornate. */
+    --font-display: "Outfit", "Inter", ui-sans-serif, system-ui, sans-serif;
+    /* Codes, timestamps, status labels, stamps — both surfaces. Precision,
+       not decoration: this is the "system" showing through. */
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    /* Fiction only: the body of an actual document. */
     --font-case: "Courier Prime", ui-monospace, monospace;
 
     /* ---- Platform surface -------------------------------------------- */
-    /* Deliberately not pure black: a blue-tinted charcoal reads as a screen,
-       not as a void, and keeps large areas from feeling like a hole. */
-    --color-surface: #14171d;
-    --color-surface-raised: #1c2029;
-    --color-surface-overlay: #22273180;
-    --color-surface-sunken: #0f1216;
+    /* Carbón: not pure black, a leveled-off charcoal with a faint
+       blue-green undertone — reads as cinematic and nocturnal rather than a
+       digital void. This is the brand's own hex, not an approximation. */
+    --color-surface: #080f14;
+    /* Azul profundo: the second dark neutral, distinct enough from Carbón to
+       read as a separate surface (a raised card, a panel) without
+       introducing a bright colour. */
+    --color-surface-raised: #182a3a;
+    --color-surface-overlay: #182a3a80;
+    --color-surface-sunken: #04070a;
 
-    --color-line: #2c313c;
-    --color-line-strong: #3d4451;
+    --color-line: #1f2f3d;
+    --color-line-strong: #2f4356;
 
-    --color-ink: #e8eaee;
-    --color-ink-muted: #9aa2b1;
-    --color-ink-subtle: #6b7383;
-    --color-ink-inverse: #14171d;
+    /* Papel is the platform's one light colour, everywhere — not only the
+       fiction surface. Warm parchment on Carbón is ~14.7:1 contrast, per the
+       brand's own spec, and it is what keeps the whole product from reading
+       as a generic cool-grey dark theme. */
+    --color-ink: #e8e0d2;
+    --color-ink-muted: #a89f8e;
+    --color-ink-subtle: #6f6858;
+    --color-ink-inverse: #080f14;
 
-    /* Brass: archives and evidence tags, without going gold-plated. */
-    --color-accent: #d9a441;
-    --color-accent-strong: #e8b95d;
-    --color-accent-dim: #6b5222;
+    /* Latón: olive brass, the one accent — distinction and age, never a
+       bright modern gold. */
+    --color-accent: #88924e;
+    --color-accent-strong: #a3ae66;
+    --color-accent-dim: #333a1f;
 
-    --color-danger: #e5484d;
-    --color-danger-dim: #5c1f21;
-    --color-success: #46a758;
-    --color-success-dim: #1e4527;
-    --color-warning: #f5a623;
-    --color-info: #5b9dd9;
+    /* Rojo óxido: confidential stamps, tension, alerts — deliberately
+       muted, not a vivid warning red. Verified at ~7.15:1 against Papel per
+       the brand's own spec — correct for a stamp on paper, a large fill, or
+       a border. It is NOT safe as small text directly on Carbón or Azul
+       Profundo (~1.6:1 measured) — that pairing was never part of the spec,
+       and it is what `-strong` below exists to fix. */
+    --color-danger: #7a2d2d;
+    --color-danger-dim: #3d1717;
+    /* Verde expediente: confirmation, evidence found — a desaturated,
+       almost military green, never a bright "success" green. Same caveat as
+       Rojo óxido: ~7.18:1 on Papel, but unreadable as text on a dark
+       surface. */
+    --color-success: #3a4a3f;
+    --color-success-dim: #1c241e;
+    /* Not part of the brand's 6-colour palette — derived, not specified.
+       Warning sits between Latón and Rojo óxido so it never reads as
+       "another CTA" (Latón) or "another alert" (Rojo óxido). Info is a
+       lightened Azul Profundo, distinct from the surface that already uses
+       that hue as a background. */
+    --color-warning: #a8672f;
+    --color-info: #4a7a9e;
+
+    /* ---- "-strong": the same three hues, lightened for text on dark ------
+       Every place danger/success/warning was being used as small text sat
+       directly on Carbón, Azul Profundo, or its own "-dim" badge fill — none
+       of which the brand spec's contrast numbers cover (those were measured
+       against Papel). Text there needs its own, separately-verified colour.
+       Each one below clears WCAG AA (4.5:1) against Carbón, Azul Profundo,
+       and its matching "-dim" background — Azul Profundo is the tightest of
+       the three, and every value here still clears ~5:1 against it. Use
+       these for TEXT; the base danger/success/warning stay correct for
+       fills, borders, and anything on Papel. */
+    --color-danger-strong: #e0836a;
+    --color-success-strong: #6fa87e;
+    --color-warning-strong: #d4923f;
 
     /* ---- Case surface (fiction) -------------------------------------- */
     --color-paper: #e9e2d0;
@@ -67,15 +111,25 @@
     --color-paper-accent: #c9b98a;
 
     /* ---- Radius ------------------------------------------------------ */
-    /* Platform rounds softly; the case stays sharp, like paper. */
-    --radius-card: 0.5rem;
-    --radius-control: 0.375rem;
+    /* Platform rounds softly — deliberately generous, not the tight 4-8px
+       radius of a typical admin UI; the case stays sharp, like paper.
+       Primary/secondary buttons go all the way to rounded-full instead of
+       using a token: that is a shape choice, not a point on this scale. */
+    --radius-card: 1.5rem;
+    --radius-control: 0.75rem;
+    --radius-hero: 2.5rem;
 
     /* ---- Elevation --------------------------------------------------- */
     /* Low-opacity and tight: enough to lift a card off the console, never a
        glow. */
     --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --shadow-overlay: 0 12px 40px rgb(0 0 0 / 0.5);
+
+    /* A sheet of paper lying ON the dark desk. Deeper and tighter than
+       --shadow-raised, which is tuned for a dark card on a dark surface:
+       paper over Carbón needs a real cast shadow or it reads as a hole cut
+       into the desk rather than something resting on it. */
+    --shadow-sheet: 0 2px 4px rgb(0 0 0 / 0.35), 0 10px 28px rgb(0 0 0 / 0.45);
 }
 
 /*
@@ -106,7 +160,11 @@ html {
 
 body {
     margin: 0;
-    min-height: 100vh;
+    /* dvh, not vh: on a phone 100vh is the LARGE viewport (URL bar
+       retracted), so with the bar showing every page is taller than what is
+       visible and the bottom of the layout starts life under browser
+       chrome. */
+    min-height: 100dvh;
     font-family: var(--font-sans);
     background: var(--color-surface);
     color: var(--color-ink);
@@ -147,7 +205,7 @@ body {
 }
 
 .case-stamp {
-    font-family: var(--font-stamp);
+    font-family: var(--font-mono);
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -164,6 +222,25 @@ body {
 
 .case-prose {
     line-height: 1.75;
+    /* Case documents are the one prose surface that carries content nobody
+       on this team wrote — AI testimony, epilogues — plus URLs and tokens
+       from the case files. A single unbreakable run used to be contained by
+       `overflow-x: auto` on this element; that rule is gone (see
+       .case-scroll-x below) and nothing else stops it, so the page itself
+       would scroll sideways under the fixed bottom bar. */
+    overflow-wrap: anywhere;
+}
+
+/* Preflight leaves `pre { white-space: pre }`, which on a 360px screen means
+   one terminal dump or ASCII floor plan takes the whole layout with it. */
+.case-prose pre {
+    white-space: pre-wrap;
+}
+
+.case-prose a {
+    color: var(--color-paper-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .case-prose > * + * {
@@ -173,7 +250,10 @@ body {
 .case-prose h1,
 .case-prose h2,
 .case-prose h3 {
-    font-family: var(--font-stamp);
+    /* A heading inside a document is still part of that document — bolder
+       and larger, not a different typeface pretending to be a stamp. */
+    font-family: var(--font-case);
+    font-weight: 700;
     line-height: 1.3;
     margin-top: 2rem;
 }
@@ -222,10 +302,29 @@ body {
     text-align: left;
 }
 
+/* CaseDocument splits a document into sections and lifts each heading out of
+   the flow to use as the section's own label, so the first element of a
+   section body must not keep the 2rem top margin it had mid-document. */
+.case-prose > :first-child {
+    margin-top: 0;
+}
+
 /* Long evidence tables scroll inside themselves rather than making the whole
-   page scroll sideways on a phone. */
-.case-prose {
+   page scroll sideways on a phone.
+   This used to be `overflow-x: auto` on .case-prose itself, which was wrong
+   twice over: per the overflow spec, setting one axis to a non-visible value
+   computes the other to `auto` too, so every document silently became a
+   two-axis scroll container that clipped anything reaching outside it (a
+   stamp over an edge, a sticky header). And it never worked anyway, because
+   `table { width: 100% }` shrinks the table to fit instead of overflowing.
+   CaseDocument wraps each table in this class as it parses. */
+.case-scroll-x {
     overflow-x: auto;
+}
+
+.case-scroll-x > table {
+    width: auto;
+    min-width: 100%;
 }
 
 /*
@@ -243,4 +342,76 @@ body {
     animation: skeleton-pulse 1.6s ease-in-out infinite;
     background: var(--color-line);
     border-radius: var(--radius-control);
+}
+
+/*
+|------------------------------------------------------------------------------
+| Reveal-on-scroll
+|------------------------------------------------------------------------------
+|
+| Used by components/ui/Reveal.jsx. `opacity-0` is the resting state a
+| server-rendered page loads with; the class below is added once an
+| IntersectionObserver sees the element, so nothing here fires before React
+| hydrates. prefers-reduced-motion is already handled globally above (it
+| forces every animation-duration to 0.01ms), so a reduced-motion visitor
+| still gets the element, just without the visible motion.
+|
+*/
+
+@keyframes reveal-fade-up {
+    from { opacity: 0; transform: translateY(36px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-reveal {
+    animation: reveal-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/*
+|------------------------------------------------------------------------------
+| Case document sections
+|------------------------------------------------------------------------------
+|
+| Deliberately not .animate-reveal: its 36px lift is tuned for a card entering
+| the viewport, and on a panel that is already pushing the rest of the page
+| down it reads as a jolt. prefers-reduced-motion is handled globally above.
+|
+*/
+
+@keyframes case-sheet-open {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.case-sheet-open {
+    animation: case-sheet-open 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+|------------------------------------------------------------------------------
+| Phone affordances
+|------------------------------------------------------------------------------
+|
+| Players are on phones — that is the whole audience for the case screens, not
+| an adaptation of a desktop layout.
+|
+*/
+
+/* Filter and tab strips scroll sideways instead of stacking into three rows
+   of chrome above the content they filter. */
+.no-scrollbar {
+    scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* A bar pinned to the bottom of the viewport lands on top of the form when
+   the soft keyboard opens — right over the submit button of the accusation,
+   which is the last thing a player does in a two-hour game. */
+@media (max-width: 639px) {
+    body:has(input:focus, textarea:focus, select:focus) .player-bottom-nav {
+        display: none;
+    }
 }

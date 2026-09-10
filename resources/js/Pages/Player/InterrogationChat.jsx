@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
+import Alert from '../../components/ui/Alert';
+import Badge from '../../components/ui/Badge';
+import CaseDocument from '../../components/player/CaseDocument';
 import ChatMessage from '../../components/player/ChatMessage';
 import ChatComposer from '../../components/player/ChatComposer';
 import axios from '../../lib/axios';
@@ -133,35 +136,52 @@ export default function InterrogationChat({
                 href: route('immersion.player.interrogation.index', player.access_token),
                 label: 'Personas',
             }}
-            contentClassName="px-0 py-0 sm:px-6 sm:py-6"
         >
             <Head title={`Interrogatorio — ${suspect.name}`} />
 
-            <div className="flex min-h-0 flex-1 flex-col">
-                <div className="flex items-center gap-3 border-b-2 border-paper-ink bg-paper-raised px-4 py-3 sm:border-2">
+            {/* Not flex-1: the layout root is min-h-dvh, a MINIMUM, so nothing
+                up the chain ever hands this a bounded height. Growing to fit
+                the transcript pushed the composer below the fold and — worse —
+                made the auto-scroll below a silent no-op, so after sending a
+                question the player saw nothing happen at all. The message list
+                caps itself instead. */}
+            <div className="flex flex-col overflow-hidden rounded-card border border-line bg-surface">
+                <div className="flex items-center gap-3 border-b border-line bg-surface-raised px-4 py-3">
                     <img
                         src={suspect.photo_url}
-                        alt={suspect.name}
-                        className="h-12 w-12 shrink-0 rounded border border-paper-line object-cover"
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-control border border-line object-cover"
                     />
                     <div className="min-w-0 flex-1">
-                        <p className="truncate font-bold leading-tight">{suspect.name}</p>
+                        <p className="truncate font-semibold leading-tight text-ink">
+                            {suspect.name}
+                        </p>
                         {suspect.connection && (
-                            <p className="truncate text-xs text-paper-muted">{suspect.connection}</p>
+                            <p className="truncate text-xs text-ink-muted">{suspect.connection}</p>
                         )}
                     </div>
 
-                    {!effectiveLockedBy && (
-                        <span className="tabular shrink-0 text-sm font-bold">
-                            {questionsUsed}/{maxQuestions}
-                        </span>
+                    {effectiveLockedBy ? (
+                        // shrink-0 + truncate: this branch fires exactly when
+                        // two players race for the same suspect, and a full
+                        // name with no cap wraps to three lines inside a pill
+                        // and squeezes the suspect's own name out.
+                        <Badge className="max-w-32 shrink-0">
+                            <span className="min-w-0 truncate">{effectiveLockedBy}</span>
+                        </Badge>
+                    ) : (
+                        <Badge tone={closed ? 'success' : 'accent'}>
+                            <span className="tabular">
+                                {questionsUsed}/{maxQuestions}
+                            </span>
+                        </Badge>
                     )}
                 </div>
 
                 {messages.length > 0 && (
                     <div
                         ref={scrollRef}
-                        className="flex-1 space-y-2.5 overflow-y-auto bg-paper/40 px-3 py-4 sm:max-h-[55vh] sm:border-x-2 sm:border-paper-ink"
+                        className="max-h-[45dvh] space-y-3 overflow-y-auto bg-surface-sunken/40 px-3 py-4 sm:max-h-[55vh]"
                     >
                         {messages.map((message) => (
                             <ChatMessage
@@ -177,44 +197,44 @@ export default function InterrogationChat({
                     </div>
                 )}
 
-                {!readOnly ? (
-                    <div className="sm:border-x-2 sm:border-b-2 sm:border-paper-ink">
-                        <ChatComposer
-                            onSend={handleSend}
-                            sending={sending}
-                            remaining={maxQuestions - questionsUsed}
-                        />
-                    </div>
-                ) : outOfCredits && !closed && !effectiveLockedBy ? (
-                    /* Out of AI capacity, not out of questions: the official
-                       statement is not unlocked, so it must not be shown. */
-                    <div className="px-4 py-4 sm:px-0">
-                        <div className="border-2 border-dashed border-paper-line px-4 py-4 text-center text-sm text-paper-muted">
-                            Esta partida se quedó sin créditos de inteligencia artificial, así
-                            que {suspect.name} no puede seguir respondiendo. Avísale al Game
-                            Master. Tus preguntas siguen intactas.
-                        </div>
-                    </div>
-                ) : (
-                    <div className="px-4 py-4 sm:px-0">
-                        <div className="border-2 border-dashed border-paper-line px-4 py-4 text-center text-sm text-paper-muted">
-                            {effectiveLockedBy
-                                ? `${suspect.name} ya fue interrogado por ${effectiveLockedBy}. Abajo tienes lo que se preguntó y su declaración oficial.`
-                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Abajo tienes su declaración oficial completa.`}
-                        </div>
-
-                        <div className="mt-4 border-2 border-paper-ink bg-paper-raised p-4">
-                            <p className="case-stamp mb-3 text-[10px] text-paper-muted">
-                                Declaración oficial
-                            </p>
-                            <div
-                                className="case-prose text-[15px]"
-                                dangerouslySetInnerHTML={{ __html: testimonyHtml || '' }}
-                            />
-                        </div>
-                    </div>
+                {!readOnly && (
+                    <ChatComposer
+                        onSend={handleSend}
+                        sending={sending}
+                        remaining={maxQuestions - questionsUsed}
+                        total={maxQuestions}
+                    />
                 )}
             </div>
+
+            {readOnly &&
+                (outOfCredits && !closed && !effectiveLockedBy ? (
+                    /* Out of AI capacity, not out of questions: the official
+                       statement is not unlocked, so it must not be shown. */
+                    <Alert variant="warning" className="mt-5 mb-0">
+                        Esta partida se quedó sin créditos de inteligencia artificial, así que{' '}
+                        {suspect.name} no puede seguir respondiendo. Avísale al Game Master. Tus
+                        preguntas siguen intactas.
+                    </Alert>
+                ) : (
+                    <div className="mt-5">
+                        <Alert variant="info">
+                            {effectiveLockedBy
+                                ? `${suspect.name} ya fue interrogado por ${effectiveLockedBy}. Arriba tienes lo que se preguntó, y aquí abajo su declaración oficial.`
+                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Aquí abajo tienes su declaración oficial completa.`}
+                        </Alert>
+
+                        <p className="case-stamp mb-3 text-[10px] text-accent">
+                            Declaración oficial
+                        </p>
+
+                        <CaseDocument
+                            html={testimonyHtml || ''}
+                            id={`declaracion-${slug}`}
+                            headingLevel={3}
+                        />
+                    </div>
+                ))}
         </PlayerLayout>
     );
 }

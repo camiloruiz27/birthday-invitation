@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Alert from '../components/ui/Alert';
 import UserMenu from '../components/ui/UserMenu';
+import Brand from '../components/ui/Brand';
 
 /**
  * Shell for the signed-in platform: the investigation agency's console.
@@ -21,7 +22,9 @@ function NavLink({ item, active, className = '' }) {
         <Link
             href={route(item.route)}
             aria-current={active ? 'page' : undefined}
-            className={`text-sm transition-colors ${
+            // min-h-11 and shrink-0: this is the app's primary navigation and
+            // it was a bare 20px-tall text link that could also be squeezed.
+            className={`inline-flex min-h-11 shrink-0 items-center text-sm transition-colors ${
                 active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'
             } ${className}`}
         >
@@ -45,7 +48,7 @@ export default function AppLayout({
     const errorList = Object.values(errors);
 
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-dvh flex-col">
             {/* Lets a keyboard user jump the navigation. Visually hidden until
                 focused, which is when it matters. */}
             <a
@@ -57,41 +60,41 @@ export default function AppLayout({
 
             <header className="sticky top-0 z-10 border-b border-line bg-surface/95 backdrop-blur">
                 <Container width={width}>
-                    <div className="flex h-16 items-center justify-between gap-6">
-                        <div className="flex min-w-0 items-center gap-8">
-                            <Link
-                                href={route('dashboard')}
-                                className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
-                            >
-                                <span
-                                    aria-hidden="true"
-                                    className="h-2 w-2 shrink-0 rounded-full bg-accent"
+                    <div className="flex flex-wrap items-center gap-x-4 py-2 sm:h-16 sm:flex-nowrap sm:gap-6 sm:py-0">
+                        <Brand href={route('dashboard')} hideWordmarkOnMobile />
+
+                        {/* One <nav> in the DOM, not one per breakpoint, so
+                            there is a single "Principal" landmark. `order-last
+                            w-full` drops it onto its own scrollable line under
+                            the mark on a phone and returns it inline from sm
+                            up: four links (five for an admin) plus the mark
+                            plus the account menu measure well past 360px, and
+                            they used to put every signed-in page into a
+                            sideways scroll. */}
+                        <nav
+                            aria-label="Principal"
+                            className="no-scrollbar order-last -mx-4 flex w-full items-center gap-5 overflow-x-auto px-4 sm:order-0 sm:mx-0 sm:w-auto sm:flex-1 sm:overflow-visible sm:px-0"
+                        >
+                            {NAV.map((item) => (
+                                <NavLink
+                                    key={item.route}
+                                    item={item}
+                                    active={current === item.route}
                                 />
-                                <span className="hidden sm:inline">Central de investigación</span>
-                            </Link>
+                            ))}
 
-                            {/* Only a handful of sections, so they fit on a
-                                phone without needing a drawer. */}
-                            <nav aria-label="Principal" className="flex items-center gap-5">
-                                {NAV.map((item) => (
-                                    <NavLink
-                                        key={item.route}
-                                        item={item}
-                                        active={current === item.route}
-                                    />
-                                ))}
+                            {user?.is_admin && (
+                                <NavLink
+                                    item={{ name: 'Admin', route: 'admin.dashboard' }}
+                                    active={current === 'admin.dashboard'}
+                                    className="text-accent hover:text-accent-strong"
+                                />
+                            )}
+                        </nav>
 
-                                {user?.is_admin && (
-                                    <NavLink
-                                        item={{ name: 'Admin', route: 'admin.dashboard' }}
-                                        active={current === 'admin.dashboard'}
-                                        className="text-accent hover:text-accent-strong"
-                                    />
-                                )}
-                            </nav>
+                        <div className="ml-auto shrink-0 sm:ml-0">
+                            {user && <UserMenu user={user} />}
                         </div>
-
-                        {user && <UserMenu user={user} />}
                     </div>
                 </Container>
             </header>
@@ -105,7 +108,11 @@ export default function AppLayout({
                                     {kicker}
                                 </p>
                             )}
-                            <h1 className="mt-1 text-xl font-semibold text-ink sm:text-2xl">
+                            {/* font-display and a real size: the h1 used to be
+                                20px Inter, which left the biggest text on
+                                Panel, Créditos and Admin being a number in a
+                                tile rather than the name of the page. */}
+                            <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
                                 {title}
                             </h1>
                         </div>

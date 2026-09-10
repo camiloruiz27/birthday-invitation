@@ -5,15 +5,8 @@ import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import EmptyState from '../components/ui/EmptyState';
 import GameRow from '../components/app/GameRow';
-
-function Stat({ label, value }) {
-    return (
-        <div className="rounded-card border border-line bg-surface-raised p-4">
-            <p className="tabular text-2xl font-semibold text-ink">{value}</p>
-            <p className="mt-0.5 text-sm text-ink-muted">{label}</p>
-        </div>
-    );
-}
+import SectionHeader from '../components/ui/SectionHeader';
+import StatTile from '../components/app/StatTile';
 
 export default function Dashboard({ stats, activeGames, draftGames, library, canCreate }) {
     const { auth } = usePage().props;
@@ -46,10 +39,17 @@ export default function Dashboard({ stats, activeGames, draftGames, library, can
                 />
             ) : (
                 <div className="space-y-8">
-                    <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                        <Stat label={stats.cases === 1 ? 'Caso' : 'Casos'} value={stats.cases} />
-                        <Stat label={stats.games === 1 ? 'Partida' : 'Partidas'} value={stats.games} />
-                        <Stat label="En curso" value={stats.running} />
+                    {/* Two across on a phone, not three: at 360px a third
+                        column leaves ~72px of content inside the padding, and
+                        the admin dashboard already renders the same tile two
+                        across. */}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                        <StatTile label={stats.cases === 1 ? 'Caso' : 'Casos'} value={stats.cases} />
+                        <StatTile
+                            label={stats.games === 1 ? 'Partida' : 'Partidas'}
+                            value={stats.games}
+                        />
+                        <StatTile label="En curso" value={stats.running} />
                     </div>
 
                     {!canCreate && (
@@ -63,8 +63,8 @@ export default function Dashboard({ stats, activeGames, draftGames, library, can
                         first and never gets folded into a generic list. */}
                     {activeGames.length > 0 && (
                         <section>
-                            <h2 className="text-base font-semibold text-ink">Partidas en curso</h2>
-                            <div className="mt-3 space-y-3">
+                            <SectionHeader title="Partidas en curso" />
+                            <div className="space-y-3">
                                 {activeGames.map((game) => (
                                     <GameRow key={game.id} game={game} />
                                 ))}
@@ -74,8 +74,8 @@ export default function Dashboard({ stats, activeGames, draftGames, library, can
 
                     {draftGames.length > 0 && (
                         <section>
-                            <h2 className="text-base font-semibold text-ink">Listas para iniciar</h2>
-                            <div className="mt-3 space-y-3">
+                            <SectionHeader title="Listas para iniciar" />
+                            <div className="space-y-3">
                                 {draftGames.map((game) => (
                                     <GameRow key={game.id} game={game} />
                                 ))}

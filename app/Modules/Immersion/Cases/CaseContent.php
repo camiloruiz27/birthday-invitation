@@ -68,6 +68,14 @@ class CaseContent
      * this only stops re-showing, in this one output, the sections that are
      * already displayed as gallery images.
      *
+     * Evaluated per section, not per "---" block. It used to inspect only the
+     * FIRST heading of each block, so two sections sharing a block were kept
+     * or dropped together: excluding one silently took its neighbour with it,
+     * and an exclusion entry aimed at that neighbour matched nothing and sat
+     * there looking like it worked. Authors are not required to put a rule
+     * between every section, so the grouping was never a promise the content
+     * made.
+     *
      * @param  string[]  $excludeHeadingContains
      */
     public function renderFileExcludingSections(string $relativePath, array $excludeHeadingContains): string
@@ -76,10 +84,37 @@ class CaseContent
             return $this->renderFile($relativePath);
         }
 
-        $blocks = preg_split('/^---$/m', $this->raw($relativePath));
+        $kept = [];
 
-        $kept = array_filter($blocks, function (string $block) use ($excludeHeadingContains) {
-            if (! preg_match('/^##\s+(.+)$/m', $block, $matches)) {
+        foreach (preg_split('/^---$/m', $this->raw($relativePath)) as $block) {
+            $remaining = $this->dropSections($block, $excludeHeadingContains);
+
+            // A block whose every section was excluded leaves no rule behind:
+            // an <hr> with nothing on either side of it is just a scar.
+            if (trim($remaining) !== '') {
+                $kept[] = $remaining;
+            }
+        }
+
+        return self::render(trim(implode("\n\n---\n\n", $kept)));
+    }
+
+    /**
+     * Drops the excluded sections of ONE block, keeping its siblings and
+     * whatever text came before the first heading.
+     *
+     * @param  string[]  $excludeHeadingContains
+     */
+    private function dropSections(string $block, array $excludeHeadingContains): string
+    {
+        // Zero-width split before each "## ", so a heading always travels
+        // with its own body and the piece order survives untouched.
+        $pieces = preg_split('/^(?=##\s+)/m', $block);
+
+        $kept = array_filter($pieces, function (string $piece) use ($excludeHeadingContains) {
+            // No heading of its own — lead-in text. It belongs to the block,
+            // not to any one section, so it is never dropped.
+            if (! preg_match('/^##\s+(.+)$/m', $piece, $matches)) {
                 return true;
             }
 
@@ -94,6 +129,6 @@ class CaseContent
             return true;
         });
 
-        return self::render(trim(implode("\n\n---\n\n", $kept)));
+        return implode('', $kept);
     }
 }

@@ -73,7 +73,7 @@ export default function Games({ games, hasLibrary, canCreate }) {
                     <div
                         role="group"
                         aria-label="Filtrar partidas"
-                        className="mb-5 flex flex-wrap gap-2"
+                        className="no-scrollbar -mx-4 mb-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0"
                     >
                         {FILTERS.map((item) => {
                             const count = item.statuses
@@ -86,14 +86,18 @@ export default function Games({ games, hasLibrary, canCreate }) {
                                     type="button"
                                     onClick={() => setFilter(item.key)}
                                     aria-pressed={filter === item.key}
-                                    className={`min-h-9 rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+                                    // Matches the pill in ui/Tabs exactly —
+                                    // this row used to be 36px tall with its
+                                    // own padding and a faded count, two
+                                    // clicks away from the real thing.
+                                    className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 py-1.5 text-sm transition-colors ${
                                         filter === item.key
-                                            ? 'border-accent bg-accent-dim text-accent-strong'
-                                            : 'border-line text-ink-muted hover:text-ink'
+                                            ? 'border-accent bg-accent-dim font-semibold text-accent-strong'
+                                            : 'border-line-strong text-ink-muted hover:border-accent hover:text-ink'
                                     }`}
                                 >
                                     {item.label}
-                                    <span className="tabular ml-1.5 text-xs opacity-70">{count}</span>
+                                    <span className="tabular text-xs text-ink-subtle">{count}</span>
                                 </button>
                             );
                         })}
@@ -109,7 +113,13 @@ export default function Games({ games, hasLibrary, canCreate }) {
                             {visible.map((game) => (
                                 <div key={game.id} className="flex items-start gap-3">
                                     <GameRow game={game} className="flex-1" />
-                                    <DeleteGameButton game={game} size="sm" variant="ghost" />
+                                    {/* Stays ghost — a red button beside every
+                                        row in a list invites the misclick it
+                                        is warning about — but not at size sm:
+                                        32px for the one irreversible action on
+                                        the page is the wrong place to save
+                                        space. The ConfirmModal is the guard. */}
+                                    <DeleteGameButton game={game} variant="ghost" />
                                 </div>
                             ))}
                         </div>

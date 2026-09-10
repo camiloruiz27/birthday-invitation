@@ -44,7 +44,7 @@ export default function DeleteGameButton({ game, size = 'md', variant = 'danger'
                     <li>Los enlaces de sus jugadores dejarán de funcionar.</li>
                     <li>Se borran sus interrogatorios y acusaciones.</li>
                     {started && (
-                        <li className="text-danger">
+                        <li className="text-danger-strong">
                             Esta partida ya está en marcha: quienes estén jugando la perderán.
                         </li>
                     )}

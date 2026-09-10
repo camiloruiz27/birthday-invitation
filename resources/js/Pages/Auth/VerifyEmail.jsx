@@ -1,7 +1,8 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
+import TextLink from '../../components/ui/TextLink';
 
 /**
  * Where someone lands when they try to buy with an address they have not
@@ -25,9 +26,9 @@ export default function VerifyEmail({ email, sent }) {
             title="Confirma tu correo"
             description="Solo hace falta una vez, y desbloquea las compras de tu cuenta."
             footer={
-                <Link href={route('dashboard')} className="underline hover:text-ink">
+                <TextLink href={route('dashboard')}>
                     Volver al panel
-                </Link>
+                </TextLink>
             }
         >
             <Head title="Confirma tu correo" />
@@ -55,9 +56,9 @@ export default function VerifyEmail({ email, sent }) {
                 <p className="text-sm text-ink-muted">
                     ¿No te llegó? Revisa la carpeta de spam, o pídelo de nuevo. Si la
                     dirección quedó mal escrita, puedes corregirla desde{' '}
-                    <Link href={route('profile.edit')} className="text-accent underline">
+                    <TextLink href={route('profile.edit')}>
                         tu perfil
-                    </Link>
+                    </TextLink>
                     .
                 </p>
 

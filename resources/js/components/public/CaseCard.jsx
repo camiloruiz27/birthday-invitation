@@ -1,5 +1,4 @@
 import { Link } from '@inertiajs/react';
-import Badge from '../ui/Badge';
 import { formatPrice, formatDuration, formatPlayerRange } from '../../lib/format';
 
 export const DIFFICULTY_LABELS = {
@@ -32,7 +31,7 @@ export function CaseFacts({ mysteryCase, className = '' }) {
     );
 }
 
-export default function CaseCard({ mysteryCase, owned = false }) {
+export default function CaseCard({ mysteryCase }) {
     return (
         <Link
             href={route('cases.show', mysteryCase.slug)}
@@ -50,10 +49,7 @@ export default function CaseCard({ mysteryCase, owned = false }) {
             )}
 
             <div className="flex flex-1 flex-col p-5">
-                <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-semibold text-ink">{mysteryCase.name}</h3>
-                    {owned && <Badge tone="success">En tu biblioteca</Badge>}
-                </div>
+                <h3 className="font-semibold text-ink">{mysteryCase.name}</h3>
 
                 {mysteryCase.tagline && (
                     <p className="mt-2 text-sm text-ink-muted">{mysteryCase.tagline}</p>

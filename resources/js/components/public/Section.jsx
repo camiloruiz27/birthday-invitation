@@ -1,8 +1,13 @@
 import Container from '../ui/Container';
+import Reveal from '../ui/Reveal';
 
 /**
  * Vertical rhythm for the marketing pages, so every section is not spaced
  * slightly differently.
+ *
+ * The kicker/title/description block animates in on scroll by itself —
+ * every page built on Section gets that motion for free, rather than each
+ * page having to remember to wrap its own heading in <Reveal>.
  */
 export default function Section({
     id,
@@ -21,14 +26,14 @@ export default function Section({
         >
             <Container width={width}>
                 {(kicker || title) && (
-                    <div className="max-w-2xl">
+                    <Reveal as="div" className="max-w-2xl">
                         {kicker && (
                             <p className="text-xs font-medium uppercase tracking-widest text-accent">
                                 {kicker}
                             </p>
                         )}
                         {title && (
-                            <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">
+                            <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
                                 {title}
                             </h2>
                         )}
@@ -37,7 +42,7 @@ export default function Section({
                                 {description}
                             </p>
                         )}
-                    </div>
+                    </Reveal>
                 )}
 
                 {children && <div className={title ? 'mt-10' : ''}>{children}</div>}

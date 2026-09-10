@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
+import Brand from '../components/ui/Brand';
 
 const NAV = [
     { name: 'Casos', route: 'cases.index' },
@@ -11,19 +12,6 @@ const NAV = [
     { name: 'Precios', route: 'pricing' },
 ];
 
-function Brand({ onClick }) {
-    return (
-        <Link
-            href={route('home')}
-            onClick={onClick}
-            className="flex shrink-0 items-center gap-2.5 text-sm font-semibold text-ink"
-        >
-            <span aria-hidden="true" className="h-2 w-2 rounded-full bg-accent" />
-            Central de investigación
-        </Link>
-    );
-}
-
 /**
  * Marketing shell.
  *
@@ -31,18 +19,29 @@ function Brand({ onClick }) {
  * pages instead of being bounced to their dashboard, so the header swaps its
  * calls to action rather than the whole layout.
  */
-export default function PublicLayout({ current, children }) {
+export default function PublicLayout({ current, bleed = false, children }) {
     const { props, url } = usePage();
     const user = props.auth?.user;
     const status = props.flash?.status;
     const [menuOpen, setMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
 
     // A navigation closes the mobile menu; otherwise it stays open over the
     // new page.
     useEffect(() => setMenuOpen(false), [url]);
 
+    // Transparent and tall at the top of the page, solid and compact once
+    // scrolled — the header stops competing with a hero for attention, then
+    // steps in as an anchored bar once there is real content behind it.
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 24);
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
-        <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-dvh flex-col">
             <a
                 href="#main"
                 className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-inverse"
@@ -50,24 +49,34 @@ export default function PublicLayout({ current, children }) {
                 Saltar al contenido
             </a>
 
-            <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur">
+            <header
+                className={`fixed top-0 z-20 w-full transition-all duration-500 ${
+                    scrolled
+                        ? 'border-b border-line bg-surface/95 py-3 shadow-raised backdrop-blur-md'
+                        : 'border-b border-transparent bg-transparent py-6'
+                }`}
+            >
                 <Container width="wide">
-                    <div className="flex h-16 items-center justify-between gap-6">
+                    <div className="flex h-10 items-center justify-between gap-6">
                         <Brand />
 
-                        <nav aria-label="Principal" className="hidden items-center gap-6 lg:flex">
+                        <nav aria-label="Principal" className="hidden items-center gap-8 lg:flex">
                             {NAV.map((item) => (
                                 <Link
                                     key={item.route}
                                     href={route(item.route)}
                                     aria-current={current === item.route ? 'page' : undefined}
-                                    className={`text-sm transition-colors ${
+                                    className={`group relative overflow-hidden py-1 text-sm transition-colors ${
                                         current === item.route
                                             ? 'font-medium text-ink'
                                             : 'text-ink-muted hover:text-ink'
                                     }`}
                                 >
                                     {item.name}
+                                    <span
+                                        aria-hidden="true"
+                                        className="absolute bottom-0 left-0 h-px w-full -translate-x-full bg-accent transition-transform duration-300 group-hover:translate-x-0"
+                                    />
                                 </Link>
                             ))}
                         </nav>
@@ -159,7 +168,15 @@ export default function PublicLayout({ current, children }) {
                 )}
             </header>
 
-            <main id="main" className="flex-1">
+            {/*
+                The header is `fixed`, so it never reserves space in normal
+                flow — necessary for it to float transparently over a hero
+                photo. Every OTHER page needs that space back, or its first
+                heading renders straight underneath the (transparent, but
+                real) header. `bleed` is Landing's opt-out: its hero already
+                clears the header height with its own generous padding.
+            */}
+            <main id="main" className={`flex-1 ${bleed ? '' : 'pt-24 sm:pt-28'}`}>
                 {status && (
                     <Container width="wide" className="pt-6">
                         <Alert variant="status">{status}</Alert>
@@ -193,7 +210,7 @@ export default function PublicLayout({ current, children }) {
                     </div>
 
                     <p className="mt-10 border-t border-line pt-6 text-xs text-ink-subtle">
-                        © {new Date().getFullYear()} Central de investigación
+                        © {new Date().getFullYear()} MisterioCode
                     </p>
                 </Container>
             </footer>

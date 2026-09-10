@@ -4,6 +4,9 @@ import Card, { CardHeader } from '../../components/ui/Card';
 import Badge, { GAME_STATUS_TONE } from '../../components/ui/Badge';
 import Alert from '../../components/ui/Alert';
 import EmptyState from '../../components/ui/EmptyState';
+import Meter from '../../components/ui/Meter';
+import SectionHeader from '../../components/ui/SectionHeader';
+import StatTile from '../../components/app/StatTile';
 import { STATUS_LABELS } from '../../components/app/GameRow';
 import { formatDateTime, formatDuration } from '../../lib/format';
 
@@ -18,19 +21,15 @@ const SOURCE_LABELS = {
     promo: 'Promoción',
 };
 
+/** Only the alert colouring is specific to this page; the tile is shared. */
 function Metric({ label, value, hint, tone = 'default' }) {
     return (
-        <div className="rounded-card border border-line bg-surface-raised p-4">
-            <p
-                className={`tabular text-2xl font-semibold ${
-                    tone === 'alert' && value > 0 ? 'text-danger' : 'text-ink'
-                }`}
-            >
-                {value}
-            </p>
-            <p className="mt-0.5 text-sm text-ink-muted">{label}</p>
-            {hint && <p className="mt-1 text-xs text-ink-subtle">{hint}</p>}
-        </div>
+        <StatTile
+            label={label}
+            value={value}
+            hint={hint}
+            tone={tone === 'alert' && value > 0 ? 'alert' : 'default'}
+        />
     );
 }
 
@@ -38,7 +37,12 @@ function Breakdown({ counts, labels }) {
     const entries = Object.entries(counts);
 
     if (entries.length === 0) {
-        return <p className="text-sm text-ink-subtle">Sin datos todavía.</p>;
+        return (
+            <EmptyState
+                title="Sin datos todavía"
+                description="Aparecerá aquí en cuanto haya partidas registradas."
+            />
+        );
     }
 
     const total = entries.reduce((sum, [, value]) => sum + value, 0);
@@ -48,15 +52,19 @@ function Breakdown({ counts, labels }) {
             {entries.map(([key, value]) => (
                 <li key={key}>
                     <div className="flex items-baseline justify-between gap-3 text-sm">
-                        <span className="text-ink-muted">{labels?.[key] || key}</span>
-                        <span className="tabular text-ink">{value}</span>
+                        <span className="min-w-0 truncate text-ink-muted">
+                            {labels?.[key] || key}
+                        </span>
+                        <span className="tabular shrink-0 text-ink">{value}</span>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-                        <div
-                            className="h-full rounded-full bg-accent"
-                            style={{ width: `${(value / total) * 100}%` }}
-                        />
-                    </div>
+                    {/* Was a bare div: the same bar is a progressbar on the
+                        other two screens that draw it, and silent here. */}
+                    <Meter
+                        value={value}
+                        max={total}
+                        label={labels?.[key] || key}
+                        className="mt-1"
+                    />
                 </li>
             ))}
         </ul>
@@ -99,7 +107,7 @@ export default function AdminDashboard({ metrics }) {
 
             <div className="space-y-8">
                 <section>
-                    <h2 className="mb-3 text-base font-semibold text-ink">Personas</h2>
+                    <SectionHeader title="Personas" />
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         <Metric
                             label="Cuentas registradas"
@@ -129,7 +137,7 @@ export default function AdminDashboard({ metrics }) {
                 </section>
 
                 <section>
-                    <h2 className="mb-3 text-base font-semibold text-ink">Uso</h2>
+                    <SectionHeader title="Uso" />
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         <Metric label="Partidas creadas" value={usage.games} />
                         <Metric
@@ -167,7 +175,7 @@ export default function AdminDashboard({ metrics }) {
                 </section>
 
                 <section>
-                    <h2 className="mb-3 text-base font-semibold text-ink">Catálogo</h2>
+                    <SectionHeader title="Catálogo" />
                     <div className="grid gap-5 lg:grid-cols-2">
                         <Card as="article">
                             <CardHeader
@@ -223,9 +231,7 @@ export default function AdminDashboard({ metrics }) {
                 </section>
 
                 <section>
-                    <h2 className="mb-3 text-base font-semibold text-ink">
-                        Inteligencia artificial
-                    </h2>
+                    <SectionHeader title="Inteligencia artificial" />
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         <Metric
                             label="Preguntas hechas"

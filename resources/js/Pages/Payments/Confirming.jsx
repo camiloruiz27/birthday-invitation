@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import usePoll from '../../hooks/usePoll';
+import TextLink from '../../components/ui/TextLink';
 
 /**
  * Where Bold sends the buyer back after checkout.
@@ -123,9 +124,9 @@ export default function Confirming({ order }) {
                             Si esperabas un cargo o una devolución, escríbenos con el número de
                             orden #{order.id}.
                         </p>
-                        <Link href={route('dashboard')} className="mt-6 inline-block text-sm text-accent underline">
+                        <TextLink href={route('dashboard')} className="mt-6 inline-block text-sm">
                             Volver al panel
-                        </Link>
+                        </TextLink>
                     </>
                 )}
             </Card>

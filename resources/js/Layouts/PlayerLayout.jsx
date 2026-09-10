@@ -1,10 +1,20 @@
+import { useEffect, useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
+import Alert from '../components/ui/Alert';
+import Brand from '../components/ui/Brand';
+import Container from '../components/ui/Container';
+import { MECHANIC_ICON_PATHS } from '../lib/mechanicIcons';
 
 /**
- * The fiction surface: what a player sees.
+ * What a player sees, on the dark desk.
  *
- * Deliberately the opposite of the platform console — light paper, typewriter
- * type, sharp edges — because this is the case file, not the software.
+ * This layout used to put `.case-surface` on the root, so the entire screen
+ * was paper. It is now the platform console like everywhere else, and paper
+ * is reserved for the documents themselves (see components/player/paper).
+ * The reason is both brand and code: the player screens were the only ones
+ * that could not use Button, Field, Badge, Alert or EmptyState — all of
+ * which are built on platform tokens — so every one of those patterns had
+ * been re-implemented by hand, four and five times over, and had drifted.
  *
  * Mobile-first for real: players are on phones at a table, so the sections
  * live in a thumb-reachable bottom bar on small screens and move up into the
@@ -17,6 +27,29 @@ const SECTION_LABELS = {
     accusation: 'Acusación',
     solution: 'Solución',
 };
+
+// Reuses the mechanic icon set so the same idea never gets two drawings.
+const SECTION_ICONS = {
+    inbox: MECHANIC_ICON_PATHS.inbox,
+    interrogation: MECHANIC_ICON_PATHS.interrogation,
+    accusation: MECHANIC_ICON_PATHS.accusation,
+    solution: 'M9 12.5l2.2 2.2L15.5 10M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+};
+
+function SectionIcon({ section, className = 'h-5 w-5' }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+            className={className}
+        >
+            <path strokeLinecap="round" strokeLinejoin="round" d={SECTION_ICONS[section]} />
+        </svg>
+    );
+}
 
 function sectionsFor(player, game) {
     const sections = [
@@ -50,29 +83,87 @@ function SectionLink({ section, active, variant }) {
             <Link
                 href={section.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-14 flex-1 items-center justify-center px-2 text-center text-xs uppercase tracking-wide ${
-                    active
-                        ? 'bg-paper-ink font-bold text-paper'
-                        : 'text-paper-ink hover:bg-paper-sunken'
+                className={`flex min-h-16 flex-1 flex-col items-center justify-center gap-1 px-2 text-center text-[11px] transition-colors ${
+                    active ? 'text-accent-strong' : 'text-ink-muted hover:text-ink'
                 }`}
             >
-                {label}
+                <SectionIcon section={section.key} />
+                <span className={active ? 'font-semibold' : ''}>{label}</span>
             </Link>
         );
     }
 
+    // Desktop: the sliding underline from the public site, so the case does
+    // not feel like a different product than the one they bought.
     return (
         <Link
             href={section.href}
             aria-current={active ? 'page' : undefined}
-            className={`min-h-11 border-2 px-3 py-1.5 text-xs uppercase tracking-wide ${
-                active
-                    ? 'border-paper bg-paper text-paper-ink font-bold'
-                    : 'border-paper text-paper hover:bg-paper hover:text-paper-ink'
+            className={`group relative inline-flex min-h-11 items-center gap-2 py-1 text-sm transition-colors ${
+                active ? 'text-ink' : 'text-ink-muted hover:text-ink'
             }`}
         >
+            <SectionIcon section={section.key} className="h-4 w-4" />
             {label}
+            <span
+                aria-hidden="true"
+                className={`absolute inset-x-0 bottom-0 h-px origin-left bg-accent transition-transform duration-300 ${
+                    active ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
+                }`}
+            />
         </Link>
+    );
+}
+
+/**
+ * Time on the clock, ticking.
+ *
+ * `elapsed_minutes` is computed server-side (it discounts paused time), but
+ * the inbox only polls `items`, so the value would sit frozen for the whole
+ * session. Counting forward from the last value the server sent keeps it
+ * honest between reloads, and any poll that does carry `game` corrects it.
+ */
+function CaseClock({ game }) {
+    const base = game?.elapsed_minutes;
+    const [drift, setDrift] = useState(0);
+
+    useEffect(() => {
+        setDrift(0);
+
+        if (game?.status !== 'running') {
+            return undefined;
+        }
+
+        const mountedAt = Date.now();
+        const timer = window.setInterval(
+            () => setDrift(Math.floor((Date.now() - mountedAt) / 60000)),
+            30000
+        );
+
+        return () => window.clearInterval(timer);
+    }, [base, game?.status]);
+
+    if (base == null || !game?.started_at) {
+        return null;
+    }
+
+    if (game.status === 'paused') {
+        return <p className="case-stamp shrink-0 text-[10px] text-warning-strong">En pausa</p>;
+    }
+
+    if (game.status !== 'running') {
+        return null;
+    }
+
+    const total = base + drift;
+
+    return (
+        <p className="shrink-0 text-right">
+            <span className="case-stamp block text-[10px] text-ink-subtle">En juego</span>
+            <span className="tabular font-mono text-sm text-ink">
+                {Math.floor(total / 60)}:{String(total % 60).padStart(2, '0')}
+            </span>
+        </p>
     );
 }
 
@@ -97,40 +188,67 @@ export default function PlayerLayout({
     const sections = focused || !player ? [] : sectionsFor(player, game);
 
     return (
-        <div className="case-surface flex min-h-screen flex-col">
+        <div className="flex min-h-dvh flex-col bg-surface">
             <a
                 href="#case-main"
-                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:border-2 focus:border-paper-ink focus:bg-paper focus:px-4 focus:py-2 focus:text-sm focus:font-bold"
+                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-inverse"
             >
                 Saltar al contenido
             </a>
 
-            <header className="border-b-4 border-double border-paper-ink bg-paper-ink text-paper">
-                <div className="mx-auto w-full max-w-4xl px-4 py-4 sm:px-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="min-w-0">
-                            {kicker && (
-                                <p className="case-stamp text-[11px] text-paper-accent">{kicker}</p>
+            <header className="sticky top-0 z-20 border-b border-line bg-surface/95 backdrop-blur-md">
+                <Container width="app" className="py-3">
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                            {player && (
+                                <>
+                                    {/* On a 360px screen with a back link the
+                                        title gets squeezed to nothing, and the
+                                        case name matters more than the mark. */}
+                                    <Brand
+                                        href={route('immersion.player.inbox', player.access_token)}
+                                        hideWordmarkOnMobile
+                                        className={back ? 'hidden sm:flex' : ''}
+                                    />
+                                    <span
+                                        aria-hidden="true"
+                                        className="hidden h-8 w-px shrink-0 bg-line sm:block"
+                                    />
+                                </>
                             )}
-                            <h1 className="mt-0.5 truncate text-lg font-bold">{title}</h1>
+
+                            <div className="min-w-0">
+                                {kicker && (
+                                    <p className="case-stamp truncate text-[10px] text-accent">
+                                        {kicker}
+                                    </p>
+                                )}
+                                <h1 className="truncate font-display text-base font-semibold text-ink">
+                                    {title}
+                                </h1>
+                            </div>
                         </div>
 
-                        {back && (
-                            <Link
-                                href={back.href}
-                                className="min-h-11 shrink-0 border-2 border-paper px-3 py-1.5 text-xs uppercase tracking-wide hover:bg-paper hover:text-paper-ink"
-                            >
-                                &larr; {back.label}
-                            </Link>
-                        )}
+                        <div className="flex shrink-0 items-center gap-4">
+                            <CaseClock game={game} />
+
+                            {back && (
+                                <Link
+                                    href={back.href}
+                                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong px-4 text-sm text-ink-muted transition-colors hover:border-accent hover:text-ink"
+                                >
+                                    <span aria-hidden="true">&larr;</span>
+                                    {/* The arrow carries it on a phone; the
+                                        word is what would push the title out. */}
+                                    <span className="sr-only sm:not-sr-only">{back.label}</span>
+                                </Link>
+                            )}
+                        </div>
                     </div>
 
                     {/* Desktop navigation. On phones this is the bottom bar. */}
                     {sections.length > 1 && (
-                        <nav
-                            aria-label="Secciones"
-                            className="mt-4 hidden flex-wrap gap-2 sm:flex"
-                        >
+                        <nav aria-label="Secciones" className="mt-2 hidden flex-wrap gap-6 sm:flex">
                             {sections.map((item) => (
                                 <SectionLink
                                     key={item.key}
@@ -141,33 +259,33 @@ export default function PlayerLayout({
                             ))}
                         </nav>
                     )}
-                </div>
+                </Container>
             </header>
 
             <main
                 id="case-main"
                 /* Bottom padding clears the fixed mobile bar so the last item
                    is never trapped under it. */
-                className={`mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:pb-8 ${
-                    sections.length > 1 ? 'pb-24' : 'pb-6'
-                } ${contentClassName}`}
+                className={`flex w-full flex-1 flex-col ${
+                    sections.length > 1 ? 'pb-28 sm:pb-10' : 'pb-10'
+                }`}
             >
-                {status && (
-                    <div
-                        role="status"
-                        className="mb-5 border-2 border-paper-line bg-paper-raised px-4 py-3 text-sm"
-                    >
-                        {status}
-                    </div>
-                )}
-
-                {children}
+                <Container width="app" className={`flex flex-1 flex-col py-6 ${contentClassName}`}>
+                    <Alert variant="status">{status}</Alert>
+                    {children}
+                </Container>
             </main>
 
             {sections.length > 1 && (
                 <nav
                     aria-label="Secciones"
-                    className="fixed inset-x-0 bottom-0 z-10 flex border-t-2 border-paper-ink bg-paper-raised sm:hidden"
+                    /* Opaque, not blurred: a second backdrop-blur layer
+                       compositing over a 4,000-word document while it scrolls
+                       is a known source of stutter on iOS and mid-range
+                       Android, and this bar has nothing worth seeing through
+                       it. The padding keeps the tabs clear of the iPhone home
+                       indicator, which swallows taps that land on it. */
+                    className="player-bottom-nav fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] sm:hidden"
                 >
                     {sections.map((item) => (
                         <SectionLink
