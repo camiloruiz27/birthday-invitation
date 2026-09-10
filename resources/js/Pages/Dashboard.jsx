@@ -23,7 +23,7 @@ export default function Dashboard({ stats, activeGames, draftGames, library, can
                 (canCreate ? (
                     <Button href={route('immersion.gm.games.create')}>Nueva partida</Button>
                 ) : (
-                    <Button disabled title="Todos tus casos llegaron a su máximo de partidas">
+                    <Button disabled>
                         Nueva partida
                     </Button>
                 ))

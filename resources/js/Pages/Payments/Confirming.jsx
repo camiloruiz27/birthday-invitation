@@ -47,15 +47,15 @@ export default function Confirming({ order }) {
                 {order.status === 'pending' && (
                     <>
                         <Spinner size="lg" className="mx-auto text-accent" label={null} />
-                        <h1 className="mt-5 text-lg font-semibold text-ink">
+                        <h2 className="mt-5 text-lg font-semibold text-ink">
                             Confirmando tu pago
-                        </h1>
+                        </h2>
                         <p className="mt-2 text-sm text-ink-muted">
                             Bold nos está avisando del resultado. Normalmente toma unos segundos —
                             no cierres esta página.
                         </p>
                         {waitedLong && (
-                            <p className="mt-4 text-xs text-ink-subtle">
+                            <p className="mt-4 text-sm text-ink-muted">
                                 Está tardando más de lo normal. Si el pago se completó, te llega
                                 un correo de confirmación en cuanto lo procesemos; si no, puedes
                                 cerrar esta página e intentarlo de nuevo.
@@ -67,7 +67,7 @@ export default function Confirming({ order }) {
                 {order.status === 'approved' && (
                     <>
                         <p className="text-3xl" aria-hidden="true">✓</p>
-                        <h1 className="mt-3 text-lg font-semibold text-ink">Pago confirmado</h1>
+                        <h2 className="mt-3 text-lg font-semibold text-ink">Pago confirmado</h2>
 
                         {order.type === 'case' ? (
                             <p className="mt-2 text-sm text-ink-muted">Ya está en tu biblioteca.</p>
@@ -106,7 +106,7 @@ export default function Confirming({ order }) {
 
                 {order.status === 'rejected' && (
                     <>
-                        <h1 className="text-lg font-semibold text-ink">El pago no pasó</h1>
+                        <h2 className="text-lg font-semibold text-ink">El pago no pasó</h2>
                         <p className="mt-2 text-sm text-ink-muted">
                             Bold rechazó la transacción. No se hizo ningún cobro. Puedes
                             intentarlo de nuevo con otra tarjeta.
@@ -119,7 +119,7 @@ export default function Confirming({ order }) {
 
                 {(order.status === 'voided' || order.status === 'expired') && (
                     <>
-                        <h1 className="text-lg font-semibold text-ink">Esta orden ya no está activa</h1>
+                        <h2 className="text-lg font-semibold text-ink">Esta orden ya no está activa</h2>
                         <p className="mt-2 text-sm text-ink-muted">
                             Si esperabas un cargo o una devolución, escríbenos con el número de
                             orden #{order.id}.

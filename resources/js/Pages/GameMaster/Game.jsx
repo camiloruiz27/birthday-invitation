@@ -275,11 +275,6 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         <Button
                             onClick={() => setConfirming('start')}
                             disabled={!hasTimeline || shortOnCredits}
-                            title={
-                                shortOnCredits
-                                    ? 'No tienes créditos de IA suficientes'
-                                    : undefined
-                            }
                         >
                             Iniciar caso
                         </Button>
@@ -573,7 +568,10 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         />
 
                         {game.players.length === 0 ? (
-                            <EmptyState title="Esta partida no tiene jugadores" />
+                            <EmptyState
+                                title="Esta partida no tiene jugadores"
+                                description="Se agregan al crear la partida. Sin jugadores no hay a quién mandarle el expediente."
+                            />
                         ) : (
                             <ul className="space-y-3">
                                 {game.players.map((player) => (

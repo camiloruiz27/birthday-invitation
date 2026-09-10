@@ -258,9 +258,50 @@ export default function AdminDashboard({ metrics }) {
                     />
 
                     {recentGames.length === 0 ? (
-                        <EmptyState title="Todavía no hay partidas" />
+                        <EmptyState
+                            title="Todavía no hay partidas"
+                            description="Aparecerán aquí en cuanto alguien cree la primera."
+                        />
                     ) : (
-                        <div className="overflow-x-auto">
+                        <>
+                            {/* Cards on a phone, table from sm up — the same
+                                answer GameMaster/Results already gives. Six
+                                columns inside overflow-x-auto turned the only
+                                list on this page into a two-finger sideways
+                                scroll. */}
+                            <ul className="divide-y divide-line sm:hidden">
+                                {recentGames.map((game) => (
+                                    <li key={game.id} className="py-3">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="min-w-0 truncate font-medium text-ink">
+                                                {game.name}
+                                            </p>
+                                            <span className="shrink-0">
+                                                <Badge
+                                                    tone={GAME_STATUS_TONE[game.status] || 'neutral'}
+                                                >
+                                                    {STATUS_LABELS[game.status] || game.status}
+                                                </Badge>
+                                            </span>
+                                        </div>
+
+                                        <p className="mt-1 truncate text-sm text-ink-muted">
+                                            {game.owner || (
+                                                <span className="text-ink-subtle">sin dueño</span>
+                                            )}
+                                            {' · '}
+                                            {game.case_slug}
+                                        </p>
+
+                                        <p className="mt-1 text-sm text-ink-subtle">
+                                            <span className="tabular">{game.players_count}</span>{' '}
+                                            jugador(es) · {formatDateTime(game.created_at)}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div className="hidden overflow-x-auto sm:block">
                             <table className="w-full min-w-140 text-left text-sm">
                                 <thead>
                                     <tr className="border-b border-line text-xs uppercase tracking-wide text-ink-muted">
@@ -275,10 +316,10 @@ export default function AdminDashboard({ metrics }) {
                                 <tbody className="divide-y divide-line">
                                     {recentGames.map((game) => (
                                         <tr key={game.id}>
-                                            <th scope="row" className="py-2.5 pr-4 font-medium text-ink">
+                                            <th scope="row" className="max-w-48 truncate py-2.5 pr-4 font-medium text-ink">
                                                 {game.name}
                                             </th>
-                                            <td className="py-2.5 pr-4 text-ink-muted">
+                                            <td className="max-w-40 truncate py-2.5 pr-4 text-ink-muted">
                                                 {game.owner || <span className="text-ink-subtle">sin dueño</span>}
                                             </td>
                                             <td className="py-2.5 pr-4 text-ink-muted">{game.case_slug}</td>
@@ -297,7 +338,8 @@ export default function AdminDashboard({ metrics }) {
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
+                            </div>
+                        </>
                     )}
                 </Card>
             </div>

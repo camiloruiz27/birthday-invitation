@@ -94,7 +94,7 @@ function PackageCard({ pack, canPurchase, simulated }) {
                         Recargar (simulado)
                     </Button>
                 ) : (
-                    <Button size="sm" className="w-full" disabled title="Pagos no disponibles todavía">
+                    <Button size="sm" className="w-full" disabled>
                         Próximamente
                     </Button>
                 )}

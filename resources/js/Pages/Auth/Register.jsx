@@ -99,7 +99,7 @@ export default function Register() {
                     {processing ? 'Creando…' : 'Crear cuenta'}
                 </Button>
 
-                <p className="text-xs text-ink-muted">
+                <p className="text-sm text-ink-muted">
                     Crear una cuenta no incluye ningún caso. Los casos se adquieren por
                     separado y quedan en tu biblioteca de forma permanente. Te enviaremos
                     un correo para confirmar tu dirección: sin confirmarla no podrás
