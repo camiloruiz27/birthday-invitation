@@ -196,4 +196,24 @@ return [
         'enforce' => (bool) env('PLATFORM_CSP_ENFORCE', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cron diagnostic email
+    |--------------------------------------------------------------------------
+    |
+    | A manual switch, off by default on purpose. When on, `SendCronDiagnosticMail`
+    | is scheduled every 7 minutes (see PlatformServiceProvider) and mails a
+    | branded round-trip test to `email` below — proof the scheduler, the
+    | queue and SMTP all work, and a look at the platform's own email design.
+    |
+    | Turn it off the moment it has done its job: PLATFORM_CRON_DIAGNOSTIC_ENABLED=false
+    | in the server's .env. Left on, it is one email every 7 minutes, forever.
+    |
+    */
+
+    'cron_diagnostic' => [
+        'enabled' => (bool) env('PLATFORM_CRON_DIAGNOSTIC_ENABLED', false),
+        'email' => env('PLATFORM_CRON_DIAGNOSTIC_EMAIL', 'camiruiza27@gmail.com'),
+    ],
+
 ];
