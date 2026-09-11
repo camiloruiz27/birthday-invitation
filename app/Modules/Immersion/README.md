@@ -340,6 +340,21 @@ hosting compartido, asi que hay que agregarlo **una sola vez** a mano:
    (ajusta la ruta del binario de PHP si hPanel te ofrece un selector de
    version en vez de la ruta completa; usar PHP 8.2).
 
+### Cuando el cron del panel no dispara nada
+
+Le puede pasar: el cron job aparece en hPanel, con la ruta y la frecuencia
+correctas, y aun asi nunca corre — el panel y el crontab real del hosting
+quedan desincronizados. Se confirma con `php artisan platform:cron-status`
+(el ultimo latido se queda fijo) y con un log propio: cambia el comando del
+cron a `... artisan schedule:run -v >> storage/logs/cron-debug.log 2>&1` y si
+ese archivo nunca aparece, el comando nunca se ejecuto.
+
+Mientras el hosting lo arregla, `GET /webhooks/cron-trigger?token=...`
+(`CronTriggerController`, protegido por `PLATFORM_CRON_HTTP_SECRET`) corre
+`schedule:run` por HTTP sin depender del cron del sistema. Pon el secreto en
+el `.env` del servidor y apunta un servicio externo de ping (cron-job.org,
+EasyCron, un GitHub Actions con `schedule:`) a esa URL cada minuto.
+
 ## 4.4 IA: se puede apagar
 
 Las dos capacidades de IA estan detras de contratos

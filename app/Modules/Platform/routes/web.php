@@ -9,6 +9,7 @@ use App\Modules\Platform\Http\Controllers\Auth\RegisteredUserController;
 use App\Modules\Platform\Http\Controllers\CatalogController;
 use App\Modules\Platform\Http\Controllers\CheckoutController;
 use App\Modules\Platform\Http\Controllers\CreditsController;
+use App\Modules\Platform\Http\Controllers\CronTriggerController;
 use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
@@ -176,3 +177,18 @@ Route::middleware('auth')->group(function () {
 */
 
 Route::post('/webhooks/bold', BoldWebhookController::class)->name('payments.webhook.bold');
+
+/*
+|--------------------------------------------------------------------------
+| External cron trigger (fallback)
+|--------------------------------------------------------------------------
+|
+| A ping service, not a signed-in user: no `auth`. The token checked inside
+| CronTriggerController is this route's real authentication. Only does
+| anything if PLATFORM_CRON_HTTP_SECRET is set on this server.
+|
+*/
+
+Route::get('/webhooks/cron-trigger', CronTriggerController::class)
+    ->middleware('throttle:120,1')
+    ->name('cron.trigger');
