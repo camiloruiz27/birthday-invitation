@@ -216,4 +216,23 @@ return [
         'email' => env('PLATFORM_CRON_DIAGNOSTIC_EMAIL', 'camiruiza27@gmail.com'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | HTTP cron trigger (fallback)
+    |--------------------------------------------------------------------------
+    |
+    | Lets an external ping service run `schedule:run` over HTTP, for a host
+    | whose own cron daemon silently never fires the job its panel shows
+    | configured (see app/Modules/Immersion/README.md, "Cron en produccion").
+    |
+    | An empty secret makes the endpoint always refuse: set
+    | PLATFORM_CRON_HTTP_SECRET only on the server that actually needs this
+    | fallback, never in a shared or example .env.
+    |
+    */
+
+    'cron_http_trigger' => [
+        'secret' => env('PLATFORM_CRON_HTTP_SECRET'),
+    ],
+
 ];
