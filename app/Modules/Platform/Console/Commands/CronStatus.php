@@ -2,14 +2,8 @@
 
 namespace App\Modules\Platform\Console\Commands;
 
-use App\Modules\Immersion\Models\Game;
-use App\Modules\Immersion\Models\TimelineEvent;
-use App\Modules\Platform\PlatformServiceProvider;
-use Carbon\CarbonImmutable;
+use App\Modules\Platform\Support\CronDiagnostics;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 /**
  * Answers "is the cron actually working?" without needing SSH.
@@ -40,14 +34,16 @@ class CronStatus extends Command
 
     public function handle(): int
     {
+        $diagnostics = CronDiagnostics::gather();
+
         $this->line('');
         $this->line('  <options=bold>Estado del cron y de las tareas programadas</>');
         $this->line('');
 
-        $this->reportHeartbeat();
-        $this->reportOverdueTimeline();
-        $this->reportQueue();
-        $this->reportEnvironment();
+        $this->reportHeartbeat($diagnostics);
+        $this->reportOverdueTimeline($diagnostics);
+        $this->reportQueue($diagnostics);
+        $this->reportEnvironment($diagnostics);
 
         $this->line('');
 
@@ -73,12 +69,11 @@ class CronStatus extends Command
      * The cause. Written by a one-line scheduled closure every minute, so if
      * this is stale the cron itself is not running the scheduler at all.
      */
-    private function reportHeartbeat(): void
+    private function reportHeartbeat(array $diagnostics): void
     {
         $tolerance = max(2, (int) $this->option('tolerance'));
-        $last = Cache::get(PlatformServiceProvider::HEARTBEAT_KEY);
 
-        if (! $last) {
+        if ($diagnostics['heartbeat_at'] === null) {
             $this->row('Último latido', 'nunca', false);
             $this->problems[] = 'El scheduler no ha corrido ni una vez desde que se instaló esta '
                 .'comprobación. Revisa la tarea cron en el panel del hosting: la ruta a `artisan` '
@@ -87,13 +82,12 @@ class CronStatus extends Command
             return;
         }
 
-        $at = CarbonImmutable::parse($last);
-        $ago = (int) $at->diffInMinutes(now());
+        $ago = $diagnostics['heartbeat_ago_minutes'];
         $alive = $ago <= $tolerance;
 
         $this->row(
             'Último latido',
-            $at->timezone(config('app.timezone'))->format('d/m/Y H:i:s').' ('.$ago.' min)',
+            $diagnostics['heartbeat_at']->timezone(config('app.timezone'))->format('d/m/Y H:i:s')." ({$ago} min)",
             $alive,
         );
 
@@ -109,22 +103,10 @@ class CronStatus extends Command
      * scheduler can be perfectly alive while events pile up because the queue
      * behind it is not being drained.
      */
-    private function reportOverdueTimeline(): void
+    private function reportOverdueTimeline(array $diagnostics): void
     {
-        $overdue = 0;
-        $games = 0;
-
-        foreach (Game::query()->where('status', 'running')->get() as $game) {
-            $due = TimelineEvent::query()
-                ->where('game_id', $game->id)
-                ->due($game->elapsedMinutes())
-                ->count();
-
-            if ($due > 0) {
-                $overdue += $due;
-                $games++;
-            }
-        }
+        $overdue = $diagnostics['overdue_events'];
+        $games = $diagnostics['overdue_games'];
 
         $this->row(
             'Eventos vencidos sin enviar',
@@ -139,9 +121,9 @@ class CronStatus extends Command
         }
     }
 
-    private function reportQueue(): void
+    private function reportQueue(array $diagnostics): void
     {
-        $driver = config('queue.default');
+        $driver = $diagnostics['queue_driver'];
 
         $this->row('Driver de cola', $driver, $driver !== 'sync');
 
@@ -153,10 +135,8 @@ class CronStatus extends Command
             return;
         }
 
-        if (Schema::hasTable('jobs')) {
-            $waiting = DB::table('jobs')->count();
-            // A handful mid-flight is normal; a pile means nothing is draining
-            // them, which on this host means queue:work is not being scheduled.
+        if ($diagnostics['queue_waiting'] !== null) {
+            $waiting = $diagnostics['queue_waiting'];
             $this->row('Trabajos en cola', (string) $waiting, $waiting < 25);
 
             if ($waiting >= 25) {
@@ -164,8 +144,8 @@ class CronStatus extends Command
             }
         }
 
-        if (Schema::hasTable('failed_jobs')) {
-            $failed = DB::table('failed_jobs')->count();
+        if ($diagnostics['queue_failed'] !== null) {
+            $failed = $diagnostics['queue_failed'];
             $this->row('Trabajos fallidos', (string) $failed, $failed === 0);
 
             if ($failed > 0) {
@@ -180,18 +160,16 @@ class CronStatus extends Command
      * server is misbehaving, and a production site left in debug mode is
      * worth saying out loud while somebody is looking.
      */
-    private function reportEnvironment(): void
+    private function reportEnvironment(array $diagnostics): void
     {
-        $debug = (bool) config('app.debug');
+        // Informational, not a verdict: this command runs on a laptop as
+        // often as on the server, and a red mark against "local" there would
+        // be noise with nothing to fix. APP_DEBUG is what is dangerous
+        // wherever it is true, so it is the one that carries the alarm.
+        $this->row('Entorno', $diagnostics['environment'], null);
+        $this->row('Modo depuración', $diagnostics['debug'] ? 'activado' : 'desactivado', ! $diagnostics['debug']);
 
-        // Informational, not a verdict: this command is run on a laptop as
-        // often as on the server, and a red mark against `local` there would
-        // be noise with nothing to fix. APP_DEBUG is the one that is
-        // dangerous wherever it is true, so it carries the alarm.
-        $this->row('Entorno', (string) config('app.env'), null);
-        $this->row('Modo depuración', $debug ? 'activado' : 'desactivado', ! $debug);
-
-        if ($debug) {
+        if ($diagnostics['debug']) {
             $this->problems[] = 'APP_DEBUG está activado. Cualquier error muestra una traza con el '
                 .'contenido del .env, incluidas las contraseñas de la base de datos y del correo.';
         }

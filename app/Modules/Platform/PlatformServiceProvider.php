@@ -11,6 +11,7 @@ use App\Modules\Platform\Console\Commands\ListPromoCodes;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
+use App\Modules\Platform\Console\Commands\SendCronDiagnosticMail;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
@@ -175,6 +176,7 @@ class PlatformServiceProvider extends ServiceProvider
                 ExpireStaleOrders::class,
                 ReconcileOrder::class,
                 ReconcilePendingOrders::class,
+                SendCronDiagnosticMail::class,
                 CreatePromoCode::class,
                 ListPromoCodes::class,
             ]);
@@ -199,6 +201,17 @@ class PlatformServiceProvider extends ServiceProvider
                     ->everyMinute()
                     ->name('platform:scheduler-heartbeat')
                     ->withoutOverlapping(5);
+
+                // PURELY DIAGNOSTIC, off by default — see the config comment
+                // and SendCronDiagnosticMail's docblock. Registered right
+                // after the heartbeat above (not before), so within the same
+                // tick the diagnostic email reads a heartbeat that is already
+                // fresh rather than one minute stale.
+                if (config('platform.cron_diagnostic.enabled')) {
+                    $schedule->command(SendCronDiagnosticMail::class)
+                        ->cron('*/7 * * * *')
+                        ->withoutOverlapping(5);
+                }
 
                 // A pending order never granted anything, so cleaning it up
                 // late costs nothing — daily is plenty.
