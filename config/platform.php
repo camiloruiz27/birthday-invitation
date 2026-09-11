@@ -227,7 +227,7 @@ return [
     |
     | An empty secret makes the endpoint always refuse: set
     | PLATFORM_CRON_HTTP_SECRET only on the server that actually needs this
-    | fallback, never in a shared or example .env.
+    | fallback, never in a shared or example .env. 
     |
     */
 
