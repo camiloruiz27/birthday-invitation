@@ -59,6 +59,10 @@ class GatewayInterrogationProvider implements InterrogationProvider
                     'testimony' => $case->content()->raw($suspect['file']),
                     'history' => $history,
                     'question' => $question,
+                    'case_code' => $case->code(),
+                    'authority' => $case->authority(),
+                    'victim_name' => $case->victim()['name'],
+                    'evidence_delivered' => $session->game->deliveredEvidenceCodes(),
                 ]);
 
             if (! $response->successful()) {
