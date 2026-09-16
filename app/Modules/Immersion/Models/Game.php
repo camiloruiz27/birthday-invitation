@@ -213,6 +213,39 @@ class Game extends Model
             ->exists();
     }
 
+    /**
+     * Evidence codes (e.g. "V8", "A3") this game has actually delivered so
+     * far, resolved from the timeline events already sent.
+     *
+     * This is the fact an interrogation can check a player's claim against,
+     * instead of trusting it outright: a case that tags its timeline with
+     * `evidence_codes` (see CaseDefinition::evidenceCodeMap()) lets the AI
+     * gateway tell a real "the team has V8 and V10" from a bluff. A case that
+     * never tags anything gets an empty map back and this always returns [].
+     *
+     * @return string[]
+     */
+    public function deliveredEvidenceCodes(): array
+    {
+        $map = $this->caseDefinition()->evidenceCodeMap();
+
+        if ($map === []) {
+            return [];
+        }
+
+        $sentOffsets = $this->timelineEvents()
+            ->whereNotNull('sent_at')
+            ->pluck('trigger_offset_minutes');
+
+        $codes = [];
+
+        foreach ($sentOffsets as $offset) {
+            $codes = array_merge($codes, $map[(int) $offset] ?? []);
+        }
+
+        return array_values(array_unique($codes));
+    }
+
     public function endingRevealed(): bool
     {
         return $this->ending_revealed_at !== null;

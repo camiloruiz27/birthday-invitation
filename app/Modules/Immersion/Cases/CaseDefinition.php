@@ -393,6 +393,11 @@ class CaseDefinition
             // not what the engine has to store.
             unset($event['audio_scene'], $event['audio_context'], $event['audio_speaker'], $event['audio_voice']);
 
+            // Manifest-only: which evidence codes this event carries. Read by
+            // evidenceCodeMap() straight from the manifest, never persisted as
+            // a column on the event row.
+            unset($event['evidence_codes']);
+
             $file = $event['audio_file'] ?? null;
             unset($event['audio_file']);
 
@@ -471,6 +476,37 @@ class CaseDefinition
         }
 
         return array_values((array) ($this->manifest['gallery_excluded_headings'][$sourceFile] ?? []));
+    }
+
+    /**
+     * Evidence codes (e.g. "V8", "A3"), keyed by the timeline offset that
+     * delivers them.
+     *
+     * Manifest-only, like the gallery: a case author tags a timeline event
+     * with the evidence it hands the table, so an interrogation can later be
+     * told which codes actually exist in THIS game yet — see
+     * Game::deliveredEvidenceCodes(). A case that never declares
+     * `evidence_codes` gets an empty map here, which is the point: this is
+     * purely additive and changes nothing for a case that does not opt in.
+     *
+     * @return array<int, string[]>
+     */
+    public function evidenceCodeMap(): array
+    {
+        $map = [];
+
+        foreach ((array) ($this->manifest['timeline'] ?? []) as $event) {
+            $codes = array_values((array) ($event['evidence_codes'] ?? []));
+
+            if ($codes === []) {
+                continue;
+            }
+
+            $offset = (int) ($event['trigger_offset_minutes'] ?? 0);
+            $map[$offset] = array_values(array_unique(array_merge($map[$offset] ?? [], $codes)));
+        }
+
+        return $map;
     }
 
     /**
