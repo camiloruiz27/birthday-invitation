@@ -7,9 +7,11 @@ use App\Models\User;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Jobs\GenerateEventAudio;
+use App\Modules\Immersion\Jobs\SendPlayerAccessLinks;
 use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
+use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Support\AccusationScoreboard;
 use App\Modules\Immersion\Support\AiCredits;
@@ -222,6 +224,37 @@ class GameMasterController extends Controller
         return redirect()
             ->route('immersion.gm.game.show', $game->id)
             ->with('status', "Partida creada con {$game->players()->count()} jugadores. Copia los enlaces y compártelos con tu equipo.");
+    }
+
+    /**
+     * Emails one player their own access link, on demand.
+     *
+     * For a player who lost the link the Game Master copied them at the
+     * table, or joined after the invite already went out some other way.
+     */
+    public function sendPlayerLink(Game $game, Player $player): RedirectResponse
+    {
+        abort_if((int) $player->game_id !== (int) $game->id, 404);
+
+        SendPlayerAccessLinks::dispatch([$player->id]);
+
+        return back()->with('status', "Enlace enviado a {$player->name} por correo.");
+    }
+
+    /**
+     * Emails every player in the game their own access link in one go.
+     */
+    public function sendAllPlayerLinks(Game $game): RedirectResponse
+    {
+        $ids = $game->players()->pluck('id')->all();
+
+        if (empty($ids)) {
+            return back()->with('status', 'Esta partida no tiene jugadores.');
+        }
+
+        SendPlayerAccessLinks::dispatch($ids);
+
+        return back()->with('status', 'Enlaces enviados a todos los jugadores por correo.');
     }
 
     public function loadDefaultTimeline(Game $game): RedirectResponse

@@ -45,7 +45,7 @@ function CheckIcon(props) {
     );
 }
 
-function PlayerLink({ player }) {
+function PlayerLink({ player, sending, onSendLink }) {
     const url = route('immersion.player.inbox', player.access_token);
     // 'idle' | 'copied' | 'failed' — a silent no-op used to be a real
     // outcome here, and the GM had no way to tell it apart from success.
@@ -108,6 +108,22 @@ function PlayerLink({ player }) {
                     ) : (
                         'Copiar'
                     )}
+                </Button>
+            </div>
+
+            <div className="mt-2 flex justify-end">
+                {/* Sends from the same address the timeline already mails
+                    from — a second way to hand this over besides reading it
+                    off the screen, for a player who lost the link or joined
+                    after the invite went out some other way. */}
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onSendLink}
+                    loading={sending}
+                    aria-label={`Enviar el enlace de ${player.name} por correo`}
+                >
+                    Enviar por correo
                 </Button>
             </div>
 
@@ -243,9 +259,13 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
     const [runningAction, setRunningAction] = useState(null);
     const busy = runningAction !== null;
 
-    function post(routeName, options = {}) {
-        setRunningAction(routeName);
-        router.post(route(routeName, game.id), {}, {
+    // `params` defaults to just the game id, which is all every action but
+    // the two player-scoped ones below needs. `actionKey` lets those two
+    // track their own row's spinner instead of colliding under one shared
+    // "a request for this route is in flight" flag.
+    function post(routeName, params = game.id, { actionKey, ...options } = {}) {
+        setRunningAction(actionKey ?? routeName);
+        router.post(route(routeName, params), {}, {
             preserveScroll: true,
             onFinish: () => {
                 setRunningAction(null);
@@ -565,6 +585,22 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         <CardHeader
                             title="Jugadores"
                             description={`${game.players.length} en esta partida.`}
+                            actions={
+                                game.players.length > 0 && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={() =>
+                                            post('immersion.gm.game.send-all-links', game.id, {
+                                                actionKey: 'send-all-links',
+                                            })
+                                        }
+                                        loading={runningAction === 'send-all-links'}
+                                    >
+                                        Enviar a todos
+                                    </Button>
+                                )
+                            }
                         />
 
                         {game.players.length === 0 ? (
@@ -575,7 +611,18 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         ) : (
                             <ul className="space-y-3">
                                 {game.players.map((player) => (
-                                    <PlayerLink key={player.id} player={player} />
+                                    <PlayerLink
+                                        key={player.id}
+                                        player={player}
+                                        sending={runningAction === `player-link-${player.id}`}
+                                        onSendLink={() =>
+                                            post(
+                                                'immersion.gm.game.player.send-link',
+                                                [game.id, player.id],
+                                                { actionKey: `player-link-${player.id}` }
+                                            )
+                                        }
+                                    />
                                 ))}
                             </ul>
                         )}
