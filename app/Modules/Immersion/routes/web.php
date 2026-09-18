@@ -28,6 +28,16 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
     // without it /partidas/crear is a candidate match for /partidas/{game}.
     Route::middleware('can:view,game')->whereNumber('game')->group(function () {
         Route::get('/{game}', [GameMasterController::class, 'show'])->name('game.show');
+
+        // Handing a player their own link again without leaving the console
+        // — copy-paste by hand was the only way before. {player:id}, not the
+        // token: getRouteKeyName() on Player returns access_token (that IS
+        // the player's own inbox credential), but here the Game Master is
+        // addressing a row from a page that already proved they own the game.
+        Route::post('/{game}/jugadores/{player:id}/enviar-enlace', [GameMasterController::class, 'sendPlayerLink'])
+            ->name('game.player.send-link');
+        Route::post('/{game}/enviar-enlaces', [GameMasterController::class, 'sendAllPlayerLinks'])
+            ->name('game.send-all-links');
     });
 
     // Frees a quota slot. Destructive, so it has its own ability.

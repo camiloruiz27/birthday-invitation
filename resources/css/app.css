@@ -178,6 +178,16 @@ body {
     outline-offset: 2px;
 }
 
+/* Chrome/Firefox default a <button> to the arrow cursor, unlike an <a>, which
+   is already a pointer — so a component that renders as one or the other
+   depending on props (see Button.jsx) looks inconsistent for free. `:not`
+   keeps this off disabled buttons instead of fighting the `disabled:` /
+   `aria-disabled:` utilities already setting cursor-not-allowed there. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+}
+
 /* Numbers that change in place (game clock, question counters) must not make
    the layout jitter. */
 .tabular {
