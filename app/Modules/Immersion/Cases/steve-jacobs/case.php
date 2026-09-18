@@ -75,7 +75,7 @@ return [
         'price_amount' => 89000,
         'currency' => 'COP',
 
-        'published' => true,
+        'published' => false,
         'sort_order' => 1,
     ],
 
