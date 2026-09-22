@@ -335,7 +335,7 @@ hosting compartido, asi que hay que agregarlo **una sola vez** a mano:
 2. Crea un cron job nuevo con frecuencia "Cada minuto" (`* * * * *`).
 3. Comando:
    ```
-   cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html && /opt/alt/php82/usr/bin/php artisan schedule:run >> /dev/null 2>&1
+   cd /home/u206029413/domains/misteriocode.com/public_html && /opt/alt/php82/usr/bin/php artisan schedule:run >> /dev/null 2>&1
    ```
    (ajusta la ruta del binario de PHP si hPanel te ofrece un selector de
    version en vez de la ruta completa; usar PHP 8.2).

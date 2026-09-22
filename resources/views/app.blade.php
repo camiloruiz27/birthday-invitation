@@ -8,6 +8,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="@if (config('platform.indexable'))index, follow@else noindex, nofollow @endif">
 
+    {{-- Without this, misteriocode.com and www.misteriocode.com (or a
+         tracking query string tacked onto a shared link) read as separate
+         pages to a search engine — only worth stating now that indexing is
+         actually on. url()->current() drops the query string on purpose. --}}
+    <link rel="canonical" href="{{ url()->current() }}">
+
     {{-- Overridden per page by Inertia's <Head title>; kept case-neutral so
          the shell does not name one particular mystery. --}}
     <title inertia>MisterioCode</title>
@@ -32,6 +38,7 @@
          inside an image does. --}}
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MisterioCode">
+    <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:title" content="MisterioCode — Casos de misterio para jugar en equipo">
     <meta property="og:description" content="El expediente llega en tiempo real. Investigan, interrogan y acusan — la solución la escribió una persona, no una IA.">
     <meta property="og:image" content="{{ url('/brand/social-network.png') }}">

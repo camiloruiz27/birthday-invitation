@@ -34,7 +34,7 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: 65002
           script: |
-            mkdir -p /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html/public/build
+            mkdir -p /home/u206029413/domains/misteriocode.com/public_html/public/build
 
       - name: Upload Vite build to server
         uses: appleboy/scp-action@v0.1.7
@@ -44,7 +44,7 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: 65002
           source: "public/build/*"
-          target: "/home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html/public/build"
+          target: "/home/u206029413/domains/misteriocode.com/public_html/public/build"
           strip_components: 2
 
       - name: Sincronizar codigo PHP y migrar en el servidor
@@ -56,7 +56,7 @@ jobs:
           port: 65002
           script: |
             set -e
-            cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
+            cd /home/u206029413/domains/misteriocode.com/public_html
             git fetch origin main
             git reset --hard origin/main
             composer install --no-dev --optimize-autoloader --no-interaction
@@ -85,7 +85,7 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           port: 65002
           script: |
-            cd /home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html
+            cd /home/u206029413/domains/misteriocode.com/public_html
             echo "--- IMMERSION_AI_SERVICE_URL configurada en produccion ---"
             grep "^IMMERSION_AI_SERVICE_URL=" .env || echo "NO esta definida en .env"
             echo "--- IMMERSION_AI_PROJECT_ID configurado ---"
