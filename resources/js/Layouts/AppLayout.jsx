@@ -84,11 +84,18 @@ export default function AppLayout({
                             ))}
 
                             {user?.is_admin && (
-                                <NavLink
-                                    item={{ name: 'Admin', route: 'admin.dashboard' }}
-                                    active={current === 'admin.dashboard'}
-                                    className="text-accent hover:text-accent-strong"
-                                />
+                                <>
+                                    <NavLink
+                                        item={{ name: 'Admin', route: 'admin.dashboard' }}
+                                        active={current === 'admin.dashboard'}
+                                        className="text-accent hover:text-accent-strong"
+                                    />
+                                    <NavLink
+                                        item={{ name: 'Códigos', route: 'admin.codes' }}
+                                        active={current === 'admin.codes'}
+                                        className="text-accent hover:text-accent-strong"
+                                    />
+                                </>
                             )}
                         </nav>
 

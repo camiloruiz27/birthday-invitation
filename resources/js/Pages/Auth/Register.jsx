@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
 import { TextField, PasswordField } from '../../components/ui/Field';
 import TextLink from '../../components/ui/TextLink';
+import { trackEvent } from '../../lib/analytics';
 
 export default function Register() {
     const { data, setData, post, processing, errors } = useForm({
@@ -22,6 +23,7 @@ export default function Register() {
     function submit(event) {
         event.preventDefault();
         post(route('register'), {
+            onSuccess: () => trackEvent('sign_up'),
             onFinish: () => {
                 setData('password', '');
                 setData('password_confirmation', '');

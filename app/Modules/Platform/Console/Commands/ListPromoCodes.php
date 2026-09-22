@@ -29,7 +29,7 @@ class ListPromoCodes extends Command
             ['Codigo', 'Entrega', 'Usados', 'Activo', 'Nota'],
             $codes->map(fn (PromoCode $promo) => [
                 $promo->code,
-                $this->grants($promo),
+                $promo->describeGrant(),
                 $promo->redemptions_count.'/'.($promo->max_redemptions ?? '∞'),
                 $promo->active ? 'si' : 'no',
                 $promo->note ?? '—',
@@ -37,21 +37,5 @@ class ListPromoCodes extends Command
         );
 
         return self::SUCCESS;
-    }
-
-    private function grants(PromoCode $promo): string
-    {
-        if ($promo->isDiscount()) {
-            return $promo->discount_type === PromoCode::DISCOUNT_PERCENT
-                ? "{$promo->discount_value}% off"
-                : "{$promo->discount_value} off (fijo)";
-        }
-
-        $parts = array_filter([
-            $promo->grants_case_slug,
-            $promo->grants_credits ? "{$promo->grants_credits} creditos" : null,
-        ]);
-
-        return implode(' + ', $parts) ?: '—';
     }
 }

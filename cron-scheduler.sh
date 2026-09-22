@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Define the Laravel project directory
-PROJECT_DIR="/home/u206029413/domains/cumplemiamor.cramultimedia.com/public_html"
+PROJECT_DIR="/home/u206029413/domains/misteriocode.com/public_html"
 
 # Define the PHP CLI executable
 PHP_BIN="/opt/alt/php82/usr/bin/php"

@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
+use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
@@ -155,6 +156,7 @@ Route::middleware('auth')->group(function () {
     // (php artisan platform:make-admin), never through a screen.
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/codigos', AdminPromoCodesController::class)->name('codes');
     });
 
     // Where Bold sends the buyer back after checkout. The page itself polls
