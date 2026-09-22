@@ -6,9 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * A redeemable code: either a GIFT (grants_case_slug and/or grants_credits)
- * or a DISCOUNT (discount_type + discount_value), never both — enforced by
- * whoever creates one (CreatePromoCode), not by this model.
+ * A redeemable code: either a GIFT (grants_case_slug and/or grants_credits
+ * and/or grants_any_case) or a DISCOUNT (discount_type + discount_value),
+ * never both — enforced by whoever creates one (CreatePromoCode), not by
+ * this model.
+ *
+ * grants_case_slug and grants_any_case are themselves mutually exclusive: a
+ * fixed case or a free choice of case, never both on the same code.
  *
  * Access and credits are never checked against this table directly — only
  * RedeemPromoCode ever writes to it, going through Entitlement/AiCredits the
@@ -23,6 +27,7 @@ class PromoCode extends Model
     protected $fillable = [
         'code',
         'grants_case_slug',
+        'grants_any_case',
         'grants_credits',
         'discount_type',
         'discount_value',
@@ -34,6 +39,7 @@ class PromoCode extends Model
     ];
 
     protected $casts = [
+        'grants_any_case' => 'boolean',
         'grants_credits' => 'integer',
         'discount_value' => 'integer',
         'max_redemptions' => 'integer',
@@ -49,7 +55,7 @@ class PromoCode extends Model
 
     public function isGift(): bool
     {
-        return $this->grants_case_slug !== null || $this->grants_credits !== null;
+        return $this->grants_case_slug !== null || $this->grants_any_case || $this->grants_credits !== null;
     }
 
     public function isDiscount(): bool
@@ -76,7 +82,7 @@ class PromoCode extends Model
         }
 
         $parts = array_filter([
-            $this->grants_case_slug,
+            $this->grants_any_case ? 'cualquier caso (a elección)' : $this->grants_case_slug,
             $this->grants_credits ? "{$this->grants_credits} creditos" : null,
         ]);
 

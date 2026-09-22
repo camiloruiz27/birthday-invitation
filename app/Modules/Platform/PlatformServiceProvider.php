@@ -4,6 +4,7 @@ namespace App\Modules\Platform;
 
 use App\Modules\Platform\Console\Commands\ClaimGames;
 use App\Modules\Platform\Console\Commands\CreatePromoCode;
+use App\Modules\Platform\Console\Commands\CreatePromoCodeBatch;
 use App\Modules\Platform\Console\Commands\CronStatus;
 use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
@@ -178,6 +179,7 @@ class PlatformServiceProvider extends ServiceProvider
                 ReconcilePendingOrders::class,
                 SendCronDiagnosticMail::class,
                 CreatePromoCode::class,
+                CreatePromoCodeBatch::class,
                 ListPromoCodes::class,
             ]);
 

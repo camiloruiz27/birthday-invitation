@@ -2,7 +2,7 @@
 
 namespace App\Modules\Platform\Console\Commands;
 
-use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Console\Commands\Concerns\ResolvesPromoCodeGrant;
 use App\Modules\Platform\Models\PromoCode;
 use Illuminate\Console\Command;
 
@@ -23,10 +23,13 @@ use Illuminate\Console\Command;
  */
 class CreatePromoCode extends Command
 {
+    use ResolvesPromoCodeGrant;
+
     protected $signature = 'platform:create-promo-code
                             {code : The redeemable code, e.g. LANZAMIENTO2026}
                             {--case= : Grants free access to this case slug}
-                            {--credits= : Grants this many free credits (combine with --case for a gift bundle)}
+                            {--any-case : Lets the redeemer pick which case, instead of a fixed one (never with --case)}
+                            {--credits= : Grants this many free credits (combine with --case/--any-case for a gift bundle)}
                             {--discount-percent= : Percentage off a real purchase, 1-100}
                             {--discount-fixed= : Fixed amount off a real purchase}
                             {--max-redemptions= : Total uses allowed across everyone; omit for no cap}
@@ -51,80 +54,13 @@ class CreatePromoCode extends Command
             return self::FAILURE;
         }
 
-        $caseSlug = $this->option('case');
-        $credits = $this->option('credits');
-        $discountPercent = $this->option('discount-percent');
-        $discountFixed = $this->option('discount-fixed');
+        $grant = $this->resolveGrantAttributes();
 
-        $isGift = $caseSlug !== null || $credits !== null;
-        $isDiscount = $discountPercent !== null || $discountFixed !== null;
-
-        if ($isGift && $isDiscount) {
-            $this->error(
-                'Un código es un regalo (--case/--credits) o un descuento (--discount-percent/--discount-fixed), nunca las dos cosas.'
-            );
-
+        if ($grant === null) {
             return self::FAILURE;
         }
 
-        if (! $isGift && ! $isDiscount) {
-            $this->error('Hay que dar al menos uno: --case, --credits, --discount-percent o --discount-fixed.');
-
-            return self::FAILURE;
-        }
-
-        if ($discountPercent !== null && $discountFixed !== null) {
-            $this->error('Da --discount-percent o --discount-fixed, no los dos.');
-
-            return self::FAILURE;
-        }
-
-        $attributes = ['code' => $code, 'note' => $this->option('note')];
-
-        if ($caseSlug !== null) {
-            if (! MysteryCase::where('slug', $caseSlug)->exists()) {
-                $this->error("No existe ningun caso con el slug \"{$caseSlug}\".");
-                $this->line('Disponibles: '.MysteryCase::pluck('slug')->implode(', '));
-
-                return self::FAILURE;
-            }
-
-            $attributes['grants_case_slug'] = $caseSlug;
-        }
-
-        if ($credits !== null) {
-            if ((int) $credits < 1) {
-                $this->error('--credits tiene que ser un entero positivo.');
-
-                return self::FAILURE;
-            }
-
-            $attributes['grants_credits'] = (int) $credits;
-        }
-
-        if ($discountPercent !== null) {
-            $value = (int) $discountPercent;
-
-            if ($value < 1 || $value > 100) {
-                $this->error('--discount-percent tiene que estar entre 1 y 100.');
-
-                return self::FAILURE;
-            }
-
-            $attributes['discount_type'] = PromoCode::DISCOUNT_PERCENT;
-            $attributes['discount_value'] = $value;
-        }
-
-        if ($discountFixed !== null) {
-            if ((int) $discountFixed < 1) {
-                $this->error('--discount-fixed tiene que ser un entero positivo.');
-
-                return self::FAILURE;
-            }
-
-            $attributes['discount_type'] = PromoCode::DISCOUNT_FIXED;
-            $attributes['discount_value'] = (int) $discountFixed;
-        }
+        $attributes = ['code' => $code, 'note' => $this->option('note')] + $grant;
 
         if ($this->option('max-redemptions') !== null) {
             $attributes['max_redemptions'] = (int) $this->option('max-redemptions');
@@ -138,31 +74,8 @@ class CreatePromoCode extends Command
         $promo = PromoCode::create($attributes);
 
         $this->info("Código \"{$promo->code}\" creado.");
-        $this->line('  '.$this->describe($promo));
+        $this->line('  '.($promo->isDiscount() ? 'Descuento: ' : 'Regalo: ').$promo->describeGrant());
 
         return self::SUCCESS;
-    }
-
-    private function describe(PromoCode $promo): string
-    {
-        if ($promo->isDiscount()) {
-            $value = $promo->discount_type === PromoCode::DISCOUNT_PERCENT
-                ? "{$promo->discount_value}%"
-                : "{$promo->discount_value} (monto fijo)";
-
-            return "Descuento: {$value}";
-        }
-
-        $parts = [];
-
-        if ($promo->grants_case_slug) {
-            $parts[] = "caso \"{$promo->grants_case_slug}\"";
-        }
-
-        if ($promo->grants_credits) {
-            $parts[] = "{$promo->grants_credits} creditos";
-        }
-
-        return 'Regalo: '.implode(' + ', $parts);
     }
 }

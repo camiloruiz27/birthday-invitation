@@ -37,6 +37,7 @@ class PromoCodeMetrics
             'active' => PromoCode::where('active', true)->count(),
             'gifts' => PromoCode::where(fn ($query) => $query
                 ->whereNotNull('grants_case_slug')
+                ->orWhere('grants_any_case', true)
                 ->orWhereNotNull('grants_credits'))->count(),
             'discounts' => PromoCode::whereNotNull('discount_type')->count(),
             'exhausted' => PromoCode::whereNotNull('max_redemptions')
