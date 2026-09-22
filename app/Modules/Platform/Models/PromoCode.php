@@ -63,6 +63,27 @@ class PromoCode extends Model
     }
 
     /**
+     * Human description of what a code hands over — the one place this is
+     * spelled out, so the console listing and the admin screen never drift
+     * apart on the wording.
+     */
+    public function describeGrant(): string
+    {
+        if ($this->isDiscount()) {
+            return $this->discount_type === self::DISCOUNT_PERCENT
+                ? "{$this->discount_value}% off"
+                : "{$this->discount_value} off (fijo)";
+        }
+
+        $parts = array_filter([
+            $this->grants_case_slug,
+            $this->grants_credits ? "{$this->grants_credits} creditos" : null,
+        ]);
+
+        return implode(' + ', $parts) ?: '—';
+    }
+
+    /**
      * Applies this code's discount to an amount, floored at zero — a fixed
      * discount larger than the price (or a stray value above 100%) can never
      * produce a negative charge.
