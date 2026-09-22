@@ -235,4 +235,23 @@ return [
         'secret' => env('PLATFORM_CRON_HTTP_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Analytics (Google Analytics 4 + Microsoft Clarity)
+    |--------------------------------------------------------------------------
+    |
+    | Off unless the id is present, same convention as captcha above: with no
+    | id, resources/views/app.blade.php never emits the script, so local
+    | development and the test suite never talk to Google or Microsoft.
+    |
+    | GA4: analytics.google.com -> Admin -> Data streams -> Measurement ID
+    | (G-XXXXXXXXXX). Clarity: clarity.microsoft.com -> Settings -> Project ID.
+    |
+    */
+
+    'analytics' => [
+        'ga_measurement_id' => env('PLATFORM_GA_MEASUREMENT_ID', ''),
+        'clarity_project_id' => env('PLATFORM_CLARITY_PROJECT_ID', ''),
+    ],
+
 ];

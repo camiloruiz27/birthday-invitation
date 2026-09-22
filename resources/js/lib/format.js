@@ -1,12 +1,18 @@
 /**
- * Price in the case's own currency.
- *
- * `amount` is in the currency's minor unit. COP has no practical minor unit,
- * so for COP those are whole pesos and the formatter must not invent decimals.
+ * `amount` as stored is in the currency's minor unit. COP has no practical
+ * minor unit, so for COP (and its lookalikes) that value is already whole
+ * units and must not be divided into invented decimals.
  */
+export function minorUnitValue(amount, currency = 'COP') {
+    const hasCents = !['COP', 'CLP', 'JPY', 'KRW'].includes(currency);
+
+    return hasCents ? amount / 100 : amount;
+}
+
+/** Price in the case's own currency. */
 export function formatPrice(amount, currency = 'COP') {
     const hasCents = !['COP', 'CLP', 'JPY', 'KRW'].includes(currency);
-    const value = hasCents ? amount / 100 : amount;
+    const value = minorUnitValue(amount, currency);
 
     try {
         return new Intl.NumberFormat('es-CO', {

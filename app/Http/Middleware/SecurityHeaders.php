@@ -80,8 +80,26 @@ class SecurityHeaders
         // inside its own iframe, so it needs both script-src and frame-src.
         $turnstile = 'https://challenges.cloudflare.com';
 
-        $script = ["'self'", "'nonce-{$nonce}'", $turnstile];
-        $connect = ["'self'"];
+        // Google Analytics (gtag.js) and Microsoft Clarity: both load a
+        // <script src> from their own host, then call home over the same
+        // domains to send events. Wildcarded subdomains because both
+        // actually use several (regional collection endpoints for GA,
+        // several report hosts for Clarity) — the exact set is Google's
+        // and Microsoft's to change, not ours to enumerate. Listed
+        // unconditionally, same as Turnstile above: an empty analytics id
+        // just means app.blade.php never emits the script that would use
+        // these, not that the policy needs to know about it.
+        $analyticsScript = ['https://www.googletagmanager.com', 'https://www.clarity.ms'];
+        $analyticsConnect = [
+            'https://www.google-analytics.com',
+            'https://*.google-analytics.com',
+            'https://www.googletagmanager.com',
+            'https://www.clarity.ms',
+            'https://*.clarity.ms',
+        ];
+
+        $script = ["'self'", "'nonce-{$nonce}'", $turnstile, ...$analyticsScript];
+        $connect = ["'self'", ...$analyticsConnect];
 
         // The Vite dev server hands modules over its own origin and pushes
         // hot updates over a websocket. Neither exists in a built deploy, so
@@ -104,8 +122,9 @@ class SecurityHeaders
             "font-src 'self' https://fonts.gstatic.com data:",
 
             // data: for the gallery's inline assets; blob: for audio the
-            // browser builds locally.
-            "img-src 'self' data: blob:",
+            // browser builds locally. The analytics hosts cover GA's pixel
+            // fallback when a fetch/beacon isn't available.
+            "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com",
             "media-src 'self' blob:",
 
             'connect-src '.implode(' ', $connect),

@@ -42,6 +42,33 @@
     <meta name="twitter:description" content="El expediente llega en tiempo real. Investigan, interrogan y acusan — la solución la escribió una persona, no una IA.">
     <meta name="twitter:image" content="{{ url('/brand/social-network.png') }}">
 
+    @if (config('platform.analytics.ga_measurement_id'))
+        {{-- Google Analytics 4. The loader tag is allowed by host, not by
+             nonce, so it would work without one — it carries it anyway
+             because SecurityHardeningTest pins "every <script> in the shell
+             carries this response's nonce" as an invariant, so enabling CSP
+             enforcement can never blank the page from an untagged script. --}}
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('platform.analytics.ga_measurement_id') }}" nonce="{{ $cspNonce ?? '' }}"></script>
+        <script nonce="{{ $cspNonce ?? '' }}">
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ config('platform.analytics.ga_measurement_id') }}');
+        </script>
+    @endif
+
+    @if (config('platform.analytics.clarity_project_id'))
+        {{-- Microsoft Clarity: heatmaps and session recordings. No event
+             wiring needed on our side for that part, it just runs. --}}
+        <script nonce="{{ $cspNonce ?? '' }}">
+            (function (c, l, a, r, i, t, y) {
+                c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+                t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+                y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+            })(window, document, 'clarity', 'script', '{{ config('platform.analytics.clarity_project_id') }}');
+        </script>
+    @endif
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     {{-- Inter carries the platform UI; Outfit is the clean geometric sans

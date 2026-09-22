@@ -63,6 +63,12 @@ class PaymentCallbackController extends Controller
                 'wallet_available' => $order->type === Order::TYPE_CREDIT_PACKAGE
                     ? $credits->walletFor($order->user)->available()
                     : null,
+                // What GA4's purchase event reports — the real amount this
+                // specific order charged, 0 included (a free promo or a
+                // simulated grant is not a fictitious figure to report, it's
+                // the honest value of that one order).
+                'amount' => $order->amount,
+                'currency' => $order->currency,
             ],
         ]);
     }

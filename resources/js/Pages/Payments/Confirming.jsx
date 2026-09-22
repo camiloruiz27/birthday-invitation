@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card from '../../components/ui/Card';
@@ -6,6 +6,8 @@ import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import usePoll from '../../hooks/usePoll';
 import TextLink from '../../components/ui/TextLink';
+import { trackEvent } from '../../lib/analytics';
+import { minorUnitValue } from '../../lib/format';
 
 /**
  * Where Bold sends the buyer back after checkout.
@@ -17,8 +19,23 @@ import TextLink from '../../components/ui/TextLink';
  */
 export default function Confirming({ order }) {
     const [waitedLong, setWaitedLong] = useState(false);
+    const tracked = useRef(false);
 
     usePoll(['order'], { interval: 3000, enabled: order.status === 'pending' });
+
+    useEffect(() => {
+        if (order.status !== 'approved' || tracked.current) return;
+
+        tracked.current = true;
+        // transaction_id lets GA4 dedupe on its own if this ever fires
+        // twice (a re-render, a browser back/forward) for the same order.
+        trackEvent('purchase', {
+            transaction_id: String(order.id),
+            value: minorUnitValue(order.amount, order.currency || 'COP'),
+            currency: order.currency || 'COP',
+            items: [{ item_id: order.case_slug || order.type, item_name: order.type }],
+        });
+    }, [order.status, order.id, order.amount, order.currency, order.case_slug, order.type]);
 
     useEffect(() => {
         if (order.status !== 'pending') return undefined;
