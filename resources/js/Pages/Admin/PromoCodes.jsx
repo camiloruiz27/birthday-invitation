@@ -58,8 +58,9 @@ function HowTo() {
 
             <dl className="mt-4 space-y-2 text-sm">
                 {[
-                    ['--case=', 'Regala acceso al caso con este slug.'],
-                    ['--credits=', 'Regala esta cantidad de créditos (combinable con --case para el bundle).'],
+                    ['--case=', 'Regala acceso a este caso fijo (por su slug).'],
+                    ['--any-case', 'Regala acceso a cualquier caso: quien canjea elige cuál. Nunca junto con --case.'],
+                    ['--credits=', 'Regala esta cantidad de créditos (combinable con --case o --any-case para el bundle).'],
                     ['--discount-percent=', 'Descuento porcentual sobre una compra real, de 1 a 100.'],
                     ['--discount-fixed=', 'Descuento de un monto fijo sobre una compra real.'],
                     ['--max-redemptions=', 'Tope total de usos entre todos. Se omite para no poner tope.'],
@@ -77,7 +78,8 @@ function HowTo() {
 
             <p className="mt-4 text-sm text-ink-muted">
                 Un código es un <strong className="text-ink">regalo</strong> (
-                <code className="text-ink">--case</code>/<code className="text-ink">--credits</code>) o un{' '}
+                <code className="text-ink">--case</code>/<code className="text-ink">--any-case</code>/
+                <code className="text-ink">--credits</code>) o un{' '}
                 <strong className="text-ink">descuento</strong> (
                 <code className="text-ink">--discount-percent</code>/
                 <code className="text-ink">--discount-fixed</code>), nunca las dos cosas.
@@ -92,11 +94,36 @@ function HowTo() {
                 </pre>
                 <pre className="overflow-x-auto rounded-control bg-surface-sunken px-4 py-3 text-sm text-ink">
                     <code>
+                        php artisan platform:create-promo-code CUALQUIERA2026 --any-case
+                        --max-redemptions=100 --note=&quot;Regalo libre&quot;
+                    </code>
+                </pre>
+                <pre className="overflow-x-auto rounded-control bg-surface-sunken px-4 py-3 text-sm text-ink">
+                    <code>
                         php artisan platform:create-promo-code DESCUENTO20 --discount-percent=20
                         --max-per-user=1
                     </code>
                 </pre>
             </div>
+
+            <p className="mt-6 text-sm text-ink-muted">
+                Para repartir <strong className="text-ink">un código por persona</strong> (giveaway, lista de
+                invitados, afiliados), un lote de un solo uso cada uno en vez de un código compartido:
+            </p>
+
+            <pre className="mt-2 overflow-x-auto rounded-control bg-surface-sunken px-4 py-3 text-sm text-ink">
+                <code>
+                    php artisan platform:create-promo-code-batch LANZAMIENTO --count=50 --any-case
+                    --note=&quot;Giveaway redes&quot;
+                </code>
+            </pre>
+            <p className="mt-2 text-xs text-ink-subtle">
+                Cada código del lote sale como <code className="text-ink">LANZAMIENTO-XXXXXX</code>, es de un
+                solo uso y acepta las mismas opciones de entrega (
+                <code className="text-ink">--case</code>/<code className="text-ink">--any-case</code>/
+                <code className="text-ink">--credits</code>/<code className="text-ink">--discount-percent</code>/
+                <code className="text-ink">--discount-fixed</code>) que un código individual.
+            </p>
 
             <p className="mt-4 text-xs text-ink-subtle">
                 Para revisarlos desde la terminal: <code>php artisan platform:list-promo-codes</code>.
