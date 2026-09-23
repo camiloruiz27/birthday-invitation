@@ -49,10 +49,15 @@ class RedeemPromoCode
      * set on one code). No external call is involved, so the whole thing —
      * claim, grant — runs in one transaction with nothing to roll back by
      * hand if something fails partway.
+     *
+     * $caseSlug is only read when the code is grants_any_case: a fixed-case
+     * code ignores it and always grants its own slug, same as before. It is
+     * resolved BEFORE recordRedemption() so a redeemer who has not chosen a
+     * case yet (or picked one they already own) never burns a use.
      */
-    public function redeemGift(User $user, string $code): PromoCode
+    public function redeemGift(User $user, string $code, ?string $caseSlug = null): PromoCode
     {
-        return DB::transaction(function () use ($user, $code) {
+        return DB::transaction(function () use ($user, $code, $caseSlug) {
             $promo = $this->lockAndValidate($code, $user);
 
             if (! $promo->isGift()) {
@@ -61,17 +66,11 @@ class RedeemPromoCode
                 );
             }
 
+            $case = $this->resolveGiftCase($promo, $user, $caseSlug);
+
             $this->recordRedemption($promo, $user);
 
-            if ($promo->grants_case_slug) {
-                $case = MysteryCase::where('slug', $promo->grants_case_slug)->first();
-
-                if (! $case) {
-                    throw new PromoCodeException(
-                        'Este código ya no se puede usar: el caso al que apunta no está disponible.'
-                    );
-                }
-
+            if ($case) {
                 $this->access->grant($user, $case, Entitlement::SOURCE_PROMO);
             }
 
@@ -86,6 +85,65 @@ class RedeemPromoCode
 
             return $promo->fresh();
         });
+    }
+
+    /**
+     * Read-only, no lock: whether the redeem screen should show a case
+     * picker before the redeemer submits for real. An inactive, exhausted or
+     * already-used-up any-case code answers false here — exactly like any
+     * other invalid code — so this never becomes a second way to learn a
+     * code exists beyond what redeemGift() itself already reveals.
+     */
+    public function needsCaseChoice(User $user, string $code): bool
+    {
+        $promo = PromoCode::where('code', strtoupper(trim($code)))->first();
+
+        if (! $promo || ! $promo->grants_any_case) {
+            return false;
+        }
+
+        try {
+            $this->validateLimits($promo, $user);
+        } catch (PromoCodeException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function resolveGiftCase(PromoCode $promo, User $user, ?string $caseSlug): ?MysteryCase
+    {
+        if ($promo->grants_case_slug) {
+            $case = MysteryCase::where('slug', $promo->grants_case_slug)->first();
+
+            if (! $case) {
+                throw new PromoCodeException(
+                    'Este código ya no se puede usar: el caso al que apunta no está disponible.'
+                );
+            }
+
+            return $case;
+        }
+
+        if (! $promo->grants_any_case) {
+            return null;
+        }
+
+        if ($caseSlug === null) {
+            throw new PromoCodeException('Elige un caso antes de canjear este código.');
+        }
+
+        $case = MysteryCase::published()->where('slug', $caseSlug)->first();
+
+        if (! $case) {
+            throw new PromoCodeException('Ese caso no está disponible. Elige otro de la lista.');
+        }
+
+        if ($user->ownsCase($case)) {
+            throw new PromoCodeException('Ya tienes ese caso — elige otro de la lista.');
+        }
+
+        return $case;
     }
 
     /**

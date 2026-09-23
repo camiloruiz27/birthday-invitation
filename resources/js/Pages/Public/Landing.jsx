@@ -152,7 +152,7 @@ export default function Landing({ featured, mechanics }) {
                             <p className="mt-8 max-w-2xl text-lg leading-relaxed text-ink-muted sm:text-xl">
                                 No es un PDF para imprimir. El expediente llega por correo mientras
                                 juegan, la evidencia se ve como evidencia, los sospechosos responden
-                                cuando los interrogan y al final hay que acusar a alguien.
+                                cuando tu los interrogan y al final hay que acusar a alguien.
                             </p>
                         </Reveal>
 
@@ -356,19 +356,15 @@ export default function Landing({ featured, mechanics }) {
             </Section>
 
             {/* IA, dicho sin rodeos */}
-            <Section kicker="Inteligencia artificial" title="Dónde usamos IA, y dónde no">
+            <Section kicker="Nuestro motor de juego" title="Tu interrogatorio es IA. El misterio es 100% humano">
                 <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
                     <div>
                         <Reveal className="space-y-4 text-base leading-relaxed text-ink-muted">
                             <p>
-                                Usamos IA en dos sitios concretos: para que los sospechosos
-                                respondan cuando los interrogan, y para poner voz a los mensajes
-                                de audio.
+                                Usamos inteligencia artificial para darte libertad total: puedes interrogar a los sospechosos con tus propias palabras y escuchar sus respuestas con voces dinámicas.
                             </p>
                             <p>
-                                El resto del caso — la historia, la evidencia, los testimonios, la
-                                solución — está escrito por personas. La IA no inventa hechos del
-                                caso: cada sospechoso solo conoce su propia declaración.
+                                Pero el caso, la historia, las pistas, los testimonios y la gran revelación; está cuidadosamente diseñado por escritores reales. La IA no inventa ni improvisa hechos; los sospechosos solo saben lo que su guion les permite saber.
                             </p>
                         </Reveal>
 
