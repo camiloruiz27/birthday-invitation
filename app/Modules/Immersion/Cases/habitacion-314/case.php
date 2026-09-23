@@ -73,21 +73,20 @@ return [
         'tagline' => 'El registro dice que nadie entró después de las 22:40. Pero ella llevaba horas muerta cuando alguien pidió esa cena en su nombre.',
 
         'description' => <<<'TXT'
-            Marina Costas, directora regional de una consultora, aparece muerta en su
-            habitación del Hotel Alcázar durante la convención anual de la empresa. El
-            registro electrónico de la cerradura parece la coartada perfecta para
-            cualquiera: nadie entró después de que, supuestamente, ella seguía con
-            vida — pidió servicio de habitación esa misma noche.
+            Una directora regional aparece sin vida en su habitación del Hotel
+            Alcázar, durante la convención anual de la empresa. El registro
+            electrónico de la puerta parece la coartada perfecta para
+            cualquiera: nadie entró después de que, supuestamente, ella seguía
+            con vida — pidió servicio de habitación esa misma noche.
 
-            Tu equipo (4 a 7 investigadores, ideal 5) recibe el expediente en tiempo
-            real y podrá interrogar a cinco sospechosos y a dos testigos, uno por
-            uno, mientras el reloj corre hacia la acusación final.
+            Tu equipo (4 a 7 investigadores, ideal 5) recibe el expediente en
+            tiempo real y podrá interrogar a cinco sospechosos y a dos
+            testigos, uno por uno, mientras el reloj corre hacia la acusación
+            final.
 
-            El giro central: el registro de la cerradura nunca falló ni fue
-            manipulado. Lo que estaba mal era la suposición de a qué hora probaba que
-            Marina seguía viva. La mesa pasará la primera mitad de la partida
-            preguntándose cómo entró el asesino sin dejar rastro, y la segunda mitad
-            entendiendo que esa nunca fue la pregunta correcta.
+            La primera mitad de la partida se les irá pensando cómo entró
+            alguien sin dejar rastro. La segunda mitad demostrará que esa
+            nunca fue la pregunta que debían hacerse.
             TXT,
 
         // Archivo esperado en public/immersion/habitacion-314/cover/portada.png

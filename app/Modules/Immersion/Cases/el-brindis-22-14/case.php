@@ -59,16 +59,14 @@ return [
         'tagline' => 'Un brindis, una copa envenenada y un cambio de asientos que nadie planeó.',
 
         'description' => <<<'TXT'
-            Seis comensales cenan en un restaurante cerrado al público para
-            celebrar la venta de una bodega familiar. En el brindis de las
-            22:14, uno de ellos muere envenenado. La copa fatal no estaba
-            destinada a la víctima: estaba destinada a otra persona.
+            Seis comensales celebran, en un restaurante cerrado al público, la
+            venta de una bodega familiar. A las 22:14, en pleno brindis, una
+            copa resulta letal — y todo indica que quien la bebió no era quien
+            debía beberla.
 
-            Un cambio de asientos, hecho por cariño minutos antes de la cena,
-            puso a la víctima real en el lugar del objetivo real. Tu equipo
-            recibe el expediente en tiempo real —fotos, documentos, audios— y
-            podrá interrogar a los cinco sospechosos y a la testigo, uno por
-            uno, mientras el reloj corre.
+            Tu equipo recibe el expediente en tiempo real —fotos, documentos,
+            audios— y podrá interrogar a los cinco sospechosos y a la testigo,
+            uno por uno, mientras el reloj corre.
 
             Al final, una sola acusación: quién, con qué y por qué.
             TXT,

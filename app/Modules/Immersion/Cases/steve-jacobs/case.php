@@ -46,10 +46,11 @@ return [
         'tagline' => 'Un ejecutivo farmacéutico muerto en la habitación 803. Nueve personas con algo que esconder.',
 
         'description' => <<<'TXT'
-            Steve Jacobs aparece muerto en su habitación del Hotel Altamira. No hay
-            señales de entrada forzada ni de violencia: el informe forense apunta a
-            un frasco de suplementos manipulado. Junto al cuerpo, una pieza de
-            ajedrez que nadie sabe explicar.
+            Un alto ejecutivo del sector farmacéutico aparece sin vida en su
+            habitación de hotel. No hay señales de entrada forzada ni de
+            violencia: el informe forense apunta a un frasco de suplementos
+            manipulado. Junto al cuerpo, una pieza de ajedrez que nadie sabe
+            explicar.
 
             Tu equipo recibe el expediente por correo, en tiempo real, mientras el
             reloj corre: recortes de prensa, reportes de laboratorio, capturas de

@@ -78,21 +78,20 @@ return [
         'tagline' => 'Todos parecen tener algo que ocultar sobre ese documento. El problema es que ninguno de ellos parece saber dónde está ella.',
 
         'description' => <<<'TXT'
-            Silvia Rangel, auditora interna de Laboratorios Kestrel, desaparece pocas
-            horas después de anunciar por correo que encontró "alteraciones en Archivo
-            Nueve" — el expediente digital de seguridad de un ensayo clínico — y que
-            presentará un informe completo en dos días.
+            Una auditora interna de un laboratorio farmacéutico desaparece
+            pocas horas después de anunciar por correo que encontró
+            "alteraciones en Archivo Nueve" — el expediente digital de
+            seguridad de un ensayo clínico — y que presentará un informe
+            completo en dos días.
 
-            Tu equipo (5 a 8 investigadores, ideal 6) recibe el expediente en tiempo
-            real y podrá interrogar a seis sospechosos y a dos testigos, uno por uno,
-            durante 90 minutos, mientras reconstruye qué pasó realmente esa noche.
+            Tu equipo (5 a 8 investigadores, ideal 6) recibe el expediente en
+            tiempo real y podrá interrogar a seis sospechosos y a dos
+            testigos, uno por uno, durante 90 minutos, mientras reconstruye
+            qué pasó realmente esa noche.
 
-            El giro central: al menos tres personas distintas manipularon Archivo
-            Nueve, en momentos distintos, por razones distintas — y ninguna de ellas
-            tuvo nada que ver con la desaparición de Silvia. Confirmar quién falsificó
-            el documento no resuelve quién la hizo desaparecer a ella. Esa respuesta
-            está en un segundo hallazgo, casi incidental, que Silvia hizo esa misma
-            semana.
+            Ese archivo tiene más de una mano detrás, y más de un motivo
+            distinto para haber sido alterado — pero ninguno de ellos explica,
+            por sí solo, dónde está ella.
             TXT,
 
         // Archivo esperado en public/immersion/archivo-nueve/cover/portada.png

@@ -72,23 +72,22 @@ return [
         'tagline' => 'Su bolso sigue en el asiento. Su abrigo, también. Ella no.',
 
         'description' => <<<'TXT'
-            En el Expreso Nocturno Meridian, durante el largo tramo sin paradas
-            alrededor del kilómetro 186, Celia Ortuño —auditora interna que viaja a
-            entregar un informe sobre irregularidades de mantenimiento—
-            desaparece de su asiento. Poco antes, las pantallas de información de
-            los vagones sufrieron un reinicio técnico rutinario que todo el mundo
-            presenció y nadie cuestionó.
+            En el Expreso Nocturno Meridian, durante el largo tramo sin
+            paradas cerca del kilómetro 186, una auditora interna que viaja a
+            entregar un informe sobre irregularidades de mantenimiento
+            desaparece de su asiento. Minutos antes, las pantallas de los
+            vagones sufrieron un reinicio técnico rutinario que todo el mundo
+            vio y nadie cuestionó.
 
             Tu equipo (4 a 7 investigadores, ideal 6) recibe el expediente en
-            tiempo real y podrá interrogar a seis pasajeros y tripulantes y a dos
-            testigos, uno por uno, mientras el tren avanza hacia la terminal.
+            tiempo real y podrá interrogar a seis pasajeros y tripulantes y a
+            dos testigos, uno por uno, mientras el tren avanza hacia la
+            terminal.
 
-            El giro central: nadie miente sobre lo que vio u oyó esa noche, pero
-            varios testimonios usan una referencia horaria que dejó de ser
-            fiable en cuanto se restableció el sistema. La mesa deberá cruzar
-            esos relatos con referencias independientes —un hito kilométrico, un
-            registro interno de puertas— para descubrir que todos señalan, una
-            vez corregidos, al mismo lugar y a la misma persona.
+            Nadie miente sobre lo que vio u oyó esa noche. El problema es a
+            qué hora creen haberlo visto — y solo cruzando cada relato con lo
+            que el propio tren registró en silencio se llega a una única
+            respuesta.
             TXT,
 
         // Archivo esperado en public/immersion/kilometro-186/cover/portada.png

@@ -78,20 +78,19 @@ return [
         'tagline' => 'Todas las cámaras dicen la verdad. Lo que está mal es la pregunta que le estamos haciendo a las cámaras.',
 
         'description' => <<<'TXT'
-            Claudia Mercader, empresaria en plena entrevista exclusiva, aparece muerta
-            en la sala de lectura de la casa donde se graba, durante una pausa. La casa
-            está llena de cámaras de producción y seguridad. Ninguna grabación muestra
-            a nadie entrando en esa sala.
+            Una empresaria en plena entrevista exclusiva aparece sin vida en
+            la sala de lectura de la casa donde se graba, durante una pausa.
+            La casa está cubierta por cámaras de producción y seguridad.
+            Ninguna grabación muestra a nadie entrando en esa sala.
 
-            Tu equipo (4 a 7 investigadores, ideal 5) recibe el expediente en tiempo
-            real y podrá interrogar a cinco sospechosos y a dos testigos, uno por uno,
-            durante 65 minutos, revisando fotograma por fotograma lo que las cámaras
-            realmente muestran.
+            Tu equipo (4 a 7 investigadores, ideal 5) recibe el expediente en
+            tiempo real y podrá interrogar a cinco sospechosos y a dos
+            testigos, uno por uno, durante 65 minutos, revisando fotograma
+            por fotograma lo que las cámaras realmente muestran.
 
-            El giro central: ninguna cámara miente ni está manipulada. El vestidor,
-            la única zona sin cobertura, no la tiene por una razón perfectamente
-            normal — privacidad durante los cambios de vestuario. El error no está en
-            las grabaciones: está en asumir que Claudia murió donde apareció.
+            Ninguna cámara miente ni está manipulada. El error no está en
+            ninguna de las grabaciones — está en lo que la mesa entera va a
+            dar por sentado sobre ellas.
             TXT,
 
         // Archivo esperado en public/immersion/la-casa-de-cristal/cover/portada.png
