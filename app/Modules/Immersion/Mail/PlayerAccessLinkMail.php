@@ -36,6 +36,7 @@ class PlayerAccessLinkMail extends Mailable
                 'caseName' => $case->name(),
                 'caseAuthority' => $case->authority(),
                 'inboxUrl' => route('immersion.player.inbox', $this->player->access_token),
+                'logoPath' => public_path('brand/isotipo-email.png'),
             ]);
     }
 }

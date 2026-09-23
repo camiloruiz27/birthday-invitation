@@ -42,6 +42,7 @@ class CaseTimelineMail extends Mailable
                 'bodyHtml' => $case->renderEventBody($this->event->source_file, $this->event->body_markdown),
                 'gallery' => $case->galleryFor($this->event->source_file),
                 'assetPath' => fn (string $url) => $case->assetPath($url),
+                'logoPath' => public_path('brand/isotipo-email.png'),
             ]);
 
         // Case audio ships with the case, generated audio lives in storage;
