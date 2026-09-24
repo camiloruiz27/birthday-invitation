@@ -54,6 +54,7 @@ class CheckoutController extends Controller
         $finalAmount = $case->price_amount;
         $discountAmount = null;
         $promoError = null;
+        $promoRedirect = null;
 
         if ($promoCode) {
             try {
@@ -65,6 +66,7 @@ class CheckoutController extends Controller
                 $promoCode = $preview->promoCode->code;
             } catch (PromoCodeException $exception) {
                 $promoError = $exception->getMessage();
+                $promoRedirect = $exception->isWrongArea() ? route('promo.redeem') : null;
                 $promoCode = null;
             }
         }
@@ -80,6 +82,7 @@ class CheckoutController extends Controller
             'discount_amount' => $discountAmount,
             'final_amount' => $finalAmount,
             'promo_error' => $promoError,
+            'promo_redirect' => $promoRedirect,
         ]);
     }
 

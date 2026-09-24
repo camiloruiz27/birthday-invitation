@@ -104,6 +104,7 @@ class CreditsController extends Controller
         $finalAmount = (int) $package['price_amount'];
         $discountAmount = null;
         $promoError = null;
+        $promoRedirect = null;
 
         if ($promoCode) {
             try {
@@ -115,6 +116,7 @@ class CreditsController extends Controller
                 $promoCode = $preview->promoCode->code;
             } catch (PromoCodeException $exception) {
                 $promoError = $exception->getMessage();
+                $promoRedirect = $exception->isWrongArea() ? route('promo.redeem') : null;
                 $promoCode = null;
             }
         }
@@ -130,6 +132,7 @@ class CreditsController extends Controller
             'discount_amount' => $discountAmount,
             'final_amount' => $finalAmount,
             'promo_error' => $promoError,
+            'promo_redirect' => $promoRedirect,
         ]);
     }
 

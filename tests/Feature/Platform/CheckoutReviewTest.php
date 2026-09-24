@@ -80,6 +80,22 @@ class CheckoutReviewTest extends TestCase
             );
     }
 
+    public function test_the_case_review_screen_offers_a_link_to_canjear_for_a_gift_code(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs')->forceFill(['published_at' => now()])->save();
+        PromoCode::create(['code' => 'REGALO2026', 'grants_credits' => 100]);
+
+        $this->actingAs($user)
+            ->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=REGALO2026')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('promo_code', null)
+                ->where('promo_error', 'Este código es un regalo: canjéalo desde "Canjear código", no aquí.')
+                ->where('promo_redirect', route('promo.redeem'))
+            );
+    }
+
     public function test_the_case_review_screen_flags_an_already_owned_case_instead_of_pricing_it(): void
     {
         $user = $this->gameMaster('steve-jacobs');
@@ -117,6 +133,21 @@ class CheckoutReviewTest extends TestCase
                 ->where('package_id', $package['id'])
                 ->where('promo_code', 'CREDDESC')
                 ->where('final_amount', (int) $package['price_amount'] - 5000)
+            );
+    }
+
+    public function test_the_credits_review_screen_offers_a_link_to_canjear_for_a_gift_code(): void
+    {
+        $user = $this->gameMaster();
+        $package = collect((array) config('platform.credit_packages'))->first();
+        PromoCode::create(['code' => 'REGALOCRED', 'grants_credits' => 100]);
+
+        $this->actingAs($user)
+            ->get(route('credits.checkout.review', ['package' => $package['id'], 'promo_code' => 'REGALOCRED']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('promo_code', null)
+                ->where('promo_redirect', route('promo.redeem'))
             );
     }
 
