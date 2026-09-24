@@ -70,24 +70,23 @@ return [
         'tagline' => 'Ella sí planeaba desaparecer. Eso es verdad. Lo que no está probado es que lo hiciera sola.',
 
         'description' => <<<'TXT'
-            Naiara Robles, creadora de contenido en ascenso, corta abruptamente una
-            transmisión en directo durante un evento privado para creadores y marcas.
-            Cuarenta minutos después, su cuenta publica un mensaje anunciando que
-            necesita alejarse unos días. Toda la evidencia de que ella planeaba
-            desaparecer es auténtica: una maleta lista, un retiro de efectivo, una
-            conversación real con su mejor amiga sobre una cabaña donde desconectar.
+            Una creadora de contenido en ascenso corta abruptamente una
+            transmisión en directo, durante un evento privado para creadores y
+            marcas. Cuarenta minutos después, su cuenta publica un mensaje
+            anunciando que necesita alejarse unos días. Cada prueba de que
+            ella lo planeó es auténtica: una maleta lista, un retiro de
+            efectivo, una conversación real sobre una cabaña donde desconectar.
 
-            Tu equipo (4 a 6 investigadores, ideal 5) recibe el expediente en tiempo
-            real y podrá interrogar a cinco personas cercanas a Naiara y a dos
-            testigos del evento, uno por uno, mientras el reloj corre hacia la
-            acusación final.
+            Tu equipo (4 a 6 investigadores, ideal 5) recibe el expediente en
+            tiempo real y podrá interrogar a cinco personas cercanas a ella y
+            a dos testigos del evento, uno por uno, mientras el reloj corre
+            hacia la acusación final.
 
-            El giro central: nada prueba que Naiara llegara a ejecutar su propio
-            plan. La mesa pasará la primera mitad de la partida construyendo la
-            teoría más razonable —se fue por su cuenta— y la segunda mitad
-            entendiendo que esa nunca fue la pregunta correcta: quién estuvo con
-            ella entre el final del directo y el mensaje que la "explicó" ante el
-            público.
+            Todo apunta a que se fue por su cuenta. La partida empieza
+            confirmando esa teoría — y termina poniendo en duda la única
+            parte de la historia que nadie se detuvo a comprobar: quién
+            estuvo con ella entre el final de la transmisión y el mensaje que
+            la "explicó" ante el público.
             TXT,
 
         // Archivo esperado en public/immersion/desaparecida-en-directo/cover/portada.png

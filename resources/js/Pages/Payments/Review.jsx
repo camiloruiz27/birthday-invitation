@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -29,6 +29,7 @@ export default function Review({
     discount_amount,
     final_amount,
     promo_error,
+    promo_redirect,
 }) {
     const isCase = type === 'case';
 
@@ -153,6 +154,14 @@ export default function Review({
                                 Aplicar
                             </Button>
                         </form>
+                    )}
+
+                    {promo_redirect && (
+                        <p className="mt-2 text-sm text-ink-muted">
+                            <Link href={promo_redirect} className="text-accent underline">
+                                Ir a "Canjear código"
+                            </Link>
+                        </p>
                     )}
                 </div>
 

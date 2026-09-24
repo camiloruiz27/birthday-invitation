@@ -62,7 +62,8 @@ class RedeemPromoCode
 
             if (! $promo->isGift()) {
                 throw new PromoCodeException(
-                    'Este código es un descuento: se aplica al comprar un caso o al recargar créditos, no aquí.'
+                    'Este código es un descuento: se aplica al comprar un caso o al recargar créditos, no aquí.',
+                    wrongArea: true
                 );
             }
 
@@ -164,7 +165,8 @@ class RedeemPromoCode
 
             if (! $promo->isDiscount()) {
                 throw new PromoCodeException(
-                    'Este código es un regalo: canjéalo desde "Canjear código", no aquí.'
+                    'Este código es un regalo: canjéalo desde "Canjear código", no aquí.',
+                    wrongArea: true
                 );
             }
 
@@ -208,7 +210,8 @@ class RedeemPromoCode
 
         if (! $promo->isDiscount()) {
             throw new PromoCodeException(
-                'Este código es un regalo: canjéalo desde "Canjear código", no aquí.'
+                'Este código es un regalo: canjéalo desde "Canjear código", no aquí.',
+                wrongArea: true
             );
         }
 

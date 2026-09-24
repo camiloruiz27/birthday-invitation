@@ -62,21 +62,21 @@ return [
         'tagline' => 'Una tormenta polar, una estación aislada, y tres secretos que no tienen nada que ver entre sí.',
 
         'description' => <<<'TXT'
-            Una estación de investigación remota, financiada por Nordkern Energy,
-            queda aislada por una tormenta polar justo antes de una llamada
-            satelital en la que su directora científica pensaba reportar hallazgos
-            incómodos. Esa misma noche, aparece muerta en el túnel de conexión.
+            Una estación de investigación remota, financiada por Nordkern
+            Energy, queda aislada por una tormenta polar justo antes de una
+            llamada satelital en la que su directora científica pensaba
+            reportar hallazgos incómodos. Esa misma noche, aparece sin vida
+            en el túnel de conexión.
 
             Tu equipo recibe el expediente en tiempo real —fotos, documentos,
-            audios— y podrá interrogar a los seis compañeros de estación y a los
-            dos testigos, uno por uno, mientras la tormenta sigue afuera y nadie
-            puede pedir ayuda.
+            audios— y podrá interrogar a los seis compañeros de estación y a
+            los dos testigos, uno por uno, mientras la tormenta sigue afuera
+            y nadie puede pedir ayuda.
 
-            El giro central: lo que parece una sola conspiración resulta ser tres
-            actos completamente independientes, cometidos por tres personas
-            distintas, la misma noche. Al final, una sola acusación: quién mató a
-            Elena, con qué, por qué, y qué fue en realidad cada una de las otras
-            dos cosas que pasaron esa noche.
+            Más de un secreto sale a la luz esa noche, y no todos están
+            relacionados entre sí. Descubrir cuál de ellos terminó con ella
+            en el túnel de conexión es la única pregunta que de verdad
+            importa.
             TXT,
 
         // Archivo esperado en public/immersion/proyecto-boreal/cover/portada.png
