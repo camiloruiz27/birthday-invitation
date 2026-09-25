@@ -48,10 +48,13 @@ class CaseTimelineMail extends Mailable
         // Case audio ships with the case, generated audio lives in storage;
         // the event resolves whichever it is.
         if ($path = $this->event->audioAbsolutePath()) {
+            $mime = $this->event->audioMimeType();
+            $extension = $mime === 'audio/mpeg' ? 'mp3' : 'wav';
+
             $mail->attachData(
                 (string) file_get_contents($path),
-                'audio-'.$this->event->id.'.wav',
-                ['mime' => 'audio/wav']
+                'audio-'.$this->event->id.'.'.$extension,
+                ['mime' => $mime]
             );
         }
 

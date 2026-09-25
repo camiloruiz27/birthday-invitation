@@ -111,6 +111,23 @@ class TimelineEvent extends Model
     }
 
     /**
+     * The MIME type to serve this recording as, and the extension to name it
+     * with in an email attachment.
+     *
+     * Generated audio is always WAV (see GatewaySpeechProvider); case audio
+     * is authored outside the platform and can ship in whatever format the
+     * recording was actually delivered in, so this reads the real file
+     * extension instead of assuming WAV like every case did up to now.
+     */
+    public function audioMimeType(): string
+    {
+        return match (strtolower(pathinfo((string) $this->audio_path, PATHINFO_EXTENSION))) {
+            'mp3' => 'audio/mpeg',
+            default => 'audio/wav',
+        };
+    }
+
+    /**
      * An audio event that went out without its recording and is not currently
      * being generated: the one case the Game Master can act on.
      *

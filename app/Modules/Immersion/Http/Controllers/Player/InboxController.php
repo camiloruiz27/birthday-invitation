@@ -59,7 +59,7 @@ class InboxController extends Controller
 
         return response()
             ->file($path, [
-                'Content-Type' => 'audio/wav',
+                'Content-Type' => $timelineEvent->audioMimeType(),
                 // The recording for an event never changes, and it is only
                 // reachable with the player's own token.
                 'Cache-Control' => 'private, max-age=86400',
