@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Platform\Actions\DeleteAccount;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -70,7 +71,11 @@ class ProfileController extends Controller
         return back()->with('status', 'Contraseña actualizada.');
     }
 
-    public function destroy(Request $request): RedirectResponse
+    /**
+     * Closes the account. What that erases and what it must keep (payment
+     * records) is spelled out in DeleteAccount.
+     */
+    public function destroy(Request $request, DeleteAccount $deleteAccount): RedirectResponse
     {
         $request->validate([
             'password' => ['required', 'current_password'],
@@ -79,7 +84,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         Auth::logout();
-        $user->delete();
+        $deleteAccount->handle($user);
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

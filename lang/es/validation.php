@@ -178,6 +178,7 @@ return [
     */
 
     'attributes' => [
+        'accept_terms' => 'los Términos y Condiciones y la Política de Privacidad',
         'case_slug' => 'el caso',
         'code' => 'el código',
         'current_password' => 'la contraseña actual',

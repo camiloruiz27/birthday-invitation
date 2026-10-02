@@ -254,7 +254,12 @@ export function SelectField({
     );
 }
 
-export function CheckboxField({ id, label, checked, onChange, hint }) {
+/**
+ * `label` may be a node, so a consent line can carry links to the documents
+ * it refers to. `error` is for a required box (accepting terms) that the
+ * server rejected as unticked.
+ */
+export function CheckboxField({ id, label, checked, onChange, hint, error, required = false }) {
     return (
         <div>
             <label htmlFor={id} className="flex items-start gap-2.5 text-sm text-ink">
@@ -264,14 +269,21 @@ export function CheckboxField({ id, label, checked, onChange, hint }) {
                     type="checkbox"
                     checked={checked}
                     onChange={(event) => onChange(event.target.checked)}
-                    aria-describedby={hint ? `${id}-hint` : undefined}
+                    required={required}
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong bg-surface-sunken"
                 />
                 <span>{label}</span>
             </label>
-            {hint && (
+            {hint && !error && (
                 <p id={`${id}-hint`} className="mt-1 pl-6.5 text-xs text-ink-muted">
                     {hint}
+                </p>
+            )}
+            {error && (
+                <p id={`${id}-error`} className="mt-1 pl-6.5 text-xs font-medium text-danger-strong">
+                    {error}
                 </p>
             )}
         </div>

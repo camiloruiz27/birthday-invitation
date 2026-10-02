@@ -4,12 +4,19 @@ import Container from '../components/ui/Container';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
+import { openCookieSettings } from '../lib/consent';
 
 const NAV = [
     { name: 'Casos', route: 'cases.index' },
     { name: 'Mecánicas', route: 'mechanics' },
     { name: 'Inteligencia artificial', route: 'ai' },
     { name: 'Precios', route: 'pricing' },
+];
+
+const LEGAL = [
+    { name: 'Política de Privacidad', route: 'privacy' },
+    { name: 'Términos y Condiciones', route: 'terms' },
+    { name: 'Política de Cookies', route: 'cookies' },
 ];
 
 /**
@@ -209,9 +216,30 @@ export default function PublicLayout({ current, bleed = false, children }) {
                         </nav>
                     </div>
 
-                    <p className="mt-10 border-t border-line pt-6 text-xs text-ink-subtle">
-                        © {new Date().getFullYear()} MisterioCode
-                    </p>
+                    <div className="mt-10 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs text-ink-subtle">
+                            © {new Date().getFullYear()} MisterioCode
+                        </p>
+
+                        <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
+                            {LEGAL.map((item) => (
+                                <Link
+                                    key={item.route}
+                                    href={route(item.route)}
+                                    className="text-xs text-ink-muted hover:text-ink"
+                                >
+                                    {item.name}
+                                </Link>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={openCookieSettings}
+                                className="text-xs text-ink-muted hover:text-ink"
+                            >
+                                Preferencias de cookies
+                            </button>
+                        </nav>
+                    </div>
                 </Container>
             </footer>
         </div>

@@ -4,6 +4,7 @@ use App\Modules\Immersion\Http\Controllers\GameMaster\GameMasterController;
 use App\Modules\Immersion\Http\Controllers\Player\AccusationController;
 use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
+use App\Modules\Immersion\Http\Controllers\Player\PrivacyNoticeController;
 use App\Modules\Immersion\Http\Controllers\Player\SolutionController;
 use Illuminate\Support\Facades\Route;
 
@@ -102,6 +103,10 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
 
 Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () {
     Route::get('/', [InboxController::class, 'show'])->name('inbox');
+
+    // The privacy notice every player sees on their first visit; see
+    // PrivacyNoticeController.
+    Route::post('/privacidad', [PrivacyNoticeController::class, 'accept'])->name('privacy.accept');
     Route::get('/audio/{event}', [InboxController::class, 'audio'])->name('audio');
     Route::get('/acusacion', [AccusationController::class, 'show'])->name('accusation');
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');

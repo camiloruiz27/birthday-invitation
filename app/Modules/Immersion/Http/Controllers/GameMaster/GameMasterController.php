@@ -16,6 +16,7 @@ use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Support\AccusationScoreboard;
 use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Immersion\Support\GameCost;
+use App\Modules\Immersion\Support\GameEraser;
 use App\Modules\Immersion\Support\GameQuota;
 use App\Modules\Immersion\Support\RevealEnding;
 use Illuminate\Http\JsonResponse;
@@ -404,36 +405,13 @@ class GameMasterController extends Controller
      * Deletes a game and everything under it.
      *
      * This is how a Game Master frees a slot against the quota, so it has to
-     * really remove things: players, their inbox events, interrogations and
-     * accusations all go via cascade. The generated audio lives on disk rather
-     * than in a table, so it is cleaned up by hand — otherwise every deleted
-     * game would leave megabytes of orphaned WAVs behind.
-     *
-     * The credit hold is released BEFORE the delete, for the same reason: the
-     * cascade would take the hold row with it and the frozen credits would
-     * never come back to the wallet.
+     * really remove things — see GameEraser for what goes and in what order.
      */
-    public function destroy(Game $game, AiCredits $credits): RedirectResponse
+    public function destroy(Game $game, GameEraser $eraser): RedirectResponse
     {
         $name = $game->name;
 
-        $credits->release($game, "Partida eliminada: \"{$name}\"");
-
-        // Only recordings this game generated. Case audio is shipped with the
-        // case and shared by every table of it — deleting one game must never
-        // take a file out of the case package.
-        $audioPaths = $game->timelineEvents()
-            ->whereNotNull('audio_path')
-            ->get()
-            ->reject(fn (TimelineEvent $event) => $event->audioIsCaseAsset())
-            ->pluck('audio_path')
-            ->all();
-
-        $game->delete();
-
-        foreach ($audioPaths as $path) {
-            Storage::disk('local')->delete($path);
-        }
+        $eraser->erase($game);
 
         return redirect()
             ->route('immersion.gm.games.index')

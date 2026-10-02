@@ -36,6 +36,7 @@ class EmailVerificationTest extends TestCase
             'email' => 'nueva@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
         ]);
 
         Notification::assertSentTo(User::firstWhere('email', 'nueva@example.com'), VerifyEmail::class);

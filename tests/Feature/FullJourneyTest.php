@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\Player;
+use App\Modules\Platform\Models\MysteryCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
@@ -38,6 +39,13 @@ class FullJourneyTest extends TestCase
         // The catalog is derived from the installed case manifests, exactly as
         // on a real deploy.
         Artisan::call('platform:sync-cases');
+
+        // The journey is about steve-jacobs. The real catalog has ten cases
+        // and which are on sale changes with the business (steve-jacobs is
+        // currently unpublished), so the test pins its own storefront: that
+        // one case, published, and nothing else.
+        MysteryCase::where('slug', '!=', 'steve-jacobs')->update(['published_at' => null]);
+        MysteryCase::where('slug', 'steve-jacobs')->update(['published_at' => now()]);
     }
 
     public function test_a_visitor_can_go_from_the_landing_page_to_running_a_finished_game(): void
@@ -70,6 +78,7 @@ class FullJourneyTest extends TestCase
             'email' => 'gm@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
         ])->assertRedirect(route('dashboard'));
 
         $gameMaster = User::firstWhere('email', 'gm@example.com');

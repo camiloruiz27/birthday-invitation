@@ -1,6 +1,7 @@
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
+import { openCookieSettings } from '../lib/consent';
 
 /**
  * Centred single-column shell for the account screens.
@@ -43,6 +44,21 @@ export default function AuthLayout({ title, description, footer, children }) {
                 </div>
 
                 {footer && <p className="mt-6 text-center text-sm text-ink-muted">{footer}</p>}
+
+                <nav aria-label="Legal" className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs">
+                    <Link href={route('privacy')} className="text-ink-subtle hover:text-ink">
+                        Privacidad
+                    </Link>
+                    <Link href={route('terms')} className="text-ink-subtle hover:text-ink">
+                        Términos
+                    </Link>
+                    <Link href={route('cookies')} className="text-ink-subtle hover:text-ink">
+                        Cookies
+                    </Link>
+                    <button type="button" onClick={openCookieSettings} className="text-ink-subtle hover:text-ink">
+                        Preferencias de cookies
+                    </button>
+                </nav>
             </main>
         </div>
     );

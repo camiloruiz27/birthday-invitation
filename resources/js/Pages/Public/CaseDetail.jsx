@@ -11,7 +11,7 @@ import { CaseFacts } from '../../components/public/CaseCard';
 import Icon from '../../lib/mechanicIcons';
 import { formatPrice } from '../../lib/format';
 
-function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase }) {
+function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
     const { auth } = usePage().props;
     const { post, processing } = useForm({});
 
@@ -28,7 +28,7 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
                 {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-                Pago único. Acceso permanente, partidas ilimitadas.
+                Pago único. Acceso permanente, hasta {gamesPerCase} partidas.
             </p>
 
             <div className="mt-6">
@@ -75,7 +75,7 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
             <ul className="mt-6 space-y-2.5 border-t border-line pt-6 text-sm text-ink-muted">
                 {[
                     'Acceso permanente al caso',
-                    'Partidas ilimitadas, con grupos distintos',
+                    `Hasta ${gamesPerCase} partidas, con grupos distintos`,
                     'Los jugadores no necesitan cuenta',
                     'Se puede jugar presencial o a distancia',
                 ].map((item) => (
@@ -91,7 +91,13 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase })
     );
 }
 
-export default function CaseDetail({ case: mysteryCase, owned, canPurchase, canSimulatePurchase }) {
+export default function CaseDetail({
+    case: mysteryCase,
+    owned,
+    canPurchase,
+    canSimulatePurchase,
+    gamesPerCase,
+}) {
     return (
         <PublicLayout current="cases.index">
             <Head title={mysteryCase.name} />
@@ -153,6 +159,7 @@ export default function CaseDetail({ case: mysteryCase, owned, canPurchase, canS
                                 owned={owned}
                                 canPurchase={canPurchase}
                                 canSimulatePurchase={canSimulatePurchase}
+                                gamesPerCase={gamesPerCase}
                             />
                         </div>
                     </div>

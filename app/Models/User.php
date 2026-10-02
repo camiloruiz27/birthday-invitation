@@ -45,6 +45,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        // Evidence of the legal texts accepted at registration. Written only
+        // by RegisteredUserController, never from a request payload.
+        'terms_accepted_at',
+        'terms_version',
+        'privacy_accepted_at',
+        'privacy_version',
     ];
 
     /**
@@ -67,6 +73,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_admin' => 'boolean',
+        'terms_accepted_at' => 'datetime',
+        'privacy_accepted_at' => 'datetime',
     ];
 
     /**

@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import AuthLayout from '../../Layouts/AuthLayout';
 import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
-import { TextField, PasswordField } from '../../components/ui/Field';
+import { CheckboxField, TextField, PasswordField } from '../../components/ui/Field';
 import TextLink from '../../components/ui/TextLink';
 import { trackEvent } from '../../lib/analytics';
 
@@ -13,6 +13,7 @@ export default function Register() {
         email: '',
         password: '',
         password_confirmation: '',
+        accept_terms: false,
         'cf-turnstile-response': '',
     });
 
@@ -97,9 +98,41 @@ export default function Register() {
                     resetKey={captchaKey}
                 />
 
+                {/* Express authorization (Ley 1581 de 2012): starts unticked
+                    and the server refuses the registration without it. The
+                    links open in a new tab so the half-filled form survives. */}
+                <CheckboxField
+                    id="accept_terms"
+                    label={
+                        <>
+                            Acepto los{' '}
+                            <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
+                                Términos y Condiciones
+                            </TextLink>{' '}
+                            y autorizo el tratamiento de mis datos personales según la{' '}
+                            <TextLink href={route('privacy')} external target="_blank" rel="noopener noreferrer">
+                                Política de Privacidad
+                            </TextLink>
+                            .
+                        </>
+                    }
+                    checked={data.accept_terms}
+                    onChange={(value) => setData('accept_terms', value)}
+                    error={errors.accept_terms}
+                    required
+                />
+
                 <Button type="submit" loading={processing} fullWidth>
                     {processing ? 'Creando…' : 'Crear cuenta'}
                 </Button>
+
+                <p className="text-xs text-ink-muted">
+                    <strong className="font-medium text-ink">Aviso de privacidad.</strong> Usaremos tu
+                    nombre y correo para crear y administrar tu cuenta, enviarte los correos del
+                    servicio y atender tus compras. Tienes derecho a conocer, actualizar, rectificar y
+                    suprimir tus datos y a revocar esta autorización escribiendo al contacto indicado
+                    en la Política de Privacidad. No es obligatorio dar datos sensibles.
+                </p>
 
                 <p className="text-sm text-ink-muted">
                     Crear una cuenta no incluye ningún caso. Los casos se adquieren por

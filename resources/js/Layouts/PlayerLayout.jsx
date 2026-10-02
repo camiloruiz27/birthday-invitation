@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
 import Container from '../components/ui/Container';
+import PrivacyNotice from '../components/player/PrivacyNotice';
 import { MECHANIC_ICON_PATHS } from '../lib/mechanicIcons';
 
 /**
@@ -187,8 +188,17 @@ export default function PlayerLayout({
     const status = props.flash?.status;
     const sections = focused || !player ? [] : sectionsFor(player, game);
 
+    // The Game Master playing their own table already accepted the terms with
+    // their account; an invited player has not, and this is where they do.
+    // `=== null`, not falsy: a payload without the field must not nag.
+    const needsPrivacyNotice = player && !player.is_owner && player.privacy_accepted_at === null;
+
     return (
-        <div className="flex min-h-dvh flex-col bg-surface">
+        // data-clarity-mask: whatever a player reads or types here (documents,
+        // interrogation chat, the accusation) is hidden from Microsoft
+        // Clarity's session recordings. The URL still carries the access token,
+        // which Clarity cannot rewrite — see lib/analytics.js.
+        <div className="flex min-h-dvh flex-col bg-surface" data-clarity-mask="true">
             <a
                 href="#case-main"
                 className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink-inverse"
@@ -273,6 +283,31 @@ export default function PlayerLayout({
                 <Container width="app" className={`flex flex-1 flex-col py-6 ${contentClassName}`}>
                     <Alert variant="status">{status}</Alert>
                     {children}
+
+                    {/* A player never creates an account, so this is where they
+                        can read how their name and answers are handled. A new
+                        tab: the page they are on is a live game. */}
+                    {!focused && (
+                        <p className="mt-10 text-center text-xs text-ink-subtle">
+                            <a
+                                href={route('privacy')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2 hover:text-ink"
+                            >
+                                Política de Privacidad
+                            </a>
+                            {' · '}
+                            <a
+                                href={route('terms')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-2 hover:text-ink"
+                            >
+                                Términos
+                            </a>
+                        </p>
+                    )}
                 </Container>
             </main>
 
@@ -297,6 +332,8 @@ export default function PlayerLayout({
                     ))}
                 </nav>
             )}
+
+            {needsPrivacyNotice && <PrivacyNotice player={player} />}
         </div>
     );
 }

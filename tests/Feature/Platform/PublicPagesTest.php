@@ -27,7 +27,7 @@ class PublicPagesTest extends TestCase
 
     public function test_the_marketing_pages_are_public(): void
     {
-        foreach (['cases.index', 'mechanics', 'ai', 'pricing'] as $routeName) {
+        foreach (['cases.index', 'mechanics', 'ai', 'pricing', 'privacy', 'terms', 'cookies'] as $routeName) {
             $this->get(route($routeName))->assertOk();
         }
     }
