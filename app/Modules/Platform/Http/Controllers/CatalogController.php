@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Immersion\Support\GameQuota;
 use App\Modules\Platform\Http\Resources\CaseCardData;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Support\Mechanics;
@@ -34,6 +35,9 @@ class CatalogController extends Controller
             'owned' => (bool) $request->user()?->ownsCase($case),
             'canPurchase' => (bool) config('platform.payments.enabled'),
             'canSimulatePurchase' => (bool) config('platform.simulated_checkout'),
+            // Said on the page rather than typed into it, so the marketing
+            // copy cannot drift from the quota the Game Master actually hits.
+            'gamesPerCase' => app(GameQuota::class)->limit(),
         ]);
     }
 
@@ -52,6 +56,7 @@ class CatalogController extends Controller
     public function pricing(): Response
     {
         return Inertia::render('Public/Pricing', [
+            'gamesPerCase' => app(GameQuota::class)->limit(),
             'cases' => fn () => MysteryCase::published()
                 ->ordered()
                 ->get()

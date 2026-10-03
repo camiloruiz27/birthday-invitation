@@ -27,12 +27,19 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
+            // Express, prior authorization (Ley 1581 de 2012): the box starts
+            // unticked and nothing is created without it.
+            'accept_terms' => ['accepted'],
         ] + CaptchaRule::rules($request->ip()));
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
+            'terms_accepted_at' => now(),
+            'terms_version' => config('legal.terms_version'),
+            'privacy_accepted_at' => now(),
+            'privacy_version' => config('legal.privacy_version'),
         ]);
 
         // Registering grants no case access: access comes from an Entitlement,

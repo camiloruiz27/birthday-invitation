@@ -30,9 +30,15 @@ class RedeemCodeController extends Controller
             // Only cases the visitor doesn't already own: an "any case"
             // code should never let them pick one that would burn the
             // redemption for nothing (see RedeemPromoCode::resolveGiftCase).
+            //
+            // `id` has to be selected: ownsCase() matches on it, and without
+            // it the check compared against NULL, so a case the visitor
+            // already owned was never filtered out. Only slug and name go to
+            // the page.
             'cases' => MysteryCase::published()
-                ->get(['slug', 'name'])
+                ->get(['id', 'slug', 'name'])
                 ->reject(fn (MysteryCase $case) => $request->user()->ownsCase($case))
+                ->map(fn (MysteryCase $case) => $case->only(['slug', 'name']))
                 ->values(),
         ]);
     }

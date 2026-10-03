@@ -35,10 +35,57 @@ class AuthenticationTest extends TestCase
             'email' => 'isabella@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
         ])->assertRedirect(route('dashboard'));
 
         $this->assertAuthenticated();
         $this->assertDatabaseHas('users', ['email' => 'isabella@example.com']);
+    }
+
+    public function test_registration_requires_accepting_the_terms_and_privacy_policy(): void
+    {
+        // Express authorization (Ley 1581 de 2012): no box, no account.
+        $this->post(route('register'), [
+            'name' => 'Isabella',
+            'email' => 'isabella@example.com',
+            'password' => 'correct-horse-battery',
+            'password_confirmation' => 'correct-horse-battery',
+        ])->assertSessionHasErrors('accept_terms');
+
+        $this->post(route('register'), [
+            'name' => 'Isabella',
+            'email' => 'isabella@example.com',
+            'password' => 'correct-horse-battery',
+            'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => false,
+        ])->assertSessionHasErrors('accept_terms');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['email' => 'isabella@example.com']);
+    }
+
+    public function test_registration_records_what_was_accepted_and_when(): void
+    {
+        config([
+            'legal.terms_version' => '2.1',
+            'legal.privacy_version' => '3.4',
+        ]);
+
+        $this->post(route('register'), [
+            'name' => 'Isabella',
+            'email' => 'isabella@example.com',
+            'password' => 'correct-horse-battery',
+            'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
+        ]);
+
+        // Evidence of the authorization (Decreto 1074 de 2015): which text, when.
+        $user = User::firstWhere('email', 'isabella@example.com');
+
+        $this->assertNotNull($user->terms_accepted_at);
+        $this->assertNotNull($user->privacy_accepted_at);
+        $this->assertSame('2.1', $user->terms_version);
+        $this->assertSame('3.4', $user->privacy_version);
     }
 
     public function test_registration_stores_a_hashed_password(): void
@@ -48,6 +95,7 @@ class AuthenticationTest extends TestCase
             'email' => 'isabella@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
         ]);
 
         $user = User::firstWhere('email', 'isabella@example.com');
@@ -63,6 +111,7 @@ class AuthenticationTest extends TestCase
             'email' => 'isabella@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
         ]);
 
         $user = User::firstWhere('email', 'isabella@example.com');

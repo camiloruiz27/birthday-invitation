@@ -213,7 +213,10 @@ return [
 
     'cron_diagnostic' => [
         'enabled' => (bool) env('PLATFORM_CRON_DIAGNOSTIC_ENABLED', false),
-        'email' => env('PLATFORM_CRON_DIAGNOSTIC_EMAIL', 'camiruiza27@gmail.com'),
+        // No default address: a personal inbox must never be baked into the
+        // repo. Empty means the diagnostic has nowhere to go (see
+        // SendCronDiagnosticMail), so set it in the server's .env if enabled.
+        'email' => env('PLATFORM_CRON_DIAGNOSTIC_EMAIL'),
     ],
 
     /*
@@ -247,11 +250,18 @@ return [
     | GA4: analytics.google.com -> Admin -> Data streams -> Measurement ID
     | (G-XXXXXXXXXX). Clarity: clarity.microsoft.com -> Settings -> Project ID.
     |
+    | basic_measurement: both tools load for everyone with storage DENIED, so
+    | no cookie is written and the owner still learns that someone arrived and
+    | from where (see resources/js/lib/consent.js). Audience cookies and
+    | Clarity recordings stay opt-in. Set it to false for the strictest reading
+    | of Ley 1581: nothing reaches Google or Microsoft until the visitor accepts.
+    |
     */
 
     'analytics' => [
         'ga_measurement_id' => env('PLATFORM_GA_MEASUREMENT_ID', ''),
         'clarity_project_id' => env('PLATFORM_CLARITY_PROJECT_ID', ''),
+        'basic_measurement' => (bool) env('PLATFORM_ANALYTICS_BASIC', true),
     ],
 
 ];

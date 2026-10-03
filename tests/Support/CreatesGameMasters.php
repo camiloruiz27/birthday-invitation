@@ -49,15 +49,30 @@ trait CreatesGameMasters
     /**
      * The catalog row for a case, syncing the catalog from the installed
      * manifests on first use so tests do not hand-write product data.
+     *
+     * The returned case is always PUBLISHED, and on first use it is the only
+     * one. The installed manifests are the real product catalog — ten cases
+     * today, some deliberately unpublished (steve-jacobs is) — and a test about
+     * checkout or the landing page must not depend on what is on sale this
+     * week. Syncing still supplies the manifest's content and price; what the
+     * helper pins is which cases are visible.
      */
     protected function catalogCase(string $slug): MysteryCase
     {
         if (MysteryCase::query()->doesntExist()) {
             Artisan::call('platform:sync-cases');
+
+            MysteryCase::where('slug', '!=', $slug)->update(['published_at' => null]);
         }
 
-        return MysteryCase::firstWhere('slug', $slug)
+        $case = MysteryCase::firstWhere('slug', $slug)
             ?? MysteryCase::create(['slug' => $slug, 'name' => $slug]);
+
+        if (! $case->isPublished()) {
+            $case->update(['published_at' => now()]);
+        }
+
+        return $case;
     }
 
     /**

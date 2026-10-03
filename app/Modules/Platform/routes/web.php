@@ -13,6 +13,7 @@ use App\Modules\Platform\Http\Controllers\CreditsController;
 use App\Modules\Platform\Http\Controllers\CronTriggerController;
 use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
+use App\Modules\Platform\Http\Controllers\LegalController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
 use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
@@ -37,6 +38,12 @@ Route::get('/casos/{slug}', [CatalogController::class, 'show'])->name('cases.sho
 Route::get('/mecanicas', [CatalogController::class, 'mechanics'])->name('mechanics');
 Route::get('/inteligencia-artificial', [CatalogController::class, 'ai'])->name('ai');
 Route::get('/precios', [CatalogController::class, 'pricing'])->name('pricing');
+
+// Legal documents: Ley 1581 de 2012 (data policy), Ley 1480 de 2011 (terms of
+// an online sale) and the cookie policy the consent banner points to.
+Route::get('/privacidad', [LegalController::class, 'privacy'])->name('privacy');
+Route::get('/terminos', [LegalController::class, 'terms'])->name('terms');
+Route::get('/cookies', [LegalController::class, 'cookies'])->name('cookies');
 
 /*
 |--------------------------------------------------------------------------

@@ -7,9 +7,9 @@ import Section from '../../components/public/Section';
 import { CaseFacts } from '../../components/public/CaseCard';
 import { formatPrice } from '../../lib/format';
 
-const INCLUDED = [
+const included = (gamesPerCase) => [
     'Acceso permanente al caso',
-    'Partidas ilimitadas, con grupos distintos',
+    `Hasta ${gamesPerCase} partidas del caso, con grupos distintos`,
     'Todas las mecánicas del caso, sin extras',
     'Los jugadores no necesitan cuenta ni pagar nada',
     'Presencial o a distancia',
@@ -43,7 +43,7 @@ function CasePrice({ mysteryCase }) {
     );
 }
 
-export default function Pricing({ cases }) {
+export default function Pricing({ cases, gamesPerCase }) {
     return (
         <PublicLayout current="pricing">
             <Head title="Precios" />
@@ -51,7 +51,7 @@ export default function Pricing({ cases }) {
             <Section
                 kicker="Precios"
                 title="Pagas por caso, no por mes"
-                description="Compras el misterio que quieras jugar y es tuyo. No hay suscripción, ni límite de partidas, ni cobro por jugador."
+                description={`Compras el misterio que quieras jugar y es tuyo. No hay suscripción ni cobro por jugador, y puedes dirigir hasta ${gamesPerCase} partidas de cada caso.`}
             >
                 {cases.length === 0 ? (
                     <EmptyState
@@ -69,7 +69,7 @@ export default function Pricing({ cases }) {
 
             <Section title="Qué incluye cualquier caso" width="prose" tone="sunken">
                 <ul className="space-y-3">
-                    {INCLUDED.map((item) => (
+                    {included(gamesPerCase).map((item) => (
                         <li key={item} className="flex gap-3 text-ink-muted">
                             <span aria-hidden="true" className="text-accent">
                                 —

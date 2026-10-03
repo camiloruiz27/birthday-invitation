@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Platform;
 
+use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Platform\Models\MysteryCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,18 @@ class MysteryCaseCatalogTest extends TestCase
         $this->assertSame(89000, $case->price_amount);
         $this->assertSame('COP', $case->currency);
         $this->assertContains('interrogation', $case->mechanics);
-        $this->assertTrue($case->isPublished());
+        $this->assertSame($this->manifestSaysPublished('steve-jacobs'), $case->isPublished());
+    }
+
+    /**
+     * Whether the manifest in git puts the case on sale. Read from the
+     * manifest rather than assumed: publishing is a business decision that
+     * changes (steve-jacobs is unpublished at the moment) and these tests are
+     * about sync, not about what is for sale.
+     */
+    private function manifestSaysPublished(string $slug): bool
+    {
+        return (bool) app(CaseRegistry::class)->get($slug)->catalog()['published'];
     }
 
     public function test_sync_is_idempotent(): void
@@ -35,7 +47,8 @@ class MysteryCaseCatalogTest extends TestCase
         $this->artisan('platform:sync-cases')->assertSuccessful();
         $this->artisan('platform:sync-cases')->assertSuccessful();
 
-        $this->assertDatabaseCount('mystery_cases', 1);
+        // One row per installed manifest, however many there are.
+        $this->assertDatabaseCount('mystery_cases', count(app(CaseRegistry::class)->slugs()));
     }
 
     public function test_sync_refreshes_content_fields_but_preserves_pricing(): void
@@ -75,7 +88,7 @@ class MysteryCaseCatalogTest extends TestCase
         $case = MysteryCase::firstWhere('slug', 'steve-jacobs');
 
         $this->assertSame(89000, $case->price_amount);
-        $this->assertTrue($case->isPublished());
+        $this->assertSame($this->manifestSaysPublished('steve-jacobs'), $case->isPublished());
     }
 
     public function test_dry_run_writes_nothing(): void

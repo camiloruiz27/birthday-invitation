@@ -17,10 +17,13 @@ class Player extends Model
         'access_token',
         'role_slug',
         'is_owner',
+        'privacy_accepted_at',
+        'privacy_version',
     ];
 
     protected $casts = [
         'is_owner' => 'boolean',
+        'privacy_accepted_at' => 'datetime',
     ];
 
     /**

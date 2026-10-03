@@ -346,6 +346,14 @@ export default function NewGameForm({ library, credits = null }) {
                     ser menos de 6.
                     {isAutomatic && ' Tú te agregas solo, no hace falta que te pongas aquí.'}
                 </p>
+                <p className="mt-1 text-xs text-ink-muted">
+                    Al inscribir a alguien declaras que sabe y está de acuerdo con que usemos su
+                    nombre y correo para esta partida (ver la{' '}
+                    <TextLink href={route('privacy')} external target="_blank" rel="noopener noreferrer">
+                        Política de Privacidad
+                    </TextLink>
+                    ). No inscribas a menores de edad.
+                </p>
 
                 <div className="mt-3 space-y-3">
                     {players.map((player, index) => (

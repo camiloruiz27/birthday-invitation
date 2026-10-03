@@ -3,6 +3,7 @@ import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
+import TextLink from '../../components/ui/TextLink';
 import { TextField } from '../../components/ui/Field';
 import { formatPrice } from '../../lib/format';
 
@@ -171,7 +172,30 @@ export default function Review({
                     </Alert>
                 )}
 
-                <form onSubmit={confirmPurchase} className="mt-6">
+                {/* What Ley 1480 de 2011 (art. 50) wants the buyer told before
+                    paying: how, when it is delivered, and the withdrawal right
+                    with its procedure. */}
+                <div className="mt-6 space-y-1.5 rounded-control border border-line bg-surface-sunken p-4 text-xs leading-relaxed text-ink-muted">
+                    <p>
+                        <span className="font-medium text-ink">Pago:</span> con tarjeta, en la página
+                        segura de Bold. Precio en pesos colombianos con impuestos incluidos.
+                    </p>
+                    <p>
+                        <span className="font-medium text-ink">Entrega:</span> inmediata, en tu
+                        cuenta, al confirmarse el pago.
+                    </p>
+                    <p>
+                        <span className="font-medium text-ink">Retracto:</span> puedes retractarte
+                        dentro de los 5 días hábiles siguientes a la compra si aún no has usado lo
+                        comprado; el procedimiento está en los{' '}
+                        <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
+                            Términos y Condiciones
+                        </TextLink>
+                        .
+                    </p>
+                </div>
+
+                <form onSubmit={confirmPurchase} className="mt-4">
                     <Button type="submit" loading={confirmForm.processing} fullWidth>
                         {confirmForm.processing
                             ? 'Redirigiendo…'

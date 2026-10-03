@@ -59,6 +59,7 @@ class AdminTest extends TestCase
             'email' => 'intruso@example.com',
             'password' => 'correct-horse-battery',
             'password_confirmation' => 'correct-horse-battery',
+            'accept_terms' => true,
             'is_admin' => true,
         ]);
 
