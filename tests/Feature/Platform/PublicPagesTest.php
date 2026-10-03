@@ -32,6 +32,39 @@ class PublicPagesTest extends TestCase
         }
     }
 
+    public function test_pages_are_noindex_unless_indexing_is_switched_on(): void
+    {
+        // The directive used to render EMPTY (a Blade quirk), which search
+        // engines read as "index everything".
+        config(['platform.indexable' => false]);
+        $this->assertStringContainsString(
+            'name="robots" content="noindex, nofollow"',
+            $this->get(route('home'))->getContent()
+        );
+
+        config(['platform.indexable' => true]);
+        $this->assertStringContainsString(
+            'name="robots" content="index, follow"',
+            $this->get(route('home'))->getContent()
+        );
+    }
+
+    public function test_a_player_page_is_never_indexable_and_never_echoes_its_token(): void
+    {
+        config(['platform.indexable' => true]);
+        [, $player] = $this->gameOwnedBy($this->gameMaster());
+
+        $html = $this->get(route('immersion.player.inbox', $player->access_token))
+            ->assertOk()
+            ->getContent();
+
+        // The URL is the player's credential: it must not be indexed, and it
+        // must not be copied into canonical / og:url markup.
+        $this->assertStringContainsString('name="robots" content="noindex, nofollow"', $html);
+        $this->assertStringNotContainsString('rel="canonical"', $html);
+        $this->assertStringNotContainsString('og:url', $html);
+    }
+
     public function test_the_ai_page_separates_mechanics_that_use_ai(): void
     {
         $this->get(route('ai'))

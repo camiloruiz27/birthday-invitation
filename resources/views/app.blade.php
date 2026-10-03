@@ -9,7 +9,12 @@
     {{-- A player page is never indexable, whatever the site-wide switch says:
          its URL is the player's credential (/jugador/{token}). --}}
     @php($isPlayerPage = request()->is('jugador/*'))
-    <meta name="robots" content="@if (config('platform.indexable') && ! $isPlayerPage)index, follow@else noindex, nofollow @endif">
+    {{-- Computed in PHP on purpose. This used to be an inline
+         `index, follow@else noindex...@endif`, and Blade does not read an
+         @else glued to a word: it printed an EMPTY content attribute, which
+         means "no directive" — so every page was indexable whatever the switch
+         said. --}}
+    <meta name="robots" content="{{ config('platform.indexable') && ! $isPlayerPage ? 'index, follow' : 'noindex, nofollow' }}">
 
     {{-- Without this, misteriocode.com and www.misteriocode.com (or a
          tracking query string tacked onto a shared link) read as separate

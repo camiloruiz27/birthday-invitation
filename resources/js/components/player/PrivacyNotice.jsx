@@ -38,7 +38,9 @@ export default function PrivacyNotice({ player }) {
                 aria-modal="true"
                 aria-labelledby="player-privacy-title"
                 tabIndex={-1}
-                className="max-h-full w-full max-w-lg overflow-y-auto rounded-card border border-line-strong bg-surface-raised p-6 shadow-overlay outline-none"
+                // See CookieConsent: the global focus ring beats outline-none.
+                style={{ outline: 'none' }}
+                className="max-h-full w-full max-w-lg overflow-y-auto rounded-card border border-line-strong bg-surface-raised p-6 shadow-overlay"
             >
                 <h2 id="player-privacy-title" className="font-display text-xl font-semibold text-ink">
                     Antes de empezar

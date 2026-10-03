@@ -57,12 +57,6 @@ export function ControllerCard({ legal }) {
             <dt className="font-medium text-ink">NIT o C.C.</dt>
             <dd><Val value={legal.entity_id} label="NIT o cédula" /></dd>
 
-            <dt className="font-medium text-ink">Domicilio</dt>
-            <dd>
-                <Val value={legal.address} label="dirección de notificación" />
-                {legal.city ? `, ${legal.city}, Colombia` : ''}
-            </dd>
-
             <dt className="font-medium text-ink">Correo de contacto</dt>
             <dd><Mail value={legal.email} /></dd>
 
