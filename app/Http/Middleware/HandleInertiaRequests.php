@@ -54,6 +54,10 @@ class HandleInertiaRequests extends Middleware
             // itself. The secret key is what must never leave the server, and
             // it is not here. Empty means no captcha is configured, which is
             // how the widget knows to render nothing.
+            // Public contact address for the footer (questions, personal-data
+            // requests, terms). Same value the legal pages cite.
+            'contactEmail' => fn () => config('legal.email') ?: null,
+
             'captchaSiteKey' => fn () => app(Captcha::class)->siteKey(),
         ]);
     }
