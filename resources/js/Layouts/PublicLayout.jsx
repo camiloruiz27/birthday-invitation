@@ -30,6 +30,7 @@ export default function PublicLayout({ current, bleed = false, children }) {
     const { props, url } = usePage();
     const user = props.auth?.user;
     const status = props.flash?.status;
+    const contactEmail = props.contactEmail;
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -214,6 +215,22 @@ export default function PublicLayout({ current, bleed = false, children }) {
                                 </Link>
                             ))}
                         </nav>
+
+                        {contactEmail && (
+                            <div className="max-w-xs">
+                                <h2 className="text-sm font-medium text-ink">Contacto</h2>
+                                <p className="mt-3 text-sm text-ink-muted">
+                                    ¿Dudas, consultas sobre tus datos o los términos y condiciones?
+                                    Escríbenos.
+                                </p>
+                                <a
+                                    href={`mailto:${contactEmail}`}
+                                    className="mt-2 inline-block text-sm font-medium text-accent underline underline-offset-2 hover:text-accent-strong"
+                                >
+                                    {contactEmail}
+                                </a>
+                            </div>
+                        )}
                     </div>
 
                     <div className="mt-10 flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">

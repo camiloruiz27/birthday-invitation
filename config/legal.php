@@ -36,7 +36,8 @@ return [
     'city' => env('LEGAL_CITY', ''),
 
     // The channel for PQRS, retracto requests and habeas data queries.
-    'email' => env('LEGAL_EMAIL', ''),
+    // Also the public contact address shown in the site footer.
+    'email' => env('LEGAL_EMAIL', 'contacto@misteriocode.com'),
 
     'phone' => env('LEGAL_PHONE', ''),
 
