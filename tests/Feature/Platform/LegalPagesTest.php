@@ -25,6 +25,20 @@ class LegalPagesTest extends TestCase
         }
     }
 
+    public function test_the_pages_that_name_the_responsible_person_are_kept_out_of_search_results(): void
+    {
+        // A search for the owner's name must not lead to the policy or the
+        // terms, where Ley 1581 and Ley 1480 require that name to appear.
+        foreach (['privacy', 'terms'] as $routeName) {
+            $this->get(route($routeName))
+                ->assertOk()
+                ->assertHeader('X-Robots-Tag', 'noindex, noarchive');
+        }
+
+        // The cookie policy names nobody.
+        $this->get(route('cookies'))->assertHeaderMissing('X-Robots-Tag');
+    }
+
     public function test_the_documents_carry_the_controller_identity_from_config(): void
     {
         config([
