@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
 import TextLink from '../../components/ui/TextLink';
-import { TextField } from '../../components/ui/Field';
+import { CheckboxField, TextField } from '../../components/ui/Field';
 import { formatPrice } from '../../lib/format';
 
 /**
@@ -35,6 +36,9 @@ export default function Review({
     promo_redirect,
 }) {
     const isCase = type === 'case';
+
+    // Starts unticked on every visit: accepting is an act, not a default.
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const codeForm = useForm(
         isCase
@@ -183,30 +187,49 @@ export default function Review({
                     </Alert>
                 )}
 
-                {/* What Ley 1480 de 2011 (art. 50) wants the buyer told before
-                    paying: how, when it is delivered, and the withdrawal right
-                    with its procedure. */}
-                <div className="mt-6 space-y-1.5 rounded-control border border-line bg-surface-sunken p-4 text-xs leading-relaxed text-ink-muted">
-                    <p>
-                        <span className="font-medium text-ink">Pago:</span> con tarjeta, en la página
-                        segura de Bold. Precio en pesos colombianos con impuestos incluidos.
-                    </p>
-                    <p>
-                        <span className="font-medium text-ink">Entrega:</span> inmediata, en tu
-                        cuenta, al confirmarse el pago.
-                    </p>
-                    <p>
-                        <span className="font-medium text-ink">Retracto:</span> puedes retractarte
-                        dentro de los 5 días hábiles siguientes a la compra si aún no has usado lo
-                        comprado; el procedimiento está en los{' '}
-                        <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
-                            Términos y Condiciones
-                        </TextLink>
-                        .
-                    </p>
-                </div>
+                <form onSubmit={confirmPurchase} className="mt-6 space-y-4">
+                    {/* What Ley 1480 de 2011 (art. 50) wants the buyer told
+                        before paying — payment, delivery and the withdrawal
+                        right with its procedure — lives in the Terms
+                        (#precios, #retracto); here the buyer only accepts it,
+                        with a link to each part. New tab, so the review and
+                        any code already applied survive. The native `required`
+                        stops the submit with the browser's own message, so the
+                        button never looks dead. Not sent to the server. */}
+                    <CheckboxField
+                        id="accept_purchase_terms"
+                        label={
+                            <>
+                                Acepto las condiciones de esta compra:{' '}
+                                <TextLink
+                                    href={`${route('terms')}#precios`}
+                                    external
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    pago y entrega
+                                </TextLink>{' '}
+                                y{' '}
+                                <TextLink
+                                    href={`${route('terms')}#retracto`}
+                                    external
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    derecho de retracto
+                                </TextLink>
+                                , según los{' '}
+                                <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
+                                    Términos y Condiciones
+                                </TextLink>
+                                .
+                            </>
+                        }
+                        checked={acceptedTerms}
+                        onChange={setAcceptedTerms}
+                        required
+                    />
 
-                <form onSubmit={confirmPurchase} className="mt-4">
                     <Button type="submit" loading={confirmForm.processing} fullWidth>
                         {confirmForm.processing
                             ? 'Redirigiendo…'
