@@ -2,6 +2,7 @@
 
 namespace App\Modules\Platform\Console\Commands;
 
+use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Models\Order;
 use Illuminate\Console\Command;
 
@@ -22,7 +23,7 @@ class ExpireStaleOrders extends Command
 
     protected $description = 'Mark payment orders left pending too long as expired';
 
-    public function handle(): int
+    public function handle(RedeemPromoCode $promos): int
     {
         $hours = (int) ($this->option('hours') ?: config('platform.payments.stale_order_hours', 24));
 
@@ -53,17 +54,23 @@ class ExpireStaleOrders extends Command
             return self::SUCCESS;
         }
 
-        // A plain mass update, not a per-row conditional: nothing was ever
-        // granted for a pending order, so there is no accounting to protect
-        // against a concurrent webhook the way credit holds need to be.
-        // The webhook path only ever transitions FROM pending itself, so a
-        // race here at worst expires an order the instant before its webhook
-        // lands — harmless, since the transition below still checks for
-        // pending explicitly and simply affects zero rows in that case.
-        $ids = $stale->pluck('id');
-        $count = Order::whereIn('id', $ids)
-            ->where('status', Order::STATUS_PENDING)
-            ->update(['status' => Order::STATUS_EXPIRED]);
+        // One conditional update per order rather than a mass update: an
+        // expired order gives back the use of its discount code, and only
+        // the call that really made the transition may do that. Each update
+        // still checks for pending, so an order a webhook approved an instant
+        // earlier is simply left alone (zero rows) and keeps its redemption.
+        $count = 0;
+
+        foreach ($stale as $order) {
+            $expired = Order::where('id', $order->id)
+                ->where('status', Order::STATUS_PENDING)
+                ->update(['status' => Order::STATUS_EXPIRED]);
+
+            if ($expired === 1) {
+                $count++;
+                $promos->releaseForOrder($order);
+            }
+        }
 
         $this->info("Expiradas {$count} ordenes pendientes de mas de {$hours}h.");
 

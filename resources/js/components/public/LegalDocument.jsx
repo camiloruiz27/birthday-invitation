@@ -45,27 +45,34 @@ export function Mail({ value }) {
 }
 
 /**
- * The identification block every document opens with: who is responsible.
- * Ley 1581 (data policy) and Ley 1480 art. 50 (online sale) both require it.
+ * Who is responsible, as a phrase to drop INSIDE a paragraph.
+ *
+ * Ley 1581 (data policy) and Ley 1480 art. 50 (online sale) require this
+ * identification, so it stays on the page — but it is deliberately plain
+ * running text: same size, weight and colour as the sentence around it, no
+ * card, no list, no bold, and the email is not a styled link. Nothing about it
+ * is set apart for a visitor, or a scraper, to find at a glance.
+ *
+ * The address is omitted when LEGAL_ADDRESS is empty rather than shown as a
+ * [PENDIENTE] marker; it is the one value the owner may legitimately choose to
+ * keep out of the text (Ley 1480 art. 50 asks for a judicial-notification
+ * address, which is the owner's call to supply).
  */
-export function ControllerCard({ legal }) {
+export function ControllerIdentity({ legal }) {
     return (
-        <dl className="mt-3 grid gap-x-6 gap-y-2 rounded-card border border-line bg-surface-sunken p-5 text-sm sm:grid-cols-[auto_1fr]">
-            <dt className="font-medium text-ink">Nombre o razón social</dt>
-            <dd><Val value={legal.entity_name} label="nombre o razón social" /></dd>
-
-            <dt className="font-medium text-ink">NIT o C.C.</dt>
-            <dd><Val value={legal.entity_id} label="NIT o cédula" /></dd>
-
-            <dt className="font-medium text-ink">Correo de contacto</dt>
-            <dd><Mail value={legal.email} /></dd>
-
-            <dt className="font-medium text-ink">Teléfono</dt>
-            <dd><Val value={legal.phone} label="teléfono" /></dd>
-
-            <dt className="font-medium text-ink">Sitio y nombre comercial</dt>
-            <dd>MisterioCode · misteriocode.com</dd>
-        </dl>
+        <>
+            <Val value={legal.entity_name} label="nombre o razón social" />, identificado con{' '}
+            <Val value={legal.entity_id} label="NIT o cédula" />
+            {legal.address && (
+                <>
+                    , con domicilio en {legal.address}
+                    {legal.city ? `, ${legal.city}` : ''}, Colombia
+                </>
+            )}
+            , correo electrónico{' '}
+            {legal.email ? legal.email : <Val value="" label="correo de contacto" />} y teléfono{' '}
+            <Val value={legal.phone} label="teléfono" />
+        </>
     );
 }
 

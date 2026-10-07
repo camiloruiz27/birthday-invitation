@@ -47,6 +47,19 @@ class PromoCodeAnyCaseTest extends TestCase
         $this->assertTrue($promo->isGift());
     }
 
+    public function test_the_redeem_screen_opens_with_a_code_sent_from_a_purchase_screen(): void
+    {
+        $user = $this->userWithoutAccess();
+
+        $this->actingAs($user)
+            ->get(route('promo.redeem', ['code' => 'regalo-abc']))
+            ->assertInertia(fn (Assert $page) => $page->where('prefill', 'REGALO-ABC'));
+
+        $this->actingAs($user)
+            ->get(route('promo.redeem'))
+            ->assertInertia(fn (Assert $page) => $page->where('prefill', ''));
+    }
+
     public function test_the_redeem_screen_asks_which_case_before_spending_a_use(): void
     {
         $this->catalogCase('steve-jacobs');

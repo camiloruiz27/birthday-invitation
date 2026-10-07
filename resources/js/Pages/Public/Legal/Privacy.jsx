@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import PublicLayout from '../../../Layouts/PublicLayout';
-import LegalDocument, { ControllerCard, Mail, Val } from '../../../components/public/LegalDocument';
+import LegalDocument, { ControllerIdentity, Mail } from '../../../components/public/LegalDocument';
 import TextLink from '../../../components/ui/TextLink';
 
 /**
@@ -19,10 +19,10 @@ export default function Privacy({ legal }) {
             body: (
                 <>
                     <p>
-                        El responsable del tratamiento de sus datos personales es quien opera la
-                        plataforma MisterioCode:
+                        La plataforma MisterioCode (misteriocode.com) es operada por{' '}
+                        <ControllerIdentity legal={legal} />, quien es el responsable del tratamiento
+                        de sus datos personales.
                     </p>
-                    <ControllerCard legal={legal} />
                     <p>
                         Para cualquier consulta, reclamo o ejercicio de sus derechos sobre sus
                         datos puede escribirnos a <Mail value={legal.email} />.
@@ -388,9 +388,6 @@ export default function Privacy({ legal }) {
                     <p>
                         Esta política rige desde la fecha indicada al inicio y mientras
                         conservemos datos personales para las finalidades descritas.
-                    </p>
-                    <p>
-                        Responsable: <Val value={legal.entity_name} label="nombre o razón social" />.
                     </p>
                 </>
             ),

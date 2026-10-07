@@ -8,7 +8,9 @@ use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Throwable;
 
@@ -39,7 +41,7 @@ class StartCheckout
             'mystery_case_id' => $case->id,
             'amount' => $case->price_amount,
             'currency' => $case->currency,
-        ], $promoCode);
+        ], $promoCode, $case);
     }
 
     /**
@@ -57,7 +59,7 @@ class StartCheckout
         ], $promoCode);
     }
 
-    private function create(User $user, array $attributes, ?string $promoCode): Order
+    private function create(User $user, array $attributes, ?string $promoCode, ?MysteryCase $case = null): Order
     {
         $redemption = null;
 
@@ -66,7 +68,11 @@ class StartCheckout
             // already-discounted amount. If the checkout below never
             // completes, the redemption is released so a capped code does
             // not lose a use to a sale that never happened.
-            $discount = $this->promos->applyDiscount($user, $promoCode, $attributes['amount']);
+            //
+            // $case lets a gift covering this very case count as a 100%
+            // discount on it (see RedeemPromoCode::applyDiscount); a credit
+            // package passes none, so a gift there is still turned away.
+            $discount = $this->promos->applyDiscount($user, $promoCode, $attributes['amount'], $case);
             $attributes['amount'] = $discount->amount;
             $redemption = $discount->redemption;
         }
@@ -88,7 +94,7 @@ class StartCheckout
         // directly — Order still ends up the single source of truth for
         // "how did this access come to exist", even for a free one.
         if ($redemption && $order->amount === 0) {
-            $this->deliverDirectly($order);
+            $this->deliverDirectly($order, $redemption->promoCode);
 
             return $order;
         }
@@ -111,25 +117,44 @@ class StartCheckout
         return $order;
     }
 
-    private function deliverDirectly(Order $order): void
+    /**
+     * One transaction: the order is only approved if what it promised was
+     * actually delivered. A failure halfway leaves it pending (nothing
+     * granted, nothing half-approved) and platform:expire-stale-orders later
+     * closes it and gives the code's use back.
+     */
+    private function deliverDirectly(Order $order, PromoCode $promo): void
     {
-        $order->update([
-            'status' => Order::STATUS_APPROVED,
-            'provider' => 'promo',
-            'paid_at' => now(),
-        ]);
+        DB::transaction(function () use ($order, $promo) {
+            $order->update([
+                'status' => Order::STATUS_APPROVED,
+                'provider' => 'promo',
+                'paid_at' => now(),
+            ]);
 
-        if ($order->type === Order::TYPE_CASE) {
-            $this->access->grant($order->user, $order->mysteryCase, Entitlement::SOURCE_PROMO);
+            if ($order->type === Order::TYPE_CASE) {
+                $this->access->grant($order->user, $order->mysteryCase, Entitlement::SOURCE_PROMO);
 
-            return;
-        }
+                // A gift bundle (case + credits) covering this case: the
+                // credits ride along with the case.
+                if ($promo->grants_credits) {
+                    $this->credits->grant(
+                        $order->user,
+                        $promo->grants_credits,
+                        CreditLedgerEntry::REASON_PROMO,
+                        "Codigo: {$promo->code}"
+                    );
+                }
 
-        $this->credits->grant(
-            $order->user,
-            (int) $order->credits_granted,
-            CreditLedgerEntry::REASON_PROMO,
-            "Codigo aplicado a la orden #{$order->id}"
-        );
+                return;
+            }
+
+            $this->credits->grant(
+                $order->user,
+                (int) $order->credits_granted,
+                CreditLedgerEntry::REASON_PROMO,
+                "Codigo aplicado a la orden #{$order->id}"
+            );
+        });
     }
 }

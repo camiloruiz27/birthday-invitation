@@ -55,18 +55,27 @@ class CheckoutController extends Controller
         $discountAmount = null;
         $promoError = null;
         $promoRedirect = null;
+        $isGift = false;
+        $giftCredits = null;
 
         if ($promoCode) {
             try {
-                $preview = $promos->preview($request->user(), $promoCode, $case->price_amount);
+                // The case goes along so a gift covering it is accepted here
+                // as a 100% discount instead of being sent to /canjear.
+                $preview = $promos->preview($request->user(), $promoCode, $case->price_amount, $case);
                 $finalAmount = $preview->discountedAmount;
                 $discountAmount = $case->price_amount - $finalAmount;
+                $isGift = $preview->promoCode->isGift();
+                $giftCredits = $isGift ? $preview->promoCode->grants_credits : null;
                 // The stored, normalized code — not whatever case the buyer
                 // happened to type it in, or paste from a mixed-case URL.
                 $promoCode = $preview->promoCode->code;
             } catch (PromoCodeException $exception) {
                 $promoError = $exception->getMessage();
-                $promoRedirect = $exception->isWrongArea() ? route('promo.redeem') : null;
+                // Carries the code so /canjear opens with it already typed.
+                $promoRedirect = $exception->isWrongArea()
+                    ? route('promo.redeem', ['code' => strtoupper(trim($promoCode))])
+                    : null;
                 $promoCode = null;
             }
         }
@@ -81,6 +90,8 @@ class CheckoutController extends Controller
             'promo_code' => $promoCode,
             'discount_amount' => $discountAmount,
             'final_amount' => $finalAmount,
+            'is_gift' => $isGift,
+            'gift_credits' => $giftCredits,
             'promo_error' => $promoError,
             'promo_redirect' => $promoRedirect,
         ]);

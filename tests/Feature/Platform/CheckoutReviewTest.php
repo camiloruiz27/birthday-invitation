@@ -91,9 +91,87 @@ class CheckoutReviewTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('promo_code', null)
-                ->where('promo_error', 'Este código es un regalo: canjéalo desde "Canjear código", no aquí.')
-                ->where('promo_redirect', route('promo.redeem'))
+                ->where('promo_error', 'Este código de regalo no aplica a este caso: canjéalo desde "Canjear código".')
+                // The code travels with the link so /canjear opens with it typed.
+                ->where('promo_redirect', route('promo.redeem', ['code' => 'REGALO2026']))
             );
+    }
+
+    public function test_the_case_review_screen_treats_an_any_case_gift_as_a_free_case(): void
+    {
+        $user = $this->userWithoutAccess();
+        $case = $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'ELIGE', 'grants_any_case' => true]);
+
+        $this->actingAs($user)
+            ->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=elige')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('promo_code', 'ELIGE')
+                ->where('is_gift', true)
+                ->where('gift_credits', null)
+                ->where('promo_error', null)
+                ->where('discount_amount', $case->price_amount)
+                ->where('final_amount', 0)
+            );
+    }
+
+    public function test_the_case_review_screen_accepts_a_gift_fixed_to_this_very_case(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'ESTECASO', 'grants_case_slug' => 'steve-jacobs']);
+
+        $this->actingAs($user)
+            ->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=ESTECASO')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('is_gift', true)
+                ->where('final_amount', 0)
+                ->where('promo_error', null)
+            );
+    }
+
+    public function test_the_case_review_screen_reports_the_credits_a_gift_bundle_adds(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'COMBO', 'grants_any_case' => true, 'grants_credits' => 40]);
+
+        $this->actingAs($user)
+            ->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=COMBO')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('is_gift', true)
+                ->where('gift_credits', 40)
+                ->where('final_amount', 0)
+            );
+    }
+
+    public function test_the_case_review_screen_turns_away_a_gift_fixed_to_another_case(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        $this->catalogCase('el-brindis-22-14');
+        PromoCode::create(['code' => 'OTROCASO', 'grants_case_slug' => 'el-brindis-22-14']);
+
+        $this->actingAs($user)
+            ->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=OTROCASO')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('promo_code', null)
+                ->where('is_gift', false)
+                ->where('promo_redirect', route('promo.redeem', ['code' => 'OTROCASO']))
+            );
+    }
+
+    public function test_a_gift_preview_claims_nothing(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        $promo = PromoCode::create(['code' => 'SOLOMIRAR', 'grants_any_case' => true, 'max_redemptions' => 1]);
+
+        $this->actingAs($user)->get(route('cases.checkout.review', 'steve-jacobs').'?promo_code=SOLOMIRAR');
+
+        $this->assertSame(0, $promo->fresh()->redemptions_count);
+        $this->assertSame(0, PromoCodeRedemption::count());
     }
 
     public function test_the_case_review_screen_flags_an_already_owned_case_instead_of_pricing_it(): void
@@ -147,7 +225,24 @@ class CheckoutReviewTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('promo_code', null)
-                ->where('promo_redirect', route('promo.redeem'))
+                ->where('promo_redirect', route('promo.redeem', ['code' => 'REGALOCRED']))
+            );
+    }
+
+    public function test_the_credits_review_screen_still_turns_away_a_case_gift(): void
+    {
+        $user = $this->gameMaster();
+        $package = collect((array) config('platform.credit_packages'))->first();
+        PromoCode::create(['code' => 'CASOREGALO', 'grants_any_case' => true]);
+
+        // No case is being bought here, so a gift that covers "a case" has
+        // nothing to cover: it must not be mistaken for a free package.
+        $this->actingAs($user)
+            ->get(route('credits.checkout.review', ['package' => $package['id'], 'promo_code' => 'CASOREGALO']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('promo_code', null)
+                ->where('final_amount', (int) $package['price_amount'])
+                ->where('promo_redirect', route('promo.redeem', ['code' => 'CASOREGALO']))
             );
     }
 

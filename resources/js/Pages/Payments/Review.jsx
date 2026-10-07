@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
 import TextLink from '../../components/ui/TextLink';
-import { TextField } from '../../components/ui/Field';
+import { CheckboxField, TextField } from '../../components/ui/Field';
 import { formatPrice } from '../../lib/format';
 
 /**
@@ -29,10 +30,15 @@ export default function Review({
     promo_code,
     discount_amount,
     final_amount,
+    is_gift,
+    gift_credits,
     promo_error,
     promo_redirect,
 }) {
     const isCase = type === 'case';
+
+    // Starts unticked on every visit: accepting is an act, not a default.
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
 
     const codeForm = useForm(
         isCase
@@ -102,7 +108,9 @@ export default function Review({
 
                     {codeApplied && (
                         <div className="flex items-baseline justify-between">
-                            <dt className="text-ink-muted">Código {promo_code}</dt>
+                            <dt className="text-ink-muted">
+                                {is_gift ? `Regalo ${promo_code}` : `Código ${promo_code}`}
+                            </dt>
                             <dd className="tabular text-success-strong">
                                 -{formatPrice(discount_amount, currency)}
                             </dd>
@@ -138,11 +146,15 @@ export default function Review({
                             <div className="flex-1">
                                 <TextField
                                     id="promo_code"
-                                    label="¿Tienes un código de descuento?"
+                                    label={
+                                        isCase
+                                            ? '¿Tienes un código de descuento o de regalo?'
+                                            : '¿Tienes un código de descuento?'
+                                    }
                                     value={codeForm.data.promo_code}
                                     onChange={(value) => codeForm.setData('promo_code', value.toUpperCase())}
                                     error={promo_error}
-                                    placeholder="DESCUENTO20"
+                                    placeholder={isCase ? 'TU-CÓDIGO' : 'DESCUENTO20'}
                                     autoComplete="off"
                                 />
                             </div>
@@ -168,34 +180,56 @@ export default function Review({
 
                 {final_amount === 0 && (
                     <Alert variant="success" className="mt-6 mb-0">
-                        Tu código cubre el 100% — no se te cobrará nada.
+                        {is_gift
+                            ? 'Tu código de regalo cubre este caso — no se te cobrará nada.'
+                            : 'Tu código cubre el 100% — no se te cobrará nada.'}
+                        {is_gift && gift_credits > 0 && ` Además recibirás ${gift_credits} créditos.`}
                     </Alert>
                 )}
 
-                {/* What Ley 1480 de 2011 (art. 50) wants the buyer told before
-                    paying: how, when it is delivered, and the withdrawal right
-                    with its procedure. */}
-                <div className="mt-6 space-y-1.5 rounded-control border border-line bg-surface-sunken p-4 text-xs leading-relaxed text-ink-muted">
-                    <p>
-                        <span className="font-medium text-ink">Pago:</span> con tarjeta, en la página
-                        segura de Bold. Precio en pesos colombianos con impuestos incluidos.
-                    </p>
-                    <p>
-                        <span className="font-medium text-ink">Entrega:</span> inmediata, en tu
-                        cuenta, al confirmarse el pago.
-                    </p>
-                    <p>
-                        <span className="font-medium text-ink">Retracto:</span> puedes retractarte
-                        dentro de los 5 días hábiles siguientes a la compra si aún no has usado lo
-                        comprado; el procedimiento está en los{' '}
-                        <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
-                            Términos y Condiciones
-                        </TextLink>
-                        .
-                    </p>
-                </div>
+                <form onSubmit={confirmPurchase} className="mt-6 space-y-4">
+                    {/* What Ley 1480 de 2011 (art. 50) wants the buyer told
+                        before paying — payment, delivery and the withdrawal
+                        right with its procedure — lives in the Terms
+                        (#precios, #retracto); here the buyer only accepts it,
+                        with a link to each part. New tab, so the review and
+                        any code already applied survive. The native `required`
+                        stops the submit with the browser's own message, so the
+                        button never looks dead. Not sent to the server. */}
+                    <CheckboxField
+                        id="accept_purchase_terms"
+                        label={
+                            <>
+                                Acepto las condiciones de esta compra:{' '}
+                                <TextLink
+                                    href={`${route('terms')}#precios`}
+                                    external
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    pago y entrega
+                                </TextLink>{' '}
+                                y{' '}
+                                <TextLink
+                                    href={`${route('terms')}#retracto`}
+                                    external
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    derecho de retracto
+                                </TextLink>
+                                , según los{' '}
+                                <TextLink href={route('terms')} external target="_blank" rel="noopener noreferrer">
+                                    Términos y Condiciones
+                                </TextLink>
+                                .
+                            </>
+                        }
+                        checked={acceptedTerms}
+                        onChange={setAcceptedTerms}
+                        required
+                    />
 
-                <form onSubmit={confirmPurchase} className="mt-4">
                     <Button type="submit" loading={confirmForm.processing} fullWidth>
                         {confirmForm.processing
                             ? 'Redirigiendo…'

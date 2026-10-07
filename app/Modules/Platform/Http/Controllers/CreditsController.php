@@ -116,7 +116,10 @@ class CreditsController extends Controller
                 $promoCode = $preview->promoCode->code;
             } catch (PromoCodeException $exception) {
                 $promoError = $exception->getMessage();
-                $promoRedirect = $exception->isWrongArea() ? route('promo.redeem') : null;
+                // Carries the code so /canjear opens with it already typed.
+                $promoRedirect = $exception->isWrongArea()
+                    ? route('promo.redeem', ['code' => strtoupper(trim($promoCode))])
+                    : null;
                 $promoCode = null;
             }
         }

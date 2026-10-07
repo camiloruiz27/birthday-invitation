@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import PublicLayout from '../../../Layouts/PublicLayout';
-import LegalDocument, { ControllerCard, Mail } from '../../../components/public/LegalDocument';
+import LegalDocument, { ControllerIdentity, Mail } from '../../../components/public/LegalDocument';
 import TextLink from '../../../components/ui/TextLink';
 
 /**
@@ -20,9 +20,9 @@ export default function Terms({ legal, gamesPerCase }) {
                 <>
                     <p>
                         MisterioCode es una plataforma de casos de misterio interactivos que se
-                        juegan en equipo desde el navegador. Es ofrecida por:
+                        juegan en equipo desde el navegador. Es ofrecida por{' '}
+                        <ControllerIdentity legal={legal} />.
                     </p>
-                    <ControllerCard legal={legal} />
                     <p>
                         Al crear una cuenta, comprar o usar la plataforma usted declara haber leído
                         y aceptado estos Términos y Condiciones y la{' '}
