@@ -9,6 +9,7 @@ use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Rules\CaptchaRule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,6 +28,11 @@ class RedeemCodeController extends Controller
     public function show(Request $request): Response
     {
         return Inertia::render('Redeem', [
+            // A code sent here from a purchase screen that could not apply
+            // it (a credits-only gift, or one for another case), so the
+            // buyer does not have to type it twice.
+            'prefill' => Str::upper(Str::limit((string) $request->query('code'), 60, '')),
+
             // Only cases the visitor doesn't already own: an "any case"
             // code should never let them pick one that would burn the
             // redemption for nothing (see RedeemPromoCode::resolveGiftCase).

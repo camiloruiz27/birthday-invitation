@@ -5,12 +5,15 @@ namespace Tests\Feature\Platform;
 use App\Modules\Immersion\Models\CreditLedgerEntry;
 use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Platform\Actions\RedeemPromoCode;
+use App\Modules\Platform\Actions\SettleOrder;
 use App\Modules\Platform\Console\Commands\CreatePromoCode;
+use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Exceptions\PromoCodeException;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\PromoCodeRedemption;
+use App\Modules\Platform\Payments\PaymentWebhookEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\CreatesGameMasters;
@@ -182,6 +185,130 @@ class PromoCodeTest extends TestCase
         $this->assertSame(Order::STATUS_APPROVED, $order->status);
     }
 
+    public function test_an_any_case_gift_typed_at_checkout_delivers_the_case_without_bold(): void
+    {
+        $user = $this->userWithoutAccess();
+        $case = $this->catalogCase('steve-jacobs');
+        $promo = PromoCode::create(['code' => 'REGALOLIBRE', 'grants_any_case' => true, 'max_redemptions' => 1]);
+
+        Http::fake(); // nothing should be called at all
+
+        $this->actingAs($user)->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'regalolibre']);
+
+        Http::assertNothingSent();
+        $this->assertTrue($user->fresh()->ownsCase($case));
+        $this->assertSame(
+            Entitlement::SOURCE_PROMO,
+            Entitlement::where('user_id', $user->id)->where('mystery_case_id', $case->id)->first()->source
+        );
+
+        $order = Order::sole();
+        $this->assertSame(0, $order->amount);
+        $this->assertSame(Order::STATUS_APPROVED, $order->status);
+        $this->assertSame('promo', $order->provider);
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
+        $this->assertSame(1, PromoCodeRedemption::where('order_id', $order->id)->count());
+    }
+
+    public function test_a_gift_fixed_to_this_case_delivers_it_at_checkout(): void
+    {
+        $user = $this->userWithoutAccess();
+        $case = $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'FIJOAQUI', 'grants_case_slug' => 'steve-jacobs']);
+
+        Http::fake();
+
+        $this->actingAs($user)->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'FIJOAQUI']);
+
+        Http::assertNothingSent();
+        $this->assertTrue($user->fresh()->ownsCase($case));
+    }
+
+    public function test_a_gift_bundle_typed_at_checkout_also_delivers_its_credits(): void
+    {
+        $user = $this->userWithoutAccess();
+        $case = $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'COMBOCOMPRA', 'grants_any_case' => true, 'grants_credits' => 40]);
+
+        Http::fake();
+
+        $this->actingAs($user)->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'COMBOCOMPRA']);
+
+        $this->assertTrue($user->fresh()->ownsCase($case));
+
+        // 85 minted with steve-jacobs itself, plus the bundle's own 40.
+        $this->assertSame(125, app(AiCredits::class)->walletFor($user->fresh())->available());
+        $this->assertSame(
+            1,
+            CreditLedgerEntry::where('user_id', $user->id)
+                ->where('reason', CreditLedgerEntry::REASON_PROMO)
+                ->where('delta', 40)
+                ->count()
+        );
+    }
+
+    public function test_a_gift_for_another_case_is_turned_away_at_checkout_without_spending_a_use(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        $this->catalogCase('el-brindis-22-14');
+        $promo = PromoCode::create(['code' => 'OTROCASO2', 'grants_case_slug' => 'el-brindis-22-14', 'max_redemptions' => 1]);
+
+        Http::fake();
+
+        $this->actingAs($user)
+            ->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'OTROCASO2'])
+            ->assertSessionHasErrors('promo_code');
+
+        Http::assertNothingSent();
+        $this->assertSame(0, Order::count());
+        $this->assertSame(0, $promo->fresh()->redemptions_count);
+        $this->assertSame(0, Entitlement::where('user_id', $user->id)->count());
+    }
+
+    public function test_a_case_gift_is_still_turned_away_when_buying_a_credit_package(): void
+    {
+        $user = $this->gameMaster();
+        $package = collect((array) config('platform.credit_packages'))->first();
+        $promo = PromoCode::create(['code' => 'CASOPARACREDITOS', 'grants_any_case' => true, 'max_redemptions' => 1]);
+
+        Http::fake();
+
+        $this->actingAs($user)
+            ->post(route('credits.purchase'), ['package' => $package['id'], 'promo_code' => 'CASOPARACREDITOS'])
+            ->assertSessionHasErrors('promo_code');
+
+        $this->assertSame(0, $promo->fresh()->redemptions_count);
+        $this->assertSame(0, Order::count());
+    }
+
+    public function test_a_failure_while_delivering_a_free_order_leaves_it_pending_and_unapproved(): void
+    {
+        $user = $this->userWithoutAccess();
+        $this->catalogCase('steve-jacobs');
+        PromoCode::create(['code' => 'FALLAENTREGA', 'grants_any_case' => true, 'grants_credits' => 40]);
+
+        // The case is granted, then the credits step blows up: the whole
+        // delivery must roll back rather than leave an approved order with
+        // half of what it promised.
+        $this->mock(AiCredits::class, function ($mock) {
+            $mock->shouldReceive('grant')->andThrow(new \RuntimeException('boom'));
+        });
+
+        $this->withoutExceptionHandling();
+
+        try {
+            $this->actingAs($user)->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'FALLAENTREGA']);
+            $this->fail('The delivery failure should have propagated.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('boom', $exception->getMessage());
+        }
+
+        $this->assertSame(Order::STATUS_PENDING, Order::sole()->status);
+        $this->assertSame(0, Entitlement::where('user_id', $user->id)->count());
+    }
+
     public function test_releasing_a_discount_after_bold_fails_gives_the_use_back(): void
     {
         Http::fake(['*/online/link/v1' => Http::response(['errors' => ['boom']], 500)]);
@@ -207,6 +334,140 @@ class PromoCodeTest extends TestCase
         // is what eventually cleans that up, not this release path.
         $order = Order::sole();
         $this->assertSame(Order::STATUS_PENDING, $order->status);
+    }
+
+    /**
+     * A discount claimed through a real checkout, left pending the way it is
+     * once Bold has produced a link. Returns the order the redemption is
+     * attached to.
+     */
+    private function pendingDiscountedOrder(PromoCode $promo, $user): Order
+    {
+        $this->fakeBold();
+        $this->catalogCase('steve-jacobs');
+
+        $this->actingAs($user)
+            ->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => $promo->code])
+            ->assertRedirect('https://checkout.bold.co/LNK_PROMO');
+
+        return Order::sole();
+    }
+
+    private function settle(Order $order, string $status): void
+    {
+        app(SettleOrder::class)->apply($order, new PaymentWebhookEvent($order->reference, $status, 'BOLD-PAY-1', []));
+    }
+
+    public function test_a_rejected_order_gives_the_discount_use_back(): void
+    {
+        $promo = PromoCode::create([
+            'code' => 'RECHAZO',
+            'discount_type' => PromoCode::DISCOUNT_PERCENT,
+            'discount_value' => 20,
+            'max_redemptions' => 1,
+        ]);
+        $user = $this->userWithoutAccess();
+        $order = $this->pendingDiscountedOrder($promo, $user);
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
+
+        $this->settle($order, Order::STATUS_REJECTED);
+
+        $this->assertSame(Order::STATUS_REJECTED, $order->fresh()->status);
+        $this->assertSame(0, $promo->fresh()->redemptions_count);
+        $this->assertSame(0, PromoCodeRedemption::count());
+
+        // The buyer's per-user cap no longer counts the failed attempt, so
+        // the same code works again on a retry.
+        $this->actingAs($user)
+            ->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'RECHAZO'])
+            ->assertRedirect('https://checkout.bold.co/LNK_PROMO');
+    }
+
+    public function test_settling_the_same_rejection_twice_releases_the_use_only_once(): void
+    {
+        $promo = PromoCode::create([
+            'code' => 'DOBLE',
+            'discount_type' => PromoCode::DISCOUNT_FIXED,
+            'discount_value' => 1000,
+            'max_redemptions' => 5,
+        ]);
+        $first = $this->userWithoutAccess();
+        $order = $this->pendingDiscountedOrder($promo, $first);
+
+        // A second, unrelated buyer holds a use of the same code.
+        app(RedeemPromoCode::class)->applyDiscount($this->gameMaster(), 'DOBLE', 1000);
+        $this->assertSame(2, $promo->fresh()->redemptions_count);
+
+        $this->settle($order, Order::STATUS_REJECTED);
+        $this->settle($order, Order::STATUS_REJECTED); // webhook + reconcile racing
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
+    }
+
+    public function test_an_approved_order_keeps_its_discount_use(): void
+    {
+        $promo = PromoCode::create([
+            'code' => 'PAGADO',
+            'discount_type' => PromoCode::DISCOUNT_PERCENT,
+            'discount_value' => 20,
+            'max_redemptions' => 3,
+        ]);
+        $user = $this->userWithoutAccess();
+        $order = $this->pendingDiscountedOrder($promo, $user);
+
+        $this->settle($order, Order::STATUS_APPROVED);
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
+        $this->assertSame(1, PromoCodeRedemption::where('order_id', $order->id)->count());
+
+        // A refund afterwards is for a person to review: the code WAS used.
+        $this->settle($order, Order::STATUS_VOIDED);
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
+    }
+
+    public function test_expiring_a_stale_order_gives_the_discount_use_back(): void
+    {
+        $promo = PromoCode::create([
+            'code' => 'ABANDONO',
+            'discount_type' => PromoCode::DISCOUNT_PERCENT,
+            'discount_value' => 20,
+            'max_redemptions' => 1,
+        ]);
+        $order = $this->pendingDiscountedOrder($promo, $this->userWithoutAccess());
+        $order->forceFill(['created_at' => now()->subDays(2)])->save();
+
+        $this->artisan(ExpireStaleOrders::class)->assertSuccessful();
+
+        $this->assertSame(Order::STATUS_EXPIRED, $order->fresh()->status);
+        $this->assertSame(0, $promo->fresh()->redemptions_count);
+        $this->assertSame(0, PromoCodeRedemption::count());
+    }
+
+    public function test_expiring_an_order_whose_use_was_already_released_does_not_release_twice(): void
+    {
+        // The Bold-failed path: StartCheckout releases, the order stays
+        // pending, and the expiry job later closes it.
+        Http::fake(['*/online/link/v1' => Http::response(['errors' => ['boom']], 500)]);
+        $promo = PromoCode::create([
+            'code' => 'YALIBERADO',
+            'discount_type' => PromoCode::DISCOUNT_FIXED,
+            'discount_value' => 1000,
+            'max_redemptions' => 5,
+        ]);
+        $this->catalogCase('steve-jacobs');
+        $this->actingAs($this->userWithoutAccess())
+            ->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'YALIBERADO'])
+            ->assertServerError();
+
+        // Someone else's genuine use must not be eaten by the expiry.
+        app(RedeemPromoCode::class)->applyDiscount($this->gameMaster(), 'YALIBERADO', 1000);
+
+        Order::sole()->forceFill(['created_at' => now()->subDays(2)])->save();
+        $this->artisan(ExpireStaleOrders::class)->assertSuccessful();
+
+        $this->assertSame(1, $promo->fresh()->redemptions_count);
     }
 
     public function test_an_inactive_or_unknown_code_is_rejected_without_creating_anything(): void

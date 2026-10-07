@@ -8,6 +8,7 @@ use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Platform\Exceptions\PromoCodeException;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\PromoCodeRedemption;
 use Illuminate\Support\Facades\DB;
@@ -158,22 +159,55 @@ class RedeemPromoCode
      * redemption — otherwise a code with a hard cap loses a use to a sale
      * that never happened.
      */
-    public function applyDiscount(User $user, string $code, int $amount): PromoDiscount
+    public function applyDiscount(User $user, string $code, int $amount, ?MysteryCase $case = null): PromoDiscount
     {
-        return DB::transaction(function () use ($user, $code, $amount) {
+        return DB::transaction(function () use ($user, $code, $amount, $case) {
             $promo = $this->lockAndValidate($code, $user);
 
+            // A gift that covers the very case being bought is just a 100%
+            // discount on it: the buyer already chose the case, so there is
+            // nothing left to pick and no reason to send them to another
+            // screen. Whatever else the code carries (credits) is delivered
+            // by the caller along with the case.
+            if ($case && $this->coversCase($promo, $case)) {
+                return new PromoDiscount(0, $this->recordRedemption($promo, $user));
+            }
+
             if (! $promo->isDiscount()) {
-                throw new PromoCodeException(
-                    'Este código es un regalo: canjéalo desde "Canjear código", no aquí.',
-                    wrongArea: true
-                );
+                throw $this->giftOutOfPlace($case);
             }
 
             $redemption = $this->recordRedemption($promo, $user);
 
             return new PromoDiscount($promo->discountedAmount($amount), $redemption);
         });
+    }
+
+    /**
+     * Whether a gift hands over the case being bought — a code that lets the
+     * redeemer choose any case, or one fixed to exactly this case. A
+     * credits-only gift, or one fixed to a different case, covers nothing
+     * here.
+     */
+    private function coversCase(PromoCode $promo, MysteryCase $case): bool
+    {
+        return $promo->isGift()
+            && ($promo->grants_any_case || $promo->grants_case_slug === $case->slug);
+    }
+
+    /**
+     * A gift typed where it cannot apply. Reached only by someone holding a
+     * real code (limits are validated first), so naming where it DOES belong
+     * leaks nothing a guesser could use.
+     */
+    private function giftOutOfPlace(?MysteryCase $case): PromoCodeException
+    {
+        return new PromoCodeException(
+            $case
+                ? 'Este código de regalo no aplica a este caso: canjéalo desde "Canjear código".'
+                : 'Este código es un regalo: canjéalo desde "Canjear código", no aquí.',
+            wrongArea: true
+        );
     }
 
     /**
@@ -185,9 +219,30 @@ class RedeemPromoCode
     public function release(PromoCodeRedemption $redemption): void
     {
         DB::transaction(function () use ($redemption) {
-            PromoCode::whereKey($redemption->promo_code_id)->decrement('redemptions_count');
-            $redemption->delete();
+            // The delete decides whether this call owns the release: only the
+            // caller that actually removes the row gives the use back, so two
+            // paths settling the same order at once can never decrement twice.
+            if (PromoCodeRedemption::whereKey($redemption->getKey())->delete() === 1) {
+                PromoCode::whereKey($redemption->promo_code_id)->decrement('redemptions_count');
+            }
         });
+    }
+
+    /**
+     * Gives back the use a discount claimed for an order that ended without
+     * ever being paid (rejected by Bold, or expired). An order that finished
+     * in the buyer's favour — approved, or voided after delivery — keeps its
+     * redemption: the code really was used.
+     *
+     * A no-op when the order never carried a code, or when release() already
+     * ran for it (StartCheckout gives the use back itself if Bold cannot even
+     * produce a link, and the order is later expired anyway).
+     */
+    public function releaseForOrder(Order $order): void
+    {
+        PromoCodeRedemption::where('order_id', $order->id)
+            ->get()
+            ->each(fn (PromoCodeRedemption $redemption) => $this->release($redemption));
     }
 
     /**
@@ -198,7 +253,7 @@ class RedeemPromoCode
      * between the preview and the real purchase is still caught correctly;
      * this only has to be honest, not airtight.
      */
-    public function preview(User $user, string $code, int $amount): PromoPreview
+    public function preview(User $user, string $code, int $amount, ?MysteryCase $case = null): PromoPreview
     {
         $promo = PromoCode::where('code', strtoupper(trim($code)))->first();
 
@@ -208,11 +263,12 @@ class RedeemPromoCode
 
         $this->validateLimits($promo, $user);
 
+        if ($case && $this->coversCase($promo, $case)) {
+            return new PromoPreview(0, $promo);
+        }
+
         if (! $promo->isDiscount()) {
-            throw new PromoCodeException(
-                'Este código es un regalo: canjéalo desde "Canjear código", no aquí.',
-                wrongArea: true
-            );
+            throw $this->giftOutOfPlace($case);
         }
 
         return new PromoPreview($promo->discountedAmount($amount), $promo);

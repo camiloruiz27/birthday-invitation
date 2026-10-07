@@ -24,8 +24,11 @@ use Illuminate\Support\Facades\Log;
  */
 class SettleOrder
 {
-    public function __construct(private GrantCaseAccess $access, private AiCredits $credits)
-    {
+    public function __construct(
+        private GrantCaseAccess $access,
+        private AiCredits $credits,
+        private RedeemPromoCode $promos,
+    ) {
     }
 
     public function apply(Order $order, PaymentWebhookEvent $event): void
@@ -76,15 +79,29 @@ class SettleOrder
         );
     }
 
+    /**
+     * Moves a pending order to a terminal state in which nothing was ever
+     * delivered, and gives back the use of any discount code it had claimed
+     * — otherwise a capped code loses a use to a sale that never happened,
+     * and the buyer cannot retry it either (their per-user cap counts the
+     * stale redemption).
+     *
+     * Only the call that actually performed the transition releases, so a
+     * webhook and a reconcile racing on the same order release it once.
+     */
     private function transitionOnly(Order $order, string $from, string $to, PaymentWebhookEvent $event): void
     {
-        Order::where('id', $order->id)
+        $updated = Order::where('id', $order->id)
             ->where('status', $from)
             ->update([
                 'status' => $to,
                 'provider_payment_id' => $event->providerPaymentId,
                 'raw_webhook' => $event->raw,
             ]);
+
+        if ($updated === 1) {
+            $this->promos->releaseForOrder($order);
+        }
     }
 
     /**

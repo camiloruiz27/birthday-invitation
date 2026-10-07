@@ -18,9 +18,9 @@ import { TextField, SelectField } from '../components/ui/Field';
  * if a later error is about something else, since by then a case may already
  * be chosen.
  */
-export default function Redeem({ cases }) {
+export default function Redeem({ cases, prefill }) {
     const { data, setData, post, processing, errors } = useForm({
-        code: '',
+        code: prefill || '',
         case_slug: '',
         'cf-turnstile-response': '',
     });

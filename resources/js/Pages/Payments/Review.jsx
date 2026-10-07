@@ -29,6 +29,8 @@ export default function Review({
     promo_code,
     discount_amount,
     final_amount,
+    is_gift,
+    gift_credits,
     promo_error,
     promo_redirect,
 }) {
@@ -102,7 +104,9 @@ export default function Review({
 
                     {codeApplied && (
                         <div className="flex items-baseline justify-between">
-                            <dt className="text-ink-muted">Código {promo_code}</dt>
+                            <dt className="text-ink-muted">
+                                {is_gift ? `Regalo ${promo_code}` : `Código ${promo_code}`}
+                            </dt>
                             <dd className="tabular text-success-strong">
                                 -{formatPrice(discount_amount, currency)}
                             </dd>
@@ -138,11 +142,15 @@ export default function Review({
                             <div className="flex-1">
                                 <TextField
                                     id="promo_code"
-                                    label="¿Tienes un código de descuento?"
+                                    label={
+                                        isCase
+                                            ? '¿Tienes un código de descuento o de regalo?'
+                                            : '¿Tienes un código de descuento?'
+                                    }
                                     value={codeForm.data.promo_code}
                                     onChange={(value) => codeForm.setData('promo_code', value.toUpperCase())}
                                     error={promo_error}
-                                    placeholder="DESCUENTO20"
+                                    placeholder={isCase ? 'TU-CÓDIGO' : 'DESCUENTO20'}
                                     autoComplete="off"
                                 />
                             </div>
@@ -168,7 +176,10 @@ export default function Review({
 
                 {final_amount === 0 && (
                     <Alert variant="success" className="mt-6 mb-0">
-                        Tu código cubre el 100% — no se te cobrará nada.
+                        {is_gift
+                            ? 'Tu código de regalo cubre este caso — no se te cobrará nada.'
+                            : 'Tu código cubre el 100% — no se te cobrará nada.'}
+                        {is_gift && gift_credits > 0 && ` Además recibirás ${gift_credits} créditos.`}
                     </Alert>
                 )}
 
