@@ -248,6 +248,27 @@ class PromoCodeTest extends TestCase
         );
     }
 
+    public function test_a_code_created_with_max_per_user_zero_can_be_used_repeatedly_by_the_same_person(): void
+    {
+        $this->artisan('platform:create-promo-code', [
+            'code' => 'SINTOPE',
+            '--discount-percent' => 25,
+            '--max-per-user' => 0,
+        ])->assertSuccessful();
+
+        $promo = PromoCode::where('code', 'SINTOPE')->sole();
+        $this->assertNull($promo->max_redemptions_per_user);
+
+        $user = $this->userWithoutAccess();
+        $redeem = app(RedeemPromoCode::class);
+
+        $redeem->applyDiscount($user, 'SINTOPE', 89000);
+        $redeem->applyDiscount($user, 'SINTOPE', 89000);
+        $redeem->applyDiscount($user, 'SINTOPE', 89000);
+
+        $this->assertSame(3, $promo->fresh()->redemptions_count);
+    }
+
     public function test_a_gift_for_another_case_is_turned_away_at_checkout_without_spending_a_use(): void
     {
         $user = $this->userWithoutAccess();
