@@ -5,6 +5,7 @@ namespace App\Modules\Immersion\Jobs;
 use App\Modules\Immersion\Ai\Contracts\ConfessionProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
 use App\Modules\Immersion\Models\Game;
+use App\Modules\Immersion\Support\EndingBilling;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -95,6 +96,10 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
             'ending_audio_path' => $path,
             'ending_audio_status' => Game::AUDIO_READY,
         ]);
+
+        // Paid for only now that the recording exists: a failed rewrite or
+        // synthesis above returns without reaching this line.
+        app(EndingBilling::class)->chargeOnce($game);
     }
 
     public function failed(\Throwable $exception): void

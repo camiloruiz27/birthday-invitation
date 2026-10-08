@@ -29,6 +29,7 @@ export default function InterrogationChat({
     const [lastQuestion, setLastQuestion] = useState(null);
     const [raceLockedBy, setRaceLockedBy] = useState(null);
     const [outOfCredits, setOutOfCredits] = useState(false);
+    const [aiNotice, setAiNotice] = useState(null);
     const scrollRef = useRef(null);
 
     const effectiveLockedBy = lockedBy || raceLockedBy;
@@ -45,6 +46,7 @@ export default function InterrogationChat({
 
         setLastQuestion(question);
         setSending(true);
+        setAiNotice(null);
 
         // Show the question and a typing bubble immediately: the AI turn takes
         // seconds, and a silent form feels broken.
@@ -101,6 +103,14 @@ export default function InterrogationChat({
                 setLastQuestion(null);
 
                 return;
+            }
+
+            if (error.response?.data?.ai_unavailable) {
+                // The question was not charged and the slot was given back, so
+                // the counter stays as it was. Say so: a failed reply that
+                // leaves the player wondering what it cost is worse than the
+                // failure itself.
+                setAiNotice(error.response.data.message);
             }
 
             setMessages((previous) =>
@@ -206,6 +216,12 @@ export default function InterrogationChat({
                     />
                 )}
             </div>
+
+            {aiNotice && !readOnly && (
+                <Alert variant="warning" className="mt-5 mb-0">
+                    {aiNotice}
+                </Alert>
+            )}
 
             {readOnly &&
                 (outOfCredits && !closed && !effectiveLockedBy ? (

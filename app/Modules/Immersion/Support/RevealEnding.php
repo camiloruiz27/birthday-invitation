@@ -128,13 +128,16 @@ class RevealEnding
             return;
         }
 
-        // The ending's cost was frozen when the game started, so this should
-        // always succeed. It can still fail if the reservation was returned in
-        // between — a long pause, or the stale-hold sweeper — and in that case
-        // the extras are skipped rather than taken for free.
+        // Nothing is charged here: the ending is paid for by EndingBilling once
+        // it has actually been delivered, so a failed epilogue or recording
+        // costs nothing. This is only the pre-flight. The ending's cost was
+        // frozen when the game started, so it should always pass; it can still
+        // fail if the reservation was returned in between — a long pause, or
+        // the stale-hold sweeper — and in that case the extras are skipped
+        // rather than produced for free.
         $price = $this->cost->endingCost((string) $game->ending_type);
 
-        if (! $this->credits->spend($game, $price, "Final: {$game->ending_type}")) {
+        if (! $this->credits->canSpend($game, $price)) {
             Log::warning('immersion_ending_not_funded', [
                 'game_id' => $game->id,
                 'ending_type' => $game->ending_type,
