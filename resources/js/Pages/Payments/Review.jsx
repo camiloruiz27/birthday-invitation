@@ -46,9 +46,13 @@ export default function Review({
             : { promo_code: promo_code || '', package: package_id }
     );
 
-    const confirmForm = useForm(
-        isCase ? { promo_code: promo_code || '' } : { promo_code: promo_code || '', package: package_id }
-    );
+    // Deliberately holds NO promo code: useForm only reads its initial values
+    // on the first render, and applying or removing a code reloads this page
+    // with preserveState — so a code kept here would stay whatever it was when
+    // the screen first opened (usually empty) while the screen shows the
+    // discount from the server. confirmPurchase() adds the code that is on
+    // screen at the moment of confirming instead.
+    const confirmForm = useForm(isCase ? {} : { package: package_id });
 
     function reviewUrl() {
         return isCase ? route('cases.checkout.review', case_slug) : route('credits.checkout.review');
@@ -74,6 +78,9 @@ export default function Review({
 
     function confirmPurchase(event) {
         event.preventDefault();
+        // `promo_code` is the prop: the code the server validated and is
+        // showing the total for, or null after "Quitar" / a rejected code.
+        confirmForm.transform((data) => ({ ...data, promo_code: promo_code || '' }));
         confirmForm.post(isCase ? route('cases.acquire', case_slug) : route('credits.purchase'));
     }
 
