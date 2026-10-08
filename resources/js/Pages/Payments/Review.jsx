@@ -179,7 +179,7 @@ export default function Review({
                 </div>
 
                 {final_amount === 0 && (
-                    <Alert variant="success" className="mt-6 mb-0">
+                    <Alert variant="status" className="mt-6 mb-0">
                         {is_gift
                             ? 'Tu código de regalo cubre este caso — no se te cobrará nada.'
                             : 'Tu código cubre el 100% — no se te cobrará nada.'}

@@ -36,7 +36,10 @@ export default function Alert({ variant = 'info', title, className = '', childre
         return null;
     }
 
-    const { classes, role, politeness } = VARIANTS[variant];
+    // An unknown variant falls back to `info` instead of throwing: a typo in
+    // one message must not blank the whole page (it did, once, on the review
+    // screen).
+    const { classes, role, politeness } = VARIANTS[variant] ?? VARIANTS.info;
 
     return (
         <div
