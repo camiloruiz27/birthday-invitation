@@ -1,0 +1,106 @@
+name: Build Vite and deploy to TEST (Hostinger)
+
+# Despliega la rama develop a test.misteriocode.com. Es el gemelo de deploy.yml
+# (produccion, rama main): mismo repositorio, mismos secrets de SSH, otra
+# carpeta en el servidor.
+on:
+  push:
+    branches: ["develop"]
+
+# Dos pushes seguidos no deben desplegar a la vez sobre la misma carpeta.
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Carpeta del sitio de test en el servidor. Si la ruta real es otra, no
+  # edites este archivo: define la variable de repositorio TEST_DEPLOY_PATH
+  # (Settings > Secrets and variables > Actions > Variables).
+  DEPLOY_PATH: ${{ vars.TEST_DEPLOY_PATH || '/home/u206029413/domains/test.misteriocode.com/public_html' }}
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Vite
+        run: |
+          npm run build
+          test -f public/build/manifest.json
+
+      - name: Ensure remote build dir exists
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          script: |
+            mkdir -p "${{ env.DEPLOY_PATH }}/public/build"
+
+      - name: Upload Vite build to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          source: "public/build/*"
+          target: "${{ env.DEPLOY_PATH }}/public/build"
+          strip_components: 2
+
+      - name: Sincronizar codigo PHP y migrar en el servidor de test
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        with:
+          host: ${{ secrets.HOSTINGER_HOST }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          port: 65002
+          envs: GH_TOKEN,REPO
+          script: |
+            set -e
+            cd "${{ env.DEPLOY_PATH }}"
+
+            # Primera vez: la carpeta del sitio nuevo no es un repositorio.
+            # git init funciona aunque Hostinger haya dejado archivos de
+            # ejemplo dentro; el reset de abajo los reemplaza.
+            if [ ! -d .git ]; then
+              git init -q
+            fi
+
+            # El token del propio workflow dura lo que dura este job y solo
+            # lee el repo. Se usa en la URL y NO se guarda como remote, asi
+            # sirve igual si el repo es privado y no queda nada en el servidor.
+            git fetch "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" develop
+            git reset --hard FETCH_HEAD
+
+            # El .env de test se crea a mano una sola vez (no esta en git).
+            if [ ! -f .env ]; then
+              echo "ERROR: falta .env en $(pwd). Crealo desde .env.example antes de desplegar." >&2
+              exit 1
+            fi
+
+            composer install --no-dev --optimize-autoloader --no-interaction
+            php artisan migrate --force
+            php artisan platform:sync-cases
+            php artisan optimize:clear
+            php artisan queue:restart
+            ls -la public/build/manifest.json
