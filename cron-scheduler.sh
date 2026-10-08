@@ -1,7 +1,9 @@
 #!/bin/sh
 
-# Define the Laravel project directory
-PROJECT_DIR="/home/u206029413/domains/misteriocode.com/public_html"
+# The Laravel project directory is the folder this script lives in, so the same
+# file works in production and in test without edits. (It used to be a fixed
+# production path, which made a test cron run production's scheduler.)
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Define the PHP CLI executable
 PHP_BIN="/opt/alt/php82/usr/bin/php"

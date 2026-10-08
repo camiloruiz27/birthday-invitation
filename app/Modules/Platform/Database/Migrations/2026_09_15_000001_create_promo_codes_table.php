@@ -37,9 +37,12 @@ return new class extends Migration
             $table->string('discount_type')->nullable();
             $table->unsignedInteger('discount_value')->nullable();
 
-            // Null means no cap on that dimension.
+            // Null means no cap on that dimension. The per-user one was
+            // created NOT NULL by mistake, which made `--max-per-user=0` ("no
+            // cap per person") impossible; databases that already ran this
+            // are fixed by 2026_10_08_000001_make_max_redemptions_per_user_nullable.
             $table->unsignedInteger('max_redemptions')->nullable();
-            $table->unsignedInteger('max_redemptions_per_user')->default(1);
+            $table->unsignedInteger('max_redemptions_per_user')->nullable()->default(1);
 
             // Denormalized running total: checking "is this code exhausted?"
             // on every redemption attempt should not require counting rows
