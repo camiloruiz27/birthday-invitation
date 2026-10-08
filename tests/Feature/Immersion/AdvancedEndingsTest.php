@@ -11,6 +11,7 @@ use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\EndingBilling;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -693,15 +694,135 @@ class AdvancedEndingsTest extends TestCase
      * Per game, never per player: a table of eight pays what a table of three
      * pays, so inviting one more person is never a cost decision.
      */
-    public function test_the_ending_is_charged_once_for_the_whole_table(): void
+    public function test_revealing_the_ending_charges_nothing_yet(): void
     {
         config(['immersion.credits.costs.ending.confession_audio' => 25]);
 
         [$game] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
 
-        $spent = app(AiCredits::class)->holdFor($game)->spent;
+        // Revealed and queued, but nothing has been delivered: the table has
+        // not received what it would be paying for.
+        Bus::assertDispatched(GenerateEndingAudio::class);
+        $this->assertSame(0, app(AiCredits::class)->holdFor($game)->spent);
+        $this->assertNull($game->fresh()->ending_charged_at);
+    }
 
-        $this->assertSame(25, $spent, 'The ending costs exactly its price, once.');
+    public function test_the_confession_is_charged_once_when_the_recording_exists(): void
+    {
+        config(['immersion.credits.costs.ending.confession_audio' => 25]);
+        Http::fake(['*' => Http::response('FAKE-WAV-BYTES', 200)]);
+
+        [$game] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
+
+        $this->runAudioJob($game);
+        // A retried job finds the recording and must not bill it again.
+        $this->runAudioJob($game);
+
+        $this->assertSame(25, app(AiCredits::class)->holdFor($game)->spent, 'The ending costs exactly its price, once.');
+        $this->assertNotNull($game->fresh()->ending_charged_at);
+    }
+
+    public function test_a_failed_recording_is_not_charged(): void
+    {
+        config(['immersion.credits.costs.ending.confession_audio' => 25]);
+        Http::fake(['*' => Http::response('nope', 500)]);
+
+        [$game] = $this->playedGame(Game::ENDING_CONFESSION_AUDIO);
+
+        $this->runAudioJob($game);
+
+        $this->assertSame(Game::AUDIO_FAILED, $game->fresh()->ending_audio_status);
+        $this->assertSame(0, app(AiCredits::class)->holdFor($game)->spent);
+        $this->assertNull($game->fresh()->ending_charged_at);
+    }
+
+    /**
+     * Per game, never per player: a table of eight pays what a table of three
+     * pays, so inviting one more person is never a cost decision.
+     */
+    public function test_the_epilogue_is_charged_once_for_the_whole_table(): void
+    {
+        config(['immersion.credits.costs.ending.epilogue' => 40]);
+        Http::fake(['*' => Http::response(['message' => 'Un mensaje para ti.'], 200)]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+
+        foreach ($game->accusations()->get() as $accusation) {
+            (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+        }
+
+        $this->assertSame(2, $game->accusations()->whereNotNull('epilogue_sent_at')->count());
+        $this->assertSame(40, app(AiCredits::class)->holdFor($game)->spent);
+    }
+
+    public function test_a_failed_epilogue_is_not_charged(): void
+    {
+        config(['immersion.credits.costs.ending.epilogue' => 40]);
+        Http::fake(['*' => Http::response(['error' => 'nope'], 500)]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+
+        foreach ($game->accusations()->get() as $accusation) {
+            (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+        }
+
+        $this->assertSame(0, app(AiCredits::class)->holdFor($game)->spent);
+        $this->assertNull($game->fresh()->ending_charged_at);
+    }
+
+    public function test_one_epilogue_reaching_someone_is_enough_to_charge_the_table(): void
+    {
+        config(['immersion.credits.costs.ending.epilogue' => 40]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+        [$first, $second] = $game->accusations()->orderBy('id')->get()->all();
+
+        // One sequence, not two fakes: the stub registered first always wins.
+        Http::fake(['*' => Http::sequence()
+            ->push(['error' => 'nope'], 500)
+            ->push(['message' => 'Un mensaje para ti.'], 200),
+        ]);
+
+        (new SendEpilogue($first->id))->handle(app(EpilogueProvider::class));
+        $this->assertSame(0, app(AiCredits::class)->holdFor($game)->spent);
+
+        (new SendEpilogue($second->id))->handle(app(EpilogueProvider::class));
+
+        $this->assertSame(40, app(AiCredits::class)->holdFor($game)->spent);
+    }
+
+    public function test_charging_the_ending_twice_charges_it_once(): void
+    {
+        config(['immersion.credits.costs.ending.epilogue' => 40]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+
+        $billing = app(EndingBilling::class);
+        $billing->chargeOnce($game);
+        $billing->chargeOnce($game->fresh());
+
+        $this->assertSame(40, app(AiCredits::class)->holdFor($game)->spent);
+    }
+
+    public function test_an_ending_delivered_after_the_hold_was_released_goes_out_unbilled(): void
+    {
+        config(['immersion.credits.costs.ending.epilogue' => 40]);
+        Http::fake(['*' => Http::response(['message' => 'Un mensaje para ti.'], 200)]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+        $accusation = $game->accusations()->where('suspect_slug', self::CULPRIT)->firstOrFail();
+
+        // The sweeper gave the reservation back while the epilogue was being
+        // written.
+        app(AiCredits::class)->release($game);
+
+        (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+
+        // The player still got what was written for them, and the job did not
+        // fail over a billing detail.
+        $this->assertSame(Accusation::EPILOGUE_READY, $accusation->fresh()->epilogue_status);
+        Mail::assertSent(CaseEpilogueMail::class, 1);
+        $this->assertSame(0, app(AiCredits::class)->holdFor($game)->spent);
     }
 
     public function test_an_unfunded_ending_degrades_to_the_classic_reveal(): void

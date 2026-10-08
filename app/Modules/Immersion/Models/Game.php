@@ -61,6 +61,7 @@ class Game extends Model
         'paused_at' => 'datetime',
         'finished_at' => 'datetime',
         'ending_revealed_at' => 'datetime',
+        'ending_charged_at' => 'datetime',
         'interrogation_enabled' => 'boolean',
     ];
 
@@ -76,7 +77,7 @@ class Game extends Model
      *
      * @var array<int, string>
      */
-    protected $hidden = ['ending_audio_path', 'ending_audio_script'];
+    protected $hidden = ['ending_audio_path', 'ending_audio_script', 'ending_charged_at'];
 
     protected $appends = ['elapsed_minutes'];
 

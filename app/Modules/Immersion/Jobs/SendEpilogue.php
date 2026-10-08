@@ -5,6 +5,7 @@ namespace App\Modules\Immersion\Jobs;
 use App\Modules\Immersion\Ai\Contracts\EpilogueProvider;
 use App\Modules\Immersion\Mail\CaseEpilogueMail;
 use App\Modules\Immersion\Models\Accusation;
+use App\Modules\Immersion\Support\EndingBilling;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -84,6 +85,10 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
         Mail::to($accusation->player->email)->send(new CaseEpilogueMail($accusation->fresh()));
 
         $accusation->update(['epilogue_sent_at' => now()]);
+
+        // The ending is paid for by the first epilogue that actually reaches
+        // someone. The price is per table, so the rest find it already charged.
+        app(EndingBilling::class)->chargeOnce($accusation->game);
     }
 
     public function failed(\Throwable $exception): void

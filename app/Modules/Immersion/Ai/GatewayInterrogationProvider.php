@@ -12,20 +12,22 @@ use Illuminate\Support\Facades\Log;
  * turno de interrogatorio. Solo envia el testimonio de ESE sospechoso (nunca
  * la solucion del caso ni el testimonio de otros) para que el modelo no
  * pueda inventar ni mezclar hechos de otros personajes.
+ *
+ * Si el gateway no puede dar una respuesta real lanza InterrogationUnavailable:
+ * devolver un texto de relleno haria pasar un servicio no prestado por una
+ * respuesta, y el jugador pagaria por ella.
  */
 class GatewayInterrogationProvider implements InterrogationProvider
 {
-    // Same words the no-AI provider uses, so a failed turn is indistinguishable
-    // from a suspect who simply refuses to add anything.
-    private const FALLBACK_REPLY = NullInterrogationProvider::REPLY;
-
     public function ask(InterrogationSession $session, string $question): string
     {
         $case = $session->game->caseDefinition();
         $suspect = $case->suspect($session->suspect_slug);
 
         if (! $suspect) {
-            return self::FALLBACK_REPLY;
+            Log::warning('immersion_interrogation_unknown_suspect', ['session_id' => $session->id]);
+
+            throw new InterrogationUnavailable('Sospechoso desconocido para este caso.');
         }
 
         $baseUrl = rtrim((string) config('immersion.ai.base_url'), '/');
@@ -35,9 +37,11 @@ class GatewayInterrogationProvider implements InterrogationProvider
         if ($baseUrl === '' || $apiKey === '' || str_starts_with($apiKey, 'CHANGE_ME')) {
             Log::warning('immersion_interrogation_not_configured', ['session_id' => $session->id]);
 
-            return self::FALLBACK_REPLY;
+            throw new InterrogationUnavailable('El gateway de IA no esta configurado.');
         }
 
+        // La pregunta actual viaja aparte en `question`: el historial son solo
+        // los turnos ya cerrados de esta sesion.
         $history = $session->messages()
             ->get()
             ->map(fn ($message) => [
@@ -64,26 +68,33 @@ class GatewayInterrogationProvider implements InterrogationProvider
                     'victim_name' => $case->victim()['name'],
                     'evidence_delivered' => $session->game->deliveredEvidenceCodes(),
                 ]);
-
-            if (! $response->successful()) {
-                Log::warning('immersion_interrogation_failed_response', [
-                    'session_id' => $session->id,
-                    'status' => $response->status(),
-                ]);
-
-                return self::FALLBACK_REPLY;
-            }
-
-            $reply = (string) ($response->json('reply') ?? '');
-
-            return $reply !== '' ? $reply : self::FALLBACK_REPLY;
         } catch (\Throwable $exception) {
             Log::warning('immersion_interrogation_exception', [
                 'session_id' => $session->id,
                 'message' => $exception->getMessage(),
             ]);
 
-            return self::FALLBACK_REPLY;
+            throw new InterrogationUnavailable('No se pudo contactar al gateway de IA.', 0, $exception);
         }
+
+        if (! $response->successful()) {
+            Log::warning('immersion_interrogation_failed_response', [
+                'session_id' => $session->id,
+                'status' => $response->status(),
+                'code' => $response->json('code'),
+            ]);
+
+            throw new InterrogationUnavailable("El gateway respondio {$response->status()}.");
+        }
+
+        $reply = trim((string) ($response->json('reply') ?? ''));
+
+        if ($reply === '') {
+            Log::warning('immersion_interrogation_empty_reply', ['session_id' => $session->id]);
+
+            throw new InterrogationUnavailable('El gateway devolvio una respuesta vacia.');
+        }
+
+        return $reply;
     }
 }

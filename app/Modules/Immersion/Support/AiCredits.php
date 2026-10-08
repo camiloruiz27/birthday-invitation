@@ -140,6 +140,29 @@ class AiCredits
     }
 
     /**
+     * Would spend() say yes right now? Moves nothing.
+     *
+     * Charging happens after the model has delivered, so this is the cheap
+     * check made before asking it: a game whose hold was released should not
+     * cost a model call that nobody can pay for. It is a pre-flight only — the
+     * answer can change before spend() runs, and spend() stays the authority.
+     */
+    public function canSpend(Game $game, int $credits): bool
+    {
+        if (! $this->enabled() || $credits <= 0) {
+            return true;
+        }
+
+        $hold = $this->holdFor($game);
+
+        if (! $hold) {
+            return true;
+        }
+
+        return ! $hold->isReleased() && $hold->remaining() >= $credits;
+    }
+
+    /**
      * Draws credits for something the game just did.
      *
      * True means "go ahead": either it was paid for, or nothing was owed.

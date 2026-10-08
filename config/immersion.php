@@ -60,6 +60,14 @@ return [
         'interrogation_timeout' => (int) env('IMMERSION_AI_INTERROGATION_TIMEOUT', 35),
 
         /*
+         | How many failed turns in a row a suspect covers for with the in-character
+         | deflection (free, and the question is given back) before the player is
+         | told the AI has a problem. One hiccup should not break the scene; a
+         | gateway that keeps failing should not be hidden behind it forever.
+         */
+        'evasions_before_error' => (int) env('IMMERSION_AI_EVASIONS_BEFORE_ERROR', 2),
+
+        /*
          | Nobody is watching these two — both run on the queue — so they are
          | allowed to be slow rather than to fail.
          |

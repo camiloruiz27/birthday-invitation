@@ -4,6 +4,8 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
+use App\Modules\Immersion\Ai\InterrogationUnavailable;
+use App\Modules\Immersion\Ai\NullInterrogationProvider;
 use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
@@ -13,7 +15,9 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -125,13 +129,16 @@ class InterrogationController extends Controller
             ], 422);
         }
 
-        // Charge the game's reservation before making the call. This should
-        // never fail — the whole question ceiling was frozen when the case
-        // started — so if it does, something released the hold underneath a
-        // running game and the honest thing is to say so rather than hand out
-        // a model call nobody paid for. The question slot just taken is given
-        // back, so the player loses nothing.
-        if (! $this->credits->spend($player->game, $this->cost->questionCost(), "Pregunta a {$suspect['name']}")) {
+        $questionCost = $this->cost->questionCost();
+        $note = "Pregunta a {$suspect['name']}";
+
+        // Pre-flight only: nothing is charged yet. The whole question ceiling
+        // was frozen when the case started, so this should never fail — if it
+        // does, something released the hold underneath a running game, and the
+        // honest thing is to say so rather than spend a model call nobody can
+        // pay for. The slot just taken is given back, so the player loses
+        // nothing.
+        if (! $this->credits->canSpend($player->game, $questionCost)) {
             $session->releaseQuestion();
 
             return response()->json([
@@ -140,19 +147,72 @@ class InterrogationController extends Controller
             ], 402);
         }
 
-        $playerMessage = InterrogationMessage::create([
-            'session_id' => $session->id,
-            'role' => 'player',
-            'content' => $data['question'],
-        ]);
+        // The question is only paid for once there is a real answer to hand
+        // over. A gateway that fails charges nothing and gives the slot back.
+        try {
+            $reply = app(InterrogationProvider::class)->ask($session, $data['question']);
+        } catch (InterrogationUnavailable $exception) {
+            $session->releaseQuestion();
 
-        $reply = app(InterrogationProvider::class)->ask($session, $data['question']);
+            $failures = $this->recordFailure($session);
 
-        $suspectMessage = InterrogationMessage::create([
-            'session_id' => $session->id,
-            'role' => 'suspect',
-            'content' => $reply,
-        ]);
+            Log::warning('immersion_interrogation_unavailable', [
+                'session_id' => $session->id,
+                'player_id' => $player->id,
+                'consecutive_failures' => $failures,
+                'message' => $exception->getMessage(),
+            ]);
+
+            // The first failures are covered for in character, so one hiccup
+            // does not break the scene. A gateway that keeps failing is not
+            // hidden behind it: past the limit the player is told.
+            if ($failures > max(0, (int) config('immersion.ai.evasions_before_error'))) {
+                return response()->json([
+                    'message' => 'Estamos teniendo un problema con la inteligencia artificial y el sospechoso no esta respondiendo. No se te cobro ni se gasto tu pregunta: intentalo de nuevo en unos minutos o avisa al Game Master.',
+                    'ai_unavailable' => true,
+                ], 503);
+            }
+
+            return $this->evasion($session, $data['question']);
+        }
+
+        $this->clearFailures($session);
+
+        // Messages are stored only now, so the history sent to the gateway on
+        // the next turn holds closed turns and never the question it is also
+        // being asked as `question`.
+        try {
+            [$playerMessage, $suspectMessage] = DB::transaction(function () use ($session, $data, $reply, $player, $questionCost, $note) {
+                $playerMessage = InterrogationMessage::create([
+                    'session_id' => $session->id,
+                    'role' => 'player',
+                    'content' => $data['question'],
+                ]);
+
+                $suspectMessage = InterrogationMessage::create([
+                    'session_id' => $session->id,
+                    'role' => 'suspect',
+                    'content' => $reply,
+                ]);
+
+                // The answer already exists. If the hold was released in the
+                // seconds since the pre-flight, it is handed over unbilled
+                // instead of thrown away — the player did nothing wrong.
+                if (! $this->credits->spend($player->game, $questionCost, $note)) {
+                    Log::warning('immersion_question_unbilled', [
+                        'session_id' => $session->id,
+                        'game_id' => $player->game_id,
+                        'credits' => $questionCost,
+                    ]);
+                }
+
+                return [$playerMessage, $suspectMessage];
+            });
+        } catch (\Throwable $exception) {
+            $session->releaseQuestion();
+
+            throw $exception;
+        }
 
         if ($session->questionsRemaining() === 0 && ! $session->isClosed()) {
             $session->closed_at = Carbon::now();
@@ -171,6 +231,68 @@ class InterrogationController extends Controller
                 ? $case->content()->renderFile($suspect['file'])
                 : null,
         ]);
+    }
+
+    /**
+     * The in-character deflection for a turn the gateway could not answer.
+     *
+     * Deliberately not stored and not counted: it is not a real answer, so it
+     * stays out of the transcript, out of the history sent to the model on the
+     * next turn, and out of the player's budget. The counters in the response
+     * are therefore the real ones, unchanged, and the same question can simply
+     * be asked again.
+     */
+    private function evasion(InterrogationSession $session, string $question): JsonResponse
+    {
+        $session->refresh();
+
+        $stamp = now()->toISOString();
+        $key = 'evasion-'.uniqid();
+
+        return response()->json([
+            'player_message' => [
+                'id' => $key.'-player',
+                'role' => 'player',
+                'content' => $question,
+                'created_at' => $stamp,
+            ],
+            'suspect_message' => [
+                'id' => $key.'-suspect',
+                'role' => 'suspect',
+                'content' => NullInterrogationProvider::REPLY,
+                'created_at' => $stamp,
+            ],
+            'questions_used' => $session->questions_used,
+            'questions_remaining' => $session->questionsRemaining(),
+            'max_questions' => $session->max_questions,
+            'closed' => $session->isClosed(),
+            'original_testimony_html' => null,
+            'ai_degraded' => true,
+        ]);
+    }
+
+    /**
+     * Failed turns in a row for this suspect. Kept in the cache rather than the
+     * database: it only has to outlive a bad few minutes, and forgetting it
+     * after half an hour is the right answer.
+     */
+    private function recordFailure(InterrogationSession $session): int
+    {
+        $key = $this->failureKey($session);
+
+        Cache::add($key, 0, now()->addMinutes(30));
+
+        return (int) Cache::increment($key);
+    }
+
+    private function clearFailures(InterrogationSession $session): void
+    {
+        Cache::forget($this->failureKey($session));
+    }
+
+    private function failureKey(InterrogationSession $session): string
+    {
+        return 'immersion:interrogation-failures:'.$session->id;
     }
 
     /**
