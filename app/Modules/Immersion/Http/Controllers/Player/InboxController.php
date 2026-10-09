@@ -17,7 +17,7 @@ class InboxController extends Controller
 
         return Inertia::render('Player/Inbox', [
             'player' => $player->revealCredentials(),
-            'game' => $player->game,
+            'game' => $player->game->forPlayerView(),
             'case' => [
                 'name' => $case->name(),
                 'code' => $case->code(),

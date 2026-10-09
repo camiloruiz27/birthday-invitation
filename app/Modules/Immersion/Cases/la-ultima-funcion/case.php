@@ -123,6 +123,15 @@ return [
             'connection' => 'Director de la obra',
             'motive' => 'Héctor le confesó esa misma noche que ya había firmado un contrato de cine y que esta era, de verdad, su última función con la compañía',
             'alibi' => 'Dice haber estado todo el tiempo en la cabina de dirección coordinando la función',
+            'public' => [
+                'age' => '55 años',
+                'profile' => 'Director de "El Círculo". Lleva años trabajando con Héctor Delgado y con el elenco; coordina la función desde la cabina de dirección.',
+                'alibi' => 'Dice haber estado todo el tiempo en la cabina de dirección coordinando la función.',
+                'facts' => [
+                    'Su relación con Héctor era de años, con tensiones por el control artístico de la obra.',
+                    'Entre sus tareas figura confirmar los cues técnicos durante la función.',
+                ],
+            ],
         ],
         'santi-robles' => [
             'name' => 'Santi Robles',
@@ -132,6 +141,15 @@ return [
             'connection' => 'Utilero de la producción',
             'motive' => 'Olvidó devolver el trofeo real a la vitrina tras el ensayo con prensa (error real, sin relación con la muerte)',
             'alibi' => 'En la sala de utilería revisando el resto del atrezo, visto por otros técnicos durante la ventana crítica',
+            'public' => [
+                'age' => '30 años',
+                'profile' => 'Utilero de la producción. Se encarga de preparar y revisar el atrezo de cada función, incluida la caja de utilería.',
+                'alibi' => 'Dice haber estado en la sala de utilería revisando el resto del atrezo durante el cambio de vestuario.',
+                'facts' => [
+                    'Es quien maneja la caja de utilería donde apareció el objeto pesado.',
+                    'Su relación con Héctor era la de un colega técnico, sin trato personal estrecho.',
+                ],
+            ],
         ],
         'laura-mendizabal' => [
             'name' => 'Laura Mendizábal',
@@ -141,6 +159,15 @@ return [
             'connection' => 'Coprotagonista de la obra',
             'motive' => 'Resentimiento por un crédito de guion no reconocido (real, sin relación con la muerte); su coartada es un recuerdo sincero mal fechado',
             'alibi' => 'En su propio camerino esta noche durante la ventana crítica, sin coartada de terceros hasta aclarar la confusión de fechas',
+            'public' => [
+                'age' => '44 años',
+                'profile' => 'Coprotagonista de "El Círculo" y compañera de escena de Héctor desde hace años. Orgullosa de su trabajo y reservada con el resto del elenco.',
+                'alibi' => 'Dice haber estado en su camerino durante el cambio de vestuario previo a la escena final.',
+                'facts' => [
+                    'Su relación con Héctor era profesional, con fricciones por el reparto de créditos creativos.',
+                    'Como coprotagonista, comparte con Héctor las escenas centrales de la obra.',
+                ],
+            ],
         ],
         'carla-iturri' => [
             'name' => 'Carla Iturri',
@@ -150,6 +177,15 @@ return [
             'connection' => 'Actriz secundaria',
             'motive' => 'Relación secreta con Héctor (real, sin relación con la muerte); su testimonio sobre Santi es un recuerdo sincero mal fechado',
             'alibi' => 'En su camerino y luego brevemente con Héctor antes del cambio de vestuario, sin llegar a la ventana exacta del ataque',
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Actriz secundaria de "El Círculo". Compañera de reparto de Héctor.',
+                'alibi' => 'Dice haber estado en su camerino y haber coincidido brevemente con Héctor antes del cambio de vestuario.',
+                'facts' => [
+                    'Fue de las últimas personas en cruzarse con Héctor antes de la escena final, según su propio relato.',
+                    'Comparte varias escenas con Héctor en la obra, aunque su papel es secundario.',
+                ],
+            ],
         ],
         'gustavo-pena' => [
             'name' => 'Gustavo Peña',
@@ -159,6 +195,15 @@ return [
             'connection' => 'Productor del teatro',
             'motive' => 'Negocia en secreto vender su participación en la producción (real, sin relación con la muerte)',
             'alibi' => 'En una reunión con patrocinadores desde las 21:00 hasta las 22:00, confirmable por varios asistentes externos',
+            'public' => [
+                'age' => '58 años',
+                'profile' => 'Productor del teatro. Responde ante patrocinadores e inversores por la marcha económica de la producción.',
+                'alibi' => 'Dice haber estado en una reunión con patrocinadores entre las 21:00 y las 22:00.',
+                'facts' => [
+                    'Su relación con Héctor era profesional y comercial.',
+                    'La continuidad de la obra y de su protagonista pesa directamente en las cuentas de la producción.',
+                ],
+            ],
         ],
         'pablo-soria' => [
             'name' => 'Pablo Soria',
@@ -168,6 +213,14 @@ return [
             'connection' => 'Regidor de escena',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '38 años',
+                'profile' => 'Regidor de escena. Da las llamadas de cue y coordina los cambios de vestuario y utilería durante la función.',
+                'facts' => [
+                    'Su relación con Héctor era estrictamente de trabajo técnico.',
+                    'Maneja la hoja de llamadas de la función de esta noche.',
+                ],
+            ],
             'accusable' => false,
         ],
         'noelia-bravo' => [
@@ -178,6 +231,14 @@ return [
             'connection' => 'Asistente de camerinos',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '24 años',
+                'profile' => 'Asistente de camerinos. Atiende al elenco entre escenas y recorre los camerinos y corredores durante la función.',
+                'facts' => [
+                    'No tenía trato directo con Héctor más allá del trabajo del teatro.',
+                    'Su trabajo la mantiene entre camerinos y bambalinas durante toda la función.',
+                ],
+            ],
             'accusable' => false,
         ],
         'registro-tecnico-funcion' => [
@@ -190,6 +251,13 @@ return [
             'connection' => 'Cues y llamadas técnicas registradas exclusivamente para la función de esta noche',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Registro de los cues y llamadas técnicas de la función, junto con la hoja de llamadas de regiduría. Es un documento, no una persona.',
+                'facts' => [
+                    'Recoge únicamente los cues y llamadas de la función de esta noche.',
+                    'No incluye datos de otras funciones ni ensayos.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

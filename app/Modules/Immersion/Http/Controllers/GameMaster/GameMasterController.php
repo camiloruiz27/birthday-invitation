@@ -75,7 +75,14 @@ class GameMasterController extends Controller
         $library = $user->library();
         $quotas = $quota->forCases($user, $library->pluck('slug'));
 
+        // "Crear partida" from a case card arrives as ?case=<slug>. Only a case
+        // that is really in this library is honored, so the query string can
+        // neither preselect something they do not own nor leak that it exists.
+        $requested = (string) $request->query('case', '');
+
         return Inertia::render('GameMaster/CreateGame', [
+            'initialCase' => $library->pluck('slug')->contains($requested) ? $requested : null,
+
             // Each case carries its own quota, so the form can react as the
             // Game Master switches between them.
             'library' => $library->map(function ($case) use ($quotas, $cases, $cost) {
@@ -296,6 +303,17 @@ class GameMasterController extends Controller
             'timelineSummary' => fn () => [
                 'total' => $game->timelineEvents()->count(),
                 'sent' => $game->timelineEvents()->whereNotNull('sent_at')->count(),
+            ],
+
+            // When things start to happen after pressing "Iniciar caso", so the
+            // Game Master can tell the table what to expect. Only minutes, no
+            // titles: unlike the timeline itself this is not a spoiler, which is
+            // why it reaches the owner who is also playing.
+            'startGuide' => fn () => [
+                'first_event_minutes' => $game->timelineEvents()->min('trigger_offset_minutes'),
+                'interrogation_minutes' => $game->timelineEvents()
+                    ->where('cta_interrogation', true)
+                    ->min('trigger_offset_minutes'),
             ],
 
             'can' => [

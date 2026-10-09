@@ -109,6 +109,15 @@ return [
             'connection' => 'Madre de la víctima, anfitriona',
             'motive' => 'Ninguno directo; el cambio de asientos la hace parecer sospechosa',
             'alibi' => 'A la vista de todos casi toda la noche',
+            'public' => [
+                'age' => '62 años',
+                'profile' => 'Anfitriona de la cena, madre de Tomás y dueña de la finca que se vendía. Organizó la celebración de la venta de Bodega Ferrán.',
+                'alibi' => 'Dice haber estado atendiendo a sus invitados casi toda la noche.',
+                'facts' => [
+                    'Era quien supervisaba la organización de la cena y de la mesa.',
+                    'Vendía la finca familiar, de la que su hijo era socio minoritario.',
+                ],
+            ],
         ],
         'clara-vega' => [
             'name' => 'Clara Vega',
@@ -118,6 +127,15 @@ return [
             'connection' => 'Socia minoritaria (30%) de la bodega',
             'motive' => 'Se beneficia de la venta; discutió con Diego esa noche',
             'alibi' => 'Con Margarita revisando papeles (20:35–20:50)',
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Socia minoritaria (30%) de Bodega Ferrán, sin parentesco con la familia. Lleva años vinculada al negocio.',
+                'alibi' => 'Dice haber pasado un rato con Margarita revisando papeles de cierre antes de la cena.',
+                'facts' => [
+                    'La venta de la bodega le supone una suma importante de dinero.',
+                    'Esa noche discutió en privado con Diego Salazar.',
+                ],
+            ],
         ],
         'diego-salazar' => [
             'name' => 'Diego Salazar',
@@ -127,6 +145,15 @@ return [
             'connection' => 'Representante de Altavista Capital, comprador',
             'motive' => 'Ninguno propio; es el objetivo real del veneno',
             'alibi' => 'Sin acceso a cocina ni a las copas',
+            'public' => [
+                'age' => '45 años',
+                'profile' => 'Representante de Altavista Capital, el fondo que compraba Bodega Ferrán. No tenía relación previa con la familia.',
+                'alibi' => 'Dice haber revisado papeles del contrato en su coche antes de entrar, sin pasar por la cocina.',
+                'facts' => [
+                    'Su misión esa noche era cerrar la compra de la bodega.',
+                    'Esa noche discutió en voz baja con Clara Vega por un asunto de números.',
+                ],
+            ],
         ],
         'irene-morales' => [
             'name' => 'Irene Morales',
@@ -136,6 +163,15 @@ return [
             'connection' => 'Encargada de la finca, asistente personal de Margarita',
             'motive' => 'Venganza contra Altavista Capital (ruina de Viña Morales)',
             'alibi' => 'Sola en el pase de cocina (20:35–20:50)',
+            'public' => [
+                'age' => '36 años',
+                'profile' => 'Encargada de la finca y asistente personal de Margarita; de su confianza, conoce bien la casa y el negocio familiar.',
+                'alibi' => 'Dice haber llegado temprano para colocar ella misma las copas antiguas de la familia.',
+                'facts' => [
+                    'Colocó personalmente las copas antiguas de la familia, como gesto sentimental.',
+                    'Fue de las primeras en llegar al restaurante esa noche.',
+                ],
+            ],
         ],
         'hector-paredes' => [
             'name' => 'Héctor Paredes',
@@ -145,6 +181,15 @@ return [
             'connection' => 'Sommelier retirado, amigo de la familia',
             'motive' => null,
             'alibi' => 'Llegó a las 21:00, después de la preparación de las copas',
+            'public' => [
+                'age' => '58 años',
+                'profile' => 'Sommelier retirado y amigo cercano de la familia desde hace muchos años.',
+                'alibi' => 'Dice haber llegado al restaurante hacia las 21:00, con la cena ya en marcha.',
+                'facts' => [
+                    'Eligió y presentó el digestivo especial que se sirvió esa noche.',
+                    'Llegó tarde a la cena y no explicó bien el motivo.',
+                ],
+            ],
         ],
         'sofia-luna' => [
             'name' => 'Sofía Luna',
@@ -154,6 +199,14 @@ return [
             'connection' => 'Camarera de sala',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '24 años',
+                'profile' => 'Camarera de sala de Fermento. No tiene relación personal con la familia ni con los invitados.',
+                'facts' => [
+                    'Trabajaba un turno doble y sirvió la mesa durante toda la noche.',
+                    'Estuvo en sala y vio el movimiento de invitados y personal.',
+                ],
+            ],
         ],
         'paramedico' => [
             'name' => 'Paramédico de emergencias',
@@ -163,6 +216,13 @@ return [
             'connection' => 'Equipo de emergencias que atendió a la víctima',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Personal del equipo de emergencias que atendió a Tomás Ferrán. No tenía relación previa con él ni con los presentes.',
+                'facts' => [
+                    'Llegó después del colapso, con el equipo de emergencias.',
+                    'Su informe se limita a datos médicos objetivos, sin opinar sobre nadie.',
+                ],
+            ],
         ],
     ],
 

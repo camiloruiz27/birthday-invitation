@@ -215,6 +215,46 @@ class Game extends Model
     }
 
     /**
+     * Whether players can interrogate right now.
+     *
+     * `interrogation_enabled` is only the opt-in (and what the case was paid
+     * for): it is true from the moment the game is created, which used to mean
+     * suspects could be questioned at minute 0, before the team knew anything
+     * about them. The area opens when the envelope that introduces the people
+     * (the timeline event flagged `cta_interrogation`) has actually been sent,
+     * so it follows pauses and a GM's "send next" instead of a raw clock. A
+     * case that has no such envelope is not gated.
+     */
+    public function interrogationsOpen(): bool
+    {
+        if (! $this->interrogation_enabled) {
+            return false;
+        }
+
+        $gates = $this->timelineEvents()->where('cta_interrogation', true);
+
+        if (! (clone $gates)->exists()) {
+            return true;
+        }
+
+        return $gates->whereNotNull('sent_at')->exists();
+    }
+
+    /**
+     * Adds what a player's page needs to know about the game. Kept out of
+     * `$appends` on purpose: the games lists would run one extra query per row.
+     */
+    public function forPlayerView(): static
+    {
+        return $this->append('interrogation_open');
+    }
+
+    public function getInterrogationOpenAttribute(): bool
+    {
+        return $this->interrogationsOpen();
+    }
+
+    /**
      * Evidence codes (e.g. "V8", "A3") this game has actually delivered so
      * far, resolved from the timeline events already sent.
      *

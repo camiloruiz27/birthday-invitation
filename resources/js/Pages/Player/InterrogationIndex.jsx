@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
 import Alert from '../../components/ui/Alert';
+import Button from '../../components/ui/Button';
+import GuidedTour from '../../components/ui/GuidedTour';
 import EmptyState from '../../components/ui/EmptyState';
 import SuspectCard, {
     suspectState,
@@ -16,9 +18,39 @@ const FILTER_LABELS = {
     ...SUSPECT_STATE_LABELS,
 };
 
+/**
+ * How interrogations work, shown to every player the first time the area is
+ * open. The explanation used to be one line of an info box; in testing nobody
+ * understood the one-investigator-per-person rule or what the end of an
+ * interrogation gives you.
+ */
+function interrogationTour(maxQuestions) {
+    return [
+        {
+            title: 'Ya pueden interrogar',
+            body: 'Llegó el sobre que presenta a las personas de interés. Así funcionan los interrogatorios, en cuatro pasos.',
+        },
+        {
+            target: '[data-tour="suspect-grid"] > :first-child',
+            optional: true,
+            title: '1. Elige a una persona',
+            body: 'Cada persona habla con un solo investigador: el primero que le pregunte se queda con ese interrogatorio. Repártanse a las personas para cubrirlas todas.',
+        },
+        {
+            title: '2. Pregunta con intención',
+            body: `Tienes ${maxQuestions} preguntas por persona, y cada una cuenta. Las respuestas las genera una inteligencia artificial que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
+        },
+        {
+            title: '3. Al terminar, su ficha',
+            body: 'Cuando se acaban las preguntas de una persona (o su interrogatorio ya cerró), ves su ficha. Compartan con el resto del equipo lo que averigüen.',
+        },
+    ];
+}
+
 export default function InterrogationIndex({
     player,
     game,
+    locked = false,
     suspects,
     victim,
     sessions,
@@ -27,7 +59,11 @@ export default function InterrogationIndex({
     // Suspects are claimed by whoever asks first, so a board that only
     // updates on reload actively misleads: two players walk into the same
     // interrogation because neither saw the other take it.
-    usePoll(['sessions'], { interval: 12000 });
+    // While it is locked the poll also refreshes `game`, so the page opens by
+    // itself the moment the envelope that introduces these people arrives.
+    usePoll(locked ? ['game', 'locked', 'suspects', 'sessions'] : ['sessions'], {
+        interval: locked ? 10000 : 12000,
+    });
 
     const [filter, setFilter] = useState('all');
 
@@ -44,6 +80,30 @@ export default function InterrogationIndex({
     );
 
     const visible = filter === 'all' ? people : people.filter((person) => person.state === filter);
+
+    if (locked) {
+        return (
+            <PlayerLayout
+                player={player}
+                game={game}
+                section="interrogation"
+                kicker="Expediente"
+                title="Personas de interés"
+            >
+                <Head title="Interrogatorio" />
+
+                <EmptyState
+                    title="Los interrogatorios todavía no se abren"
+                    description="Primero revisen la bandeja: cuando llegue el sobre que presenta a las personas de interés, esta sección se abre sola y podrán interrogarlas."
+                    action={
+                        <Button href={route('immersion.player.inbox', player.access_token)}>
+                            Ir a la bandeja
+                        </Button>
+                    }
+                />
+            </PlayerLayout>
+        );
+    }
 
     return (
         <PlayerLayout
@@ -105,7 +165,7 @@ export default function InterrogationIndex({
                     description="Cambia el filtro para ver al resto de las personas de interés."
                 />
             ) : (
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="mt-5 grid gap-3 sm:grid-cols-2" data-tour="suspect-grid">
                     {visible.map((person) => (
                         <SuspectCard
                             key={person.slug}
@@ -118,6 +178,8 @@ export default function InterrogationIndex({
                     ))}
                 </div>
             )}
+
+            <GuidedTour id="interrogation" steps={interrogationTour(maxQuestions)} />
         </PlayerLayout>
     );
 }

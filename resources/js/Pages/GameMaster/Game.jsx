@@ -10,6 +10,7 @@ import Spinner from '../../components/ui/Spinner';
 import { ConfirmModal } from '../../components/ui/Modal';
 import TimelineEventRow from '../../components/game-master/TimelineEventRow';
 import DeleteGameButton from '../../components/game-master/DeleteGameButton';
+import GuidedTour from '../../components/ui/GuidedTour';
 import usePoll from '../../hooks/usePoll';
 
 /** First letter of up to two words — the avatar's fallback, there's no photo. */
@@ -239,7 +240,71 @@ function CreditsCard({ credits, status, onRearm, processing }) {
     );
 }
 
-export default function Game({ game, timelineSummary, can, ownerPlayerToken, ending, credits }) {
+function minutesLabel(minutes) {
+    if (minutes == null) return null;
+    if (minutes <= 1) return 'en el primer minuto';
+
+    return `unos ${minutes} minutos`;
+}
+
+/**
+ * What a Game Master needs to know before pressing the button. In testing the
+ * start button went unnoticed (it lives in the header) and nobody knew the
+ * inbox would stay empty for a while, so the first thing on a draft game is
+ * now the order of things and what to expect.
+ */
+function StartGuide({ guide, ready, onStart }) {
+    const first = minutesLabel(guide?.first_event_minutes);
+    const interrogation = minutesLabel(guide?.interrogation_minutes);
+
+    return (
+        <Card className="mb-6 border-accent" data-tour="gm-guide">
+            <CardHeader title="Cómo empezar" description="Esta partida todavía no ha arrancado." />
+
+            <ol className="space-y-3 text-sm text-ink-muted">
+                <li>
+                    <strong className="text-ink">1. Comparte los enlaces.</strong> Cada jugador
+                    tiene el suyo en la lista de más abajo: envíalo o cópialo.
+                </li>
+                <li>
+                    <strong className="text-ink">2. Cuando todos estén listos, inicia el caso.</strong>{' '}
+                    Pulsa el botón <em>Iniciar caso</em> (arriba a la derecha, o aquí). El reloj no
+                    se puede reiniciar; si necesitan parar, usa Pausar.
+                </li>
+                {first && (
+                    <li>
+                        <strong className="text-ink">3. El primer correo no llega al instante.</strong>{' '}
+                        Llega {first} después de iniciar. Hasta entonces las bandejas se ven vacías: es lo
+                        normal, avisa a tu mesa para que esperen.
+                    </li>
+                )}
+                {interrogation && (
+                    <li>
+                        <strong className="text-ink">4. Los interrogatorios se abren solos.</strong>{' '}
+                        Se desbloquean {interrogation} después de iniciar, cuando llega el sobre que presenta
+                        a las personas de interés.
+                    </li>
+                )}
+            </ol>
+
+            <div className="mt-5">
+                <Button onClick={onStart} disabled={!ready}>
+                    Iniciar caso
+                </Button>
+            </div>
+        </Card>
+    );
+}
+
+export default function Game({
+    game,
+    timelineSummary,
+    can,
+    ownerPlayerToken,
+    ending,
+    credits,
+    startGuide = null,
+}) {
     // The advanced endings finish on the queue after the reveal, so the console
     // has to keep looking until the recording or the last epilogue lands.
     const endingIsWorking =
@@ -295,6 +360,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         <Button
                             onClick={() => setConfirming('start')}
                             disabled={!hasTimeline || shortOnCredits}
+                            data-tour="gm-start"
                         >
                             Iniciar caso
                         </Button>
@@ -334,6 +400,44 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
             }
         >
             <Head title={game.name} />
+
+            {game.status === 'draft' && (
+                <StartGuide
+                    guide={startGuide}
+                    ready={hasTimeline && !shortOnCredits}
+                    onStart={() => setConfirming('start')}
+                />
+            )}
+
+            {game.status === 'draft' && (
+                <GuidedTour
+                    id="gm"
+                    steps={[
+                        {
+                            title: 'Esta es tu consola de partida',
+                            body: 'Desde aquí diriges el caso. Antes de empezar, un repaso rápido de lo importante.',
+                        },
+                        {
+                            target: '[data-tour="gm-guide"]',
+                            optional: true,
+                            title: 'Léelo antes de iniciar',
+                            body: 'Este recuadro resume el orden: compartir enlaces, iniciar, y cuándo llega el primer correo y se abren los interrogatorios.',
+                        },
+                        {
+                            target: '[data-tour="gm-players"]',
+                            optional: true,
+                            title: 'Tus jugadores y sus enlaces',
+                            body: 'Cada jugador tiene un enlace personal. Envíaselo o cópialo; pueden entrar antes de que empiece el caso.',
+                        },
+                        {
+                            target: '[data-tour="gm-start"]',
+                            optional: true,
+                            title: 'El botón de inicio',
+                            body: 'Cuando todos estén listos, pulsa Iniciar caso. Arranca el reloj y empiezan a llegar los correos. No se puede reiniciar, pero puedes pausar.',
+                        },
+                    ]}
+                />
+            )}
 
             {/* In automatic mode the owner is a player: the first thing they
                 need is the way into their own inbox. */}
@@ -475,7 +579,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 </Card>
             )}
 
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[1.4fr_0.6fr]">
                 <Card as="section">
                     <CardHeader
                         title="Línea de tiempo"
@@ -581,7 +685,7 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                         </div>
                     </Card>
 
-                    <Card as="section">
+                    <Card as="section" data-tour="gm-players">
                         <CardHeader
                             title="Jugadores"
                             description={`${game.players.length} en esta partida.`}
@@ -637,9 +741,12 @@ export default function Game({ game, timelineSummary, can, ownerPlayerToken, end
                 processing={busy}
                 title="¿Iniciar el caso?"
                 description={
-                    isAutomatic
+                    (isAutomatic
                         ? 'Arranca el reloj y el sistema empieza a enviar el material solo. El reloj no se puede reiniciar después.'
-                        : 'Arranca el reloj y los correos empezarán a salir solos según la línea de tiempo. El reloj no se puede reiniciar después.'
+                        : 'Arranca el reloj y los correos empezarán a salir solos según la línea de tiempo. El reloj no se puede reiniciar después.') +
+                    (minutesLabel(startGuide?.first_event_minutes)
+                        ? ` El primer correo llega ${minutesLabel(startGuide.first_event_minutes)} después de iniciar.`
+                        : '')
                 }
                 confirmLabel="Iniciar"
             />

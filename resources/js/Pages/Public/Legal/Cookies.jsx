@@ -31,6 +31,13 @@ const NECESSARY = [
         duration: '6 meses',
     },
     {
+        name: 'mc_tour',
+        provider: 'MisterioCode',
+        purpose:
+            'Recuerda que ya vio la guía de bienvenida de la plataforma o de una partida, para no mostrársela otra vez.',
+        duration: '1 año',
+    },
+    {
         name: 'localStorage / sessionStorage',
         provider: 'MisterioCode',
         purpose: 'Recuerda en su navegador qué documentos de la partida ya abrió.',

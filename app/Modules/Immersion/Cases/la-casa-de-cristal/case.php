@@ -130,6 +130,15 @@ return [
             'connection' => 'Exsocio de negocios de Claudia',
             'motive' => 'Evitar un segmento de confrontación en cámara sobre irregularidades financieras',
             'alibi' => 'Su presencia esa tarde era esperada y legítima (invitado para su propio segmento)',
+            'public' => [
+                'age' => '48 años',
+                'profile' => 'Exsocio de negocios de Claudia y cofundador de la empresa que ella dejó. Estaba invitado a un segmento programado a las 17:00.',
+                'alibi' => 'Dice haber esperado en la sala de invitados antes de su segmento de las 17:00.',
+                'facts' => [
+                    'La separación entre Claudia y él fue hostil.',
+                    'Su segmento estaba previsto para después de la pausa de grabación.',
+                ],
+            ],
         ],
         'ines-bravo' => [
             'name' => 'Inés Bravo',
@@ -139,6 +148,15 @@ return [
             'connection' => 'Estilista/responsable de vestuario',
             'motive' => 'Ninguno; vende fotos del detrás de cámaras a una revista (sin relación con la muerte)',
             'alibi' => 'Ausente del vestidor durante la ventana crítica, confirmada por Sofía',
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Estilista y responsable de vestuario: preparaba la ropa de Claudia para cada segmento según la agenda de producción.',
+                'alibi' => 'Dice haber salido a buscar un accesorio durante la pausa.',
+                'facts' => [
+                    'Era responsable de que Claudia se cambiara para el siguiente bloque durante la pausa.',
+                    'Manejaba el perchero y la agenda de vestuario.',
+                ],
+            ],
         ],
         'hector-duran' => [
             'name' => 'Héctor Durán',
@@ -148,6 +166,15 @@ return [
             'connection' => 'Periodista/entrevistador',
             'motive' => 'Ninguno; negociaba en secreto filtrar la entrevista a un medio rival (sin relación con la muerte)',
             'alibi' => 'Afuera de la casa haciendo esa llamada, visto por Óscar, en horario fuera de la ventana crítica',
+            'public' => [
+                'age' => '45 años',
+                'profile' => 'Periodista que conducía la entrevista exclusiva con Claudia sobre su salida de la empresa.',
+                'alibi' => 'Dice haber salido de la casa a hacer una llamada durante la tarde.',
+                'facts' => [
+                    'Claudia quería controlar cada detalle de la entrevista.',
+                    'Tenía a su cargo una exclusiva de gran valor para su medio.',
+                ],
+            ],
         ],
         'camila-andrade' => [
             'name' => 'Camila Andrade',
@@ -157,6 +184,15 @@ return [
             'connection' => 'Asistente personal de Claudia',
             'motive' => 'Ninguno; mantiene una relación con Tomás, el marido de Claudia (sin relación con la muerte)',
             'alibi' => 'En la zona de producción durante la ventana crítica, confirmada por Sofía',
+            'public' => [
+                'age' => '34 años',
+                'profile' => 'Asistente personal de Claudia: manejaba su agenda, sus llamadas y las necesidades del rodaje.',
+                'alibi' => 'Dice haber estado en la zona de producción coordinando la entrevista.',
+                'facts' => [
+                    'Claudia confiaba en ella para coordinar la entrevista.',
+                    'Conocía al detalle la agenda y los movimientos de Claudia durante la grabación.',
+                ],
+            ],
         ],
         'tomas-vega' => [
             'name' => 'Tomás Vega',
@@ -166,6 +202,15 @@ return [
             'connection' => 'Marido de Claudia',
             'motive' => 'Ninguno; sabía que Claudia sospechaba de su infidelidad (sin relación con la muerte)',
             'alibi' => 'Un fotograma lo sitúa alejándose de la zona del vestidor antes de la ventana crítica',
+            'public' => [
+                'age' => '52 años',
+                'profile' => 'Marido de Claudia; estaba en la casa acompañándola durante la grabación.',
+                'alibi' => 'Dice haber ido a la casa para acompañar a Claudia durante la grabación.',
+                'facts' => [
+                    'Su relación de pareja con Claudia no pasaba por su mejor momento.',
+                    'Estuvo presente en la casa durante toda la grabación.',
+                ],
+            ],
         ],
         'sofia-ledesma' => [
             'name' => 'Sofía Ledesma',
@@ -175,6 +220,14 @@ return [
             'connection' => 'Script/continuidad de producción',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '28 años',
+                'profile' => 'Script y continuidad de producción: lleva el registro de movimientos, hábitos y vestuario durante la grabación.',
+                'facts' => [
+                    'Sigue la continuidad de vestuario de cada segmento.',
+                    'Conoce las rutinas de Claudia entre segmentos.',
+                ],
+            ],
             'accusable' => false,
         ],
         'oscar-prieto' => [
@@ -185,6 +238,14 @@ return [
             'connection' => 'Seguridad de la casa',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '36 años',
+                'profile' => 'Responsable de seguridad de la casa: controla los accesos y vigila el exterior.',
+                'facts' => [
+                    'Lleva el registro de acceso de quienes entran y salen de la casa.',
+                    'No tiene visibilidad del interior del vestidor.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-produccion' => [
@@ -199,6 +260,13 @@ return [
             'connection' => 'Mapa de cámaras, sincronización horaria y cadena de custodia del metraje',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Fuente técnica sobre cámaras, sincronización horaria y cadena de custodia del metraje.',
+                'facts' => [
+                    'El vestidor no tiene cámara por un acuerdo estándar de privacidad.',
+                    'Las cámaras estaban sincronizadas con una misma referencia horaria.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

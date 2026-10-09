@@ -6,6 +6,7 @@ import Tabs from '../../components/ui/Tabs';
 import CaseDocument from '../../components/player/CaseDocument';
 import GalleryGrid from '../../components/player/GalleryGrid';
 import usePoll from '../../hooks/usePoll';
+import useSessionState from '../../hooks/useSessionState';
 
 function Verdict({ correct }) {
     if (correct === null) {
@@ -109,6 +110,10 @@ export default function Solution({
 }) {
     const you = scoreboard.find((row) => row.is_you);
     const total = scoreboard.length;
+
+    // Closing a photo remounts the page (see useSessionState); the tab the
+    // reader was on has to survive that.
+    const [tab, setTab] = useSessionState(`case-solution:${game.id}:tab`, 'verdict');
 
     // The epilogue is written on the queue after the reveal, so a player who
     // opens this page immediately would otherwise have to refresh by hand.
@@ -238,6 +243,8 @@ export default function Solution({
             <Tabs
                 label="La solución"
                 scrollable
+                active={tab}
+                onChange={setTab}
                 tabs={[
                     { key: 'verdict', label: 'Veredicto', content: verdict },
                     ...(solution.body_html

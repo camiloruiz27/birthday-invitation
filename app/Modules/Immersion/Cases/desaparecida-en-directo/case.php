@@ -127,6 +127,15 @@ return [
             'connection' => 'Mánager de Naiara desde hace cinco años',
             'motive' => 'Comisión personal decisiva ligada a un contrato de exclusividad, y deudas propias contraídas contra ella',
             'alibi' => 'Dice haber hablado con ella un momento y haberse ido; el registro de accesos lo contradice',
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Mánager de Naiara desde hace cinco años: gestiona su agenda, sus contratos y su relación con las marcas.',
+                'alibi' => 'Dice haber hablado con Naiara poco antes de que saliera al escenario; de lo ocurrido después, asegura saber poco.',
+                'facts' => [
+                    'Cobra una comisión sobre los contratos que negocia para Naiara.',
+                    'Estaba en el evento y tenía acceso a la zona de camerinos y backstage.',
+                ],
+            ],
         ],
         'elisa-montes' => [
             'name' => 'Elisa Montes',
@@ -136,6 +145,15 @@ return [
             'connection' => 'Socia de negocio de Naiara',
             'motive' => 'Dependencia financiera del negocio conjunto (aparente)',
             'alibi' => 'En una reunión de inversores durante toda la ventana crítica, confirmada por varios asistentes',
+            'public' => [
+                'age' => '30 años',
+                'profile' => 'Socia de negocio de Naiara: dirigen juntas una marca de contenido y merchandising.',
+                'alibi' => 'Dice haber estado en una reunión con inversores en otra sala del evento.',
+                'facts' => [
+                    'Buena parte de su dinero está invertido en la marca que comparte con Naiara.',
+                    'Si Naiara se aparta del negocio, la marca conjunta queda en riesgo.',
+                ],
+            ],
         ],
         'tomas-egea' => [
             'name' => 'Tomás Egea',
@@ -145,6 +163,15 @@ return [
             'connection' => 'Representante de la marca patrocinadora',
             'motive' => 'Presión corporativa por el contrato de exclusividad (aparente)',
             'alibi' => 'En la zona de patrocinadores del evento, confirmado por el personal',
+            'public' => [
+                'age' => '44 años',
+                'profile' => 'Representante de la marca patrocinadora que negocia con Naiara un contrato de exclusividad.',
+                'alibi' => 'Dice haber estado durante la noche en la zona de patrocinadores del evento.',
+                'facts' => [
+                    'Su empresa tiene interés en cerrar pronto ese contrato con Naiara.',
+                    'Estuvo en contacto con Darío en los días previos al evento por esa negociación.',
+                ],
+            ],
         ],
         'bruno-casal' => [
             'name' => 'Bruno Casal',
@@ -154,6 +181,15 @@ return [
             'connection' => 'Expareja de Naiara, también creador de contenido',
             'motive' => 'Historial de mensajes controladores (aparente)',
             'alibi' => 'Entrada registrada a las 22:35, posterior a la publicación del mensaje',
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Creador de contenido y expareja de Naiara; la relación terminó hace más de un año.',
+                'alibi' => 'Dice haber llegado al evento ya avanzada la noche.',
+                'facts' => [
+                    'Existen mensajes antiguos suyos a Naiara con un tono insistente y controlador.',
+                    'Comparte con ella el mismo círculo de creadores y asistió al evento.',
+                ],
+            ],
         ],
         'carla-nuno' => [
             'name' => 'Carla Nuño',
@@ -163,6 +199,15 @@ return [
             'connection' => 'Asistente y mejor amiga de Naiara',
             'motive' => 'Ninguno; ayudó a planear el traslado real',
             'alibi' => 'Esperando en el punto de encuentro acordado, vista por Paula',
+            'public' => [
+                'age' => '26 años',
+                'profile' => 'Asistente personal y mejor amiga de Naiara; la acompaña en el día a día de su trabajo.',
+                'alibi' => 'Dice haber esperado a Naiara fuera de la sala tras el directo, en el punto acordado.',
+                'facts' => [
+                    'Sabía del plan de Naiara de alejarse unos días a una cabaña.',
+                    'Por su cargo tiene acceso a la agenda y a los gastos de Naiara.',
+                ],
+            ],
         ],
         'ivan-soler' => [
             'name' => 'Iván Soler',
@@ -172,6 +217,13 @@ return [
             'connection' => 'Jefe técnico del evento',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Jefe técnico del evento: coordina la producción, la señal y los accesos del Estudio Lumen. No tiene relación directa con Naiara.',
+                'facts' => [
+                    'Estuvo en su puesto técnico durante todo el directo.',
+                    'Conoce el plano del estudio, incluido el corredor de servicio.',
+                ],
+            ],
             'accusable' => false,
         ],
         'paula-rey' => [
@@ -182,6 +234,13 @@ return [
             'connection' => 'Otra creadora asistente al evento',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Creadora de contenido que asistió al evento como invitada. Conoce a Naiara del entorno de creadores, sin relación estrecha.',
+                'facts' => [
+                    'Estuvo en la sala y en el aparcamiento durante la noche del evento.',
+                    'Coincidió esa noche con varias de las personas del entorno de Naiara.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-evento' => [
@@ -196,6 +255,13 @@ return [
             'connection' => 'Registros objetivos del evento (accesos, streaming, publicaciones)',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Registro automático del Estudio Lumen y de la plataforma de streaming: accesos, emisión en directo y publicaciones.',
+                'facts' => [
+                    'Anota con hora exacta las entradas a zonas restringidas y los cortes de transmisión.',
+                    'Solo informa de lo que está registrado; no interpreta ni identifica quién usaba cada dispositivo.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],
