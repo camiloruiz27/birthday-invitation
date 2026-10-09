@@ -25,6 +25,7 @@ class MysteryCase extends Model
         'name',
         'tagline',
         'description',
+        'ad',
         'cover_path',
         'difficulty',
         'duration_minutes',
@@ -40,6 +41,7 @@ class MysteryCase extends Model
 
     protected $casts = [
         'mechanics' => 'array',
+        'ad' => 'array',
         'duration_minutes' => 'integer',
         'min_players' => 'integer',
         'max_players' => 'integer',
@@ -122,6 +124,42 @@ class MysteryCase extends Model
         }
 
         return $this->definition()->victim()['photo_url'] ?: null;
+    }
+
+    /**
+     * A web-sized cover (~1000 px wide) for the ad landing, where the
+     * original 1.4-2 MB art would be most of what a phone on a TikTok or
+     * Instagram in-app browser has to download. Made by
+     * platform:build-case-images next to the cover; falls back to the
+     * original when it has not been made.
+     */
+    public function landingCoverUrl(): ?string
+    {
+        return $this->derivedCoverUrl('landing.jpg') ?? $this->coverUrl();
+    }
+
+    /**
+     * The 1200x630 share image for link previews (WhatsApp, TikTok, Meta),
+     * or null when none has been made — the caller then uses the site-wide
+     * default rather than a 2 MB, wrongly-cropped original.
+     */
+    public function ogImageUrl(): ?string
+    {
+        return $this->derivedCoverUrl('og.jpg');
+    }
+
+    /**
+     * A derived image that lives beside the cover art, if it exists on disk.
+     */
+    private function derivedCoverUrl(string $file): ?string
+    {
+        if (! $this->cover_path) {
+            return null;
+        }
+
+        $url = rtrim(dirname($this->cover_path), '/').'/'.$file;
+
+        return is_file(public_path(ltrim($url, '/'))) ? $url : null;
     }
 
     public function hasMechanic(string $mechanic): bool

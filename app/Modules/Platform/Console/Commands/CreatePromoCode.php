@@ -2,6 +2,7 @@
 
 namespace App\Modules\Platform\Console\Commands;
 
+use App\Modules\Platform\Actions\CreatePromoCodes;
 use App\Modules\Platform\Console\Commands\Concerns\ResolvesPromoCodeGrant;
 use App\Modules\Platform\Models\PromoCode;
 use Illuminate\Console\Command;
@@ -9,12 +10,10 @@ use Illuminate\Console\Command;
 /**
  * Creates a redeemable code by hand — the only way one comes to exist.
  *
- * Console-only on purpose, not an admin screen: codes are created a handful
- * of times a year (a campaign, a launch, a partnership), and every other
- * privileged write in this app already lives here rather than behind a form
- * (see platform:grant-access, platform:make-admin). A UI would duplicate
- * validation in two places and add a write surface to an admin area that
- * today has none, for a task done rarely enough that it isn't worth it.
+ * Codes can also be created from the admin screen (AdminPromoCodesController),
+ * which is what a campaign run with frequent, varied discounts needs; this
+ * command stays for scripting and for anyone working from the terminal. Both
+ * go through CreatePromoCodes for the write.
  *
  * A code is either a GIFT (--case and/or --credits) or a DISCOUNT
  * (--discount-percent or --discount-fixed) — never both. "Free case AND 20%
@@ -34,11 +33,13 @@ class CreatePromoCode extends Command
                             {--discount-fixed= : Fixed amount off a real purchase}
                             {--max-redemptions= : Total uses allowed across everyone; omit for no cap}
                             {--max-per-user=1 : Uses allowed per person; 0 means no cap}
+                            {--expires= : Last day the code works, e.g. 2026-11-30 (through the end of that day); omit for no expiry}
+                            {--applies-to= : Limit a discount to "case" purchases or "credits" top-ups; omit for both}
                             {--note= : A reminder of what campaign this is for}';
 
     protected $description = 'Create a promo/gift code';
 
-    public function handle(): int
+    public function handle(CreatePromoCodes $creator): int
     {
         $code = strtoupper(trim($this->argument('code')));
 
@@ -60,7 +61,7 @@ class CreatePromoCode extends Command
             return self::FAILURE;
         }
 
-        $attributes = ['code' => $code, 'note' => $this->option('note')] + $grant;
+        $attributes = ['note' => $this->option('note')] + $grant;
 
         if ($this->option('max-redemptions') !== null) {
             $attributes['max_redemptions'] = (int) $this->option('max-redemptions');
@@ -71,7 +72,7 @@ class CreatePromoCode extends Command
         $maxPerUser = (int) $this->option('max-per-user');
         $attributes['max_redemptions_per_user'] = $maxPerUser === 0 ? null : $maxPerUser;
 
-        $promo = PromoCode::create($attributes);
+        $promo = $creator->single($code, $attributes);
 
         $this->info("Código \"{$promo->code}\" creado.");
         $this->line('  '.($promo->isDiscount() ? 'Descuento: ' : 'Regalo: ').$promo->describeGrant());

@@ -177,6 +177,8 @@ class RedeemPromoCode
                 throw $this->giftOutOfPlace($case);
             }
 
+            $this->assertAppliesTo($promo, $case);
+
             $redemption = $this->recordRedemption($promo, $user);
 
             return new PromoDiscount($promo->discountedAmount($amount), $redemption);
@@ -271,7 +273,26 @@ class RedeemPromoCode
             throw $this->giftOutOfPlace($case);
         }
 
+        $this->assertAppliesTo($promo, $case);
+
         return new PromoPreview($promo->discountedAmount($amount), $promo);
+    }
+
+    /**
+     * A discount limited to cases or to credit packages, used on the other.
+     * The kind of purchase is already known from $case — only a case purchase
+     * passes one — so no extra argument is needed.
+     *
+     * Answers with the same words as an unknown code on purpose: telling
+     * someone "this code is for credits" is telling them it exists.
+     */
+    private function assertAppliesTo(PromoCode $promo, ?MysteryCase $case): void
+    {
+        $target = $case ? PromoCode::APPLIES_CASE : PromoCode::APPLIES_CREDITS;
+
+        if (! $promo->appliesTo($target)) {
+            throw new PromoCodeException(self::UNUSABLE);
+        }
     }
 
     /**
@@ -297,14 +318,18 @@ class RedeemPromoCode
     /**
      * Existence aside (callers look the row up their own way, locked or
      * not), everything else a code can be rejected for regardless of kind:
-     * turned off, exhausted, or already used up by this person.
+     * turned off, expired, exhausted, or already used up by this person.
      *
-     * The first two answer with the same words as "does not exist" on
+     * All but the last answer with the same words as "does not exist" on
      * purpose — see the UNUSABLE constant.
      */
     private function validateLimits(PromoCode $promo, User $user): void
     {
         if (! $promo->active) {
+            throw new PromoCodeException(self::UNUSABLE);
+        }
+
+        if ($promo->isExpired()) {
             throw new PromoCodeException(self::UNUSABLE);
         }
 

@@ -86,9 +86,15 @@ export default function Privacy({ legal }) {
                             <strong>Datos técnicos:</strong> dirección IP, tipo de navegador y
                             registros de funcionamiento y seguridad de los servidores; una medición
                             básica y anónima de las visitas, sin cookies; y, solo si usted lo
-                            autoriza, datos de uso medidos con cookies de analítica y grabaciones de
-                            sesión (ver la{' '}
+                            autoriza, datos de uso medidos con cookies de analítica, grabaciones de
+                            sesión y medición de nuestra publicidad (ver la{' '}
                             <TextLink href={route('cookies')}>Política de Cookies</TextLink>).
+                        </li>
+                        <li>
+                            <strong>Origen de su visita:</strong> si llegó desde uno de nuestros
+                            anuncios o un enlace de campaña, guardamos los parámetros del enlace
+                            (por ejemplo, la campaña y el identificador de clic de TikTok o Meta)
+                            junto a su cuenta y a sus compras, para saber qué campañas funcionan.
                         </li>
                         <li>
                             <strong>Comunicaciones:</strong> los correos de servicio que le
@@ -147,11 +153,21 @@ export default function Privacy({ legal }) {
                             detalle (tiempo de visita, abandono, grabaciones de uso) únicamente si
                             usted lo autoriza.
                         </li>
+                        <li>
+                            Medir si nuestros propios anuncios en TikTok e Instagram/Facebook
+                            funcionan, únicamente si usted lo autoriza en el aviso de cookies.
+                        </li>
                     </ul>
                     <p>
-                        No vendemos sus datos ni los usamos para publicidad de terceros. No le
-                        enviaremos comunicaciones comerciales o promocionales sin su autorización
-                        previa y expresa.
+                        No vendemos sus datos ni mostramos publicidad de terceros en el sitio. Si
+                        usted autoriza la medición publicitaria, informamos a TikTok y a Meta de
+                        los hechos de su visita (haber visto un caso, registrarse, iniciar o
+                        completar una compra y su valor) y, desde nuestros servidores, de las
+                        compras y registros, junto con su correo electrónico convertido en una
+                        huella cifrada irreversible (hash), su dirección IP y el tipo de navegador,
+                        con el único fin de medir y optimizar esos anuncios. Si no lo autoriza, no
+                        enviamos nada de eso. No le enviaremos comunicaciones comerciales o
+                        promocionales sin su autorización previa y expresa.
                     </p>
                 </>
             ),
@@ -167,8 +183,8 @@ export default function Privacy({ legal }) {
                         los{' '}
                         <TextLink href={route('terms')}>Términos y Condiciones</TextLink> y esta
                         política. Guardamos la fecha y la versión aceptadas como prueba de la
-                        autorización. Para las cookies analíticas, la autorización se pide por
-                        separado en el aviso de cookies.
+                        autorización. Para las cookies analíticas y de medición publicitaria, la
+                        autorización se pide por separado en el aviso de cookies.
                     </p>
                     <p>
                         <strong>Jugadores invitados.</strong> Un jugador no necesita cuenta: el Game
@@ -216,6 +232,12 @@ export default function Privacy({ legal }) {
                             y, solo con su autorización, mapas de calor y grabaciones de uso.
                         </li>
                         <li>
+                            <strong>TikTok</strong> y <strong>Meta</strong> (Facebook e Instagram):
+                            solo con su autorización, medición de nuestros anuncios mediante su
+                            píxel y sus interfaces de conversiones, con los datos descritos en
+                            «Finalidades».
+                        </li>
+                        <li>
                             <strong>Cloudflare Turnstile</strong>: verificación anti-bots en los
                             formularios.
                         </li>
@@ -243,7 +265,8 @@ export default function Privacy({ legal }) {
             body: (
                 <>
                     <p>
-                        Algunos de los proveedores anteriores (Google, Microsoft, Cloudflare)
+                        Algunos de los proveedores anteriores (Google, Microsoft, Cloudflare, TikTok,
+                        Meta)
                         procesan datos en servidores ubicados fuera de Colombia, principalmente en
                         Estados Unidos. Estas transmisiones a encargados se rigen por los términos
                         de tratamiento de datos de cada proveedor y, en la medida en que constituyan
@@ -367,8 +390,9 @@ export default function Privacy({ legal }) {
                 <p>
                     Usamos cookies necesarias para que el sitio funcione, una medición básica y
                     anónima de las visitas que no usa cookies y, solo con su autorización, cookies
-                    de analítica de audiencia (Google Analytics) y de grabaciones de uso (Microsoft
-                    Clarity), que usted acepta por separado. El detalle y cómo cambiar su elección
+                    de analítica de audiencia (Google Analytics), de grabaciones de uso (Microsoft
+                    Clarity) y de medición publicitaria (TikTok y Meta), que usted acepta por
+                    separado. El detalle y cómo cambiar su elección
                     están en la{' '}
                     <TextLink href={route('cookies')}>Política de Cookies</TextLink>.
                 </p>

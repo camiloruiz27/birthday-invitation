@@ -22,8 +22,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(function () {
     Route::get('/', [GameMasterController::class, 'index'])->name('games.index');
-    Route::get('/crear', [GameMasterController::class, 'create'])->name('games.create');
-    Route::post('/', [GameMasterController::class, 'store'])->name('games.store');
+    // Creating a game and mailing its players need a confirmed address: the
+    // platform sends mail to OTHER people on this account's behalf, and an
+    // address nobody has proved they own is how that gets abused. Buying a
+    // case does not (see the Platform routes), so someone who arrives from an
+    // ad pays first and confirms here, at the point it matters. The
+    // `verified` redirect remembers the page, so confirming returns to it.
+    Route::get('/crear', [GameMasterController::class, 'create'])->middleware('verified')->name('games.create');
+    Route::post('/', [GameMasterController::class, 'store'])->middleware('verified')->name('games.store');
 
     // whereNumber keeps a game id from swallowing a literal path segment:
     // without it /partidas/crear is a candidate match for /partidas/{game}.
@@ -36,8 +42,10 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         // the player's own inbox credential), but here the Game Master is
         // addressing a row from a page that already proved they own the game.
         Route::post('/{game}/jugadores/{player:id}/enviar-enlace', [GameMasterController::class, 'sendPlayerLink'])
+            ->middleware('verified')
             ->name('game.player.send-link');
         Route::post('/{game}/enviar-enlaces', [GameMasterController::class, 'sendAllPlayerLinks'])
+            ->middleware('verified')
             ->name('game.send-all-links');
     });
 
@@ -50,7 +58,10 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
     // Run controls: both modes need someone to say when the case starts and
     // ends.
     Route::middleware('can:control,game')->whereNumber('game')->group(function () {
-        Route::post('/{game}/start', [GameMasterController::class, 'start'])->name('game.start');
+        // Starting sends the timeline mail to every player, so it is gated too:
+        // it also covers a game created before creating needed a confirmed
+        // address.
+        Route::post('/{game}/start', [GameMasterController::class, 'start'])->middleware('verified')->name('game.start');
         Route::post('/{game}/pause', [GameMasterController::class, 'pause'])->name('game.pause');
         Route::post('/{game}/resume', [GameMasterController::class, 'resume'])->name('game.resume');
         Route::post('/{game}/finish', [GameMasterController::class, 'finish'])->name('game.finish');

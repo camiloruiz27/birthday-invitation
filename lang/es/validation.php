@@ -180,6 +180,9 @@ return [
     'attributes' => [
         'accept_terms' => 'los Términos y Condiciones y la Política de Privacidad',
         'case_slug' => 'el caso',
+        // Cloudflare Turnstile's field. Without this a visitor whose widget never
+        // loaded was told "cf-turnstile-response es obligatorio".
+        'cf-turnstile-response' => 'la verificación anti-robots',
         'code' => 'el código',
         'current_password' => 'la contraseña actual',
         'email' => 'el correo',

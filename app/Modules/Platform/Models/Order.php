@@ -38,6 +38,17 @@ class Order extends Model
         'credit_package_id',
         'credits_granted',
         'amount',
+        // The price a code started from and what it took off; `amount` is
+        // always what is actually charged.
+        'list_amount',
+        'discount_amount',
+        'promo_code_id',
+        // Campaign the buyer arrived from, and what a server-side conversion
+        // event needs once the browser is gone. See the migration.
+        'attribution',
+        'client_ip',
+        'client_user_agent',
+        'marketing_consent',
         'currency',
         'status',
         'reference',
@@ -52,6 +63,10 @@ class Order extends Model
     protected $casts = [
         'credits_granted' => 'integer',
         'amount' => 'integer',
+        'list_amount' => 'integer',
+        'discount_amount' => 'integer',
+        'attribution' => 'array',
+        'marketing_consent' => 'boolean',
         'raw_webhook' => 'array',
         'paid_at' => 'datetime',
     ];
@@ -59,6 +74,11 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function promoCode(): BelongsTo
+    {
+        return $this->belongsTo(PromoCode::class);
     }
 
     public function mysteryCase(): BelongsTo

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Modules\Platform\Support\Captcha;
+use App\Modules\Platform\Support\InAppBrowser;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -59,6 +60,13 @@ class HandleInertiaRequests extends Middleware
             'contactEmail' => fn () => config('legal.email') ?: null,
 
             'captchaSiteKey' => fn () => app(Captcha::class)->siteKey(),
+
+            // Which app's browser this visit is inside (tiktok, instagram,
+            // facebook, other) or null for an ordinary browser. Decided here,
+            // from the User-Agent, so the first response already knows and
+            // the pages can tell the visitor what to do when the anti-bot
+            // check or the payment page misbehaves in there. See InAppBrowser.
+            'inAppBrowser' => fn () => InAppBrowser::detect($request->userAgent()),
         ]);
     }
 }

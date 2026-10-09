@@ -64,6 +64,23 @@ const RECORDING = [
     },
 ];
 
+const MARKETING = [
+    {
+        name: '_fbp, _fbc',
+        provider: 'Meta (Facebook e Instagram)',
+        purpose:
+            'Reconocen su navegador y, si llegó desde un anuncio de Meta, cuál fue, para medir cuántos anuncios terminan en un registro o una compra.',
+        duration: 'Hasta 3 meses',
+    },
+    {
+        name: '_ttp, ttclid',
+        provider: 'TikTok',
+        purpose:
+            'Reconocen su navegador y, si llegó desde un anuncio de TikTok, cuál fue, para medir cuántos anuncios terminan en un registro o una compra.',
+        duration: 'Hasta 13 meses',
+    },
+];
+
 function CookieTable({ rows }) {
     return (
         <div className="mt-3 overflow-x-auto rounded-card border border-line">
@@ -111,14 +128,15 @@ export default function Cookies({ legal }) {
         },
         {
             id: 'consentimiento',
-            title: 'Los tres niveles y su autorización',
+            title: 'Los cuatro niveles y su autorización',
             body: (
                 <>
                     <p>
                         La Ley 1581 de 2012 exige su autorización previa, expresa e informada para
                         tratar datos personales, y la Superintendencia de Industria y Comercio
                         considera que las cookies que permiten identificar o seguir a un usuario
-                        quedan cubiertas. Por eso medimos el uso del sitio en tres niveles:
+                        quedan cubiertas. Por eso medimos el uso del sitio y de nuestra publicidad en
+                        cuatro niveles:
                     </p>
                     <ul>
                         <li>
@@ -134,6 +152,12 @@ export default function Cookies({ legal }) {
                         <li>
                             <strong>Analítica de audiencia y grabaciones:</strong> apagadas por
                             defecto; solo se activan si usted las acepta, cada una por separado.
+                        </li>
+                        <li>
+                            <strong>Medición publicitaria:</strong> apagada por defecto; solo si
+                            usted la acepta cargamos el píxel de TikTok y el de Meta. No hay una
+                            versión anónima de este nivel: sin su autorización no se carga nada de
+                            esas empresas.
                         </li>
                     </ul>
                 </>
@@ -176,7 +200,30 @@ export default function Cookies({ legal }) {
                         Configuramos Google Analytics sin señales de Google ni personalización
                         publicitaria, y enviamos las direcciones de las páginas sin credenciales ni
                         parámetros (por ejemplo, el enlace personal de un jugador se reporta sin su
-                        código). No usamos estas cookies para publicidad.
+                        código). Estas cookies de analítica no se usan para publicidad.
+                    </p>
+                </>
+            ),
+        },
+        {
+            id: 'publicidad',
+            title: 'Medición publicitaria (solo con su autorización)',
+            body: (
+                <>
+                    <CookieTable rows={MARKETING} />
+                    <p>
+                        Anunciamos MisterioCode en TikTok e Instagram/Facebook. Con su autorización,
+                        el píxel de cada red nos dice si un anuncio trajo a alguien hasta aquí y si
+                        terminó registrándose o comprando, y nos permite mostrar el anuncio a
+                        personas parecidas. Además, cuando usted se registra o compra, nuestros
+                        servidores informan ese hecho a TikTok y a Meta con su correo convertido en
+                        una huella cifrada irreversible, su dirección IP y el tipo de navegador.
+                        Estas empresas pueden procesar esos datos fuera de Colombia; ver la{' '}
+                        <TextLink href={route('privacy')}>Política de Privacidad</TextLink>.
+                    </p>
+                    <p>
+                        Si no acepta este nivel, no se carga ningún píxel y no se envía ningún dato
+                        suyo a esas redes.
                     </p>
                 </>
             ),

@@ -6,7 +6,7 @@ import Captcha from '../../components/ui/Captcha';
 import { TextField, PasswordField, CheckboxField } from '../../components/ui/Field';
 import TextLink from '../../components/ui/TextLink';
 
-export default function Login() {
+export default function Login({ case: caseSlug = null }) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
@@ -34,7 +34,7 @@ export default function Login() {
             footer={
                 <>
                     ¿No tienes cuenta?{' '}
-                    <TextLink href={route('register')}>
+                    <TextLink href={route('register', caseSlug ? { case: caseSlug } : {})}>
                         Crear una
                     </TextLink>
                 </>
@@ -77,7 +77,7 @@ export default function Login() {
 
                     <Link
                         href={route('password.request')}
-                        className="text-sm text-ink-muted underline hover:text-ink"
+                        className="inline-flex min-h-11 items-center text-sm text-ink-muted underline hover:text-ink"
                     >
                         Olvidé mi contraseña
                     </Link>

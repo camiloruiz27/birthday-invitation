@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp, router } from '@inertiajs/react';
 import route from 'ziggy-js';
 import CookieConsent from './components/public/CookieConsent';
-import { initConsent, trackPageView } from './lib/consent';
+import { initConsent, trackAdPageView, trackPageView } from './lib/consent';
 
 createInertiaApp({
     resolve: (name) => {
@@ -23,7 +23,12 @@ createInertiaApp({
         // Inertia navigations never reload the page, so GA is told about
         // each one explicitly — with the token-free URL. A no-op while
         // analytics is off.
-        router.on('navigate', () => trackPageView());
+        router.on('navigate', () => {
+            trackPageView();
+            // The same for the TikTok and Meta pixels, which only run once
+            // the visitor accepted the marketing category.
+            trackAdPageView();
+        });
 
         createRoot(el).render(
             <>

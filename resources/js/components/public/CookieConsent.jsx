@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import Button from '../ui/Button';
 import TextLink from '../ui/TextLink';
 import { CheckboxField } from '../ui/Field';
-import { OPEN_SETTINGS_EVENT, getConsent, setConsent } from '../../lib/consent';
+import { OPEN_SETTINGS_EVENT, adsConfigured, getConsent, setConsent } from '../../lib/consent';
 
 /**
  * The cookie consent banner.
  *
- * Three levels (see lib/consent.js): anonymous cookieless measurement that is
- * always on and only disclosed here, and two opt-in choices — audience
- * analytics (Google Analytics cookies) and session recordings (Microsoft
- * Clarity), each off until the visitor says yes. Ley 1581 de 2012 asks for
+ * Four levels (see lib/consent.js): anonymous cookieless measurement that is
+ * always on and only disclosed here, and three opt-in choices — audience
+ * analytics (Google Analytics cookies), session recordings (Microsoft
+ * Clarity) and advertising measurement (the TikTok and Meta pixels), each off
+ * until the visitor says yes. Ley 1581 de 2012 asks for
  * prior and express authorization; tacit consent is not valid in Colombia.
  *
  * "Aceptar todo" and "Rechazar" are the same size and weight on purpose:
@@ -26,12 +27,19 @@ export default function CookieConsent() {
     const [showSettings, setShowSettings] = useState(false);
     const [analytics, setAnalytics] = useState(false);
     const [recording, setRecording] = useState(false);
+    const [marketing, setMarketing] = useState(false);
+    // Only ask about advertising when a pixel is actually configured; read
+    // after mount like the stored choice, since it comes from the page's own
+    // <meta> tag.
+    const [adsEnabled, setAdsEnabled] = useState(false);
     const dialogRef = useRef(null);
 
     // Decide whether to show it only after mount: the choice lives in a
     // cookie that the server cannot see, and reading it during render would
     // mismatch whatever was rendered before.
     useEffect(() => {
+        setAdsEnabled(adsConfigured());
+
         const consent = getConsent();
 
         if (consent === null) {
@@ -39,6 +47,7 @@ export default function CookieConsent() {
         } else {
             setAnalytics(consent.analytics);
             setRecording(consent.recording);
+            setMarketing(consent.marketing);
         }
 
         const reopen = () => {
@@ -46,6 +55,7 @@ export default function CookieConsent() {
 
             setAnalytics(current?.analytics ?? false);
             setRecording(current?.recording ?? false);
+            setMarketing(current?.marketing ?? false);
             setShowSettings(true);
             setOpen(true);
         };
@@ -70,6 +80,7 @@ export default function CookieConsent() {
         setConsent(choice);
         setAnalytics(choice.analytics);
         setRecording(choice.recording);
+        setMarketing(choice.marketing);
         setShowSettings(false);
         setOpen(false);
     }
@@ -95,62 +106,93 @@ export default function CookieConsent() {
             style={{ outline: 'none' }}
             className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
-            <div className="mx-auto max-h-[85dvh] w-full max-w-3xl overflow-y-auto rounded-card border border-line-strong bg-surface-raised p-4 shadow-overlay sm:p-6">
-                <h2 id="cookie-consent-title" className="font-display text-base font-semibold text-ink sm:text-lg">
-                    Una cosa rápida sobre las cookies
-                </h2>
+            <div className="mx-auto max-h-[85dvh] w-full max-w-3xl overflow-y-auto rounded-card border border-line-strong bg-surface-raised p-3 shadow-overlay sm:p-6">
+                {/* On a phone this banner used to take 40% of the screen and sat
+                    on top of the page's own button. It is kept small there: a
+                    one-word title with the settings link on the same line, the
+                    mandatory notice and the "optional" line as ONE short
+                    paragraph, and only the two answers as buttons. From sm up
+                    it is the roomier layout it always was. */}
+                <div className="flex items-center justify-between gap-3">
+                    <h2 id="cookie-consent-title" className="font-display text-base font-semibold text-ink sm:text-lg">
+                        <span className="sm:hidden">Cookies</span>
+                        <span className="hidden sm:inline">Una cosa rápida sobre las cookies</span>
+                    </h2>
 
-                {/* Kept short and friendly on purpose: the detail lives in the
-                    two policies linked here. It still says the two things that
-                    must be said up front — we count visits anonymously, and
-                    anything more needs a yes. */}
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted sm:mt-2 sm:text-sm">
-                    Usamos cookies para que todo funcione y, si nos dejas, para entender cómo usas
-                    MisterioCode y mejorarlo. Siempre contamos las visitas de forma anónima, sin
-                    cookies. Tú decides lo demás, y puedes cambiarlo cuando quieras. Si quieres el
-                    detalle, está en{' '}
+                    {!showSettings && (
+                        <div className="sm:hidden">
+                            <Button variant="ghost" onClick={() => setShowSettings(true)}>
+                                Configurar
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Two things, said plainly and up front: what is mandatory
+                    (always on, no choice to make) and that everything else is
+                    optional. The mandatory space is NOT a toggle — it covers
+                    the necessary cookies and the anonymous, cookieless count of
+                    visits, which is disclosed here rather than asked for (see
+                    lib/consent.js). The detail lives in the two policies. */}
+                <div className="sm:mt-4 sm:rounded-control sm:border sm:border-line sm:bg-surface-sunken sm:px-3 sm:py-2.5">
+                    <div className="hidden items-center justify-between gap-4 sm:flex">
+                        <p className="text-sm font-medium text-ink">Obligatorio</p>
+                        <span className="text-xs font-medium text-ink-muted">Siempre activo</span>
+                    </div>
+                    <p className="text-[13px] leading-snug text-ink-muted sm:mt-1 sm:text-sm sm:leading-relaxed">
+                        <span className="font-medium text-ink sm:hidden">Obligatorio (siempre activo): </span>
+                        Es obligatorio para el correcto funcionamiento y conocimiento de la plataforma.
+                        {/* Phone only; from sm up it is its own line below. */}
+                        <span className="sm:hidden">
+                            {' '}
+                            Lo demás es opcional y lo decides tú. Más detalle en{' '}
+                            <TextLink href={route('cookies')}>Cookies</TextLink> y{' '}
+                            <TextLink href={route('privacy')}>Privacidad</TextLink>.
+                        </span>
+                    </p>
+                </div>
+
+                <p className="mt-3 hidden text-sm leading-relaxed text-ink-muted sm:block">
+                    Lo demás es opcional y lo decides tú. Más detalle en{' '}
                     <TextLink href={route('cookies')}>Cookies</TextLink> y{' '}
                     <TextLink href={route('privacy')}>Privacidad</TextLink>.
                 </p>
 
                 {showSettings && (
-                    <div className="mt-5 space-y-4 border-t border-line pt-5">
-                        <div>
-                            <div className="flex items-center justify-between gap-4">
-                                <p className="text-sm font-medium text-ink">Lo necesario</p>
-                                <span className="text-xs font-medium text-ink-muted">
-                                    Siempre activo
-                                </span>
-                            </div>
-                            <p className="mt-1 text-xs text-ink-muted">
-                                Para que el sitio funcione, verificación de tu sesión y la seguridad.
-                            </p>
-                        </div>
+                    <div className="mt-4 space-y-3 border-t border-line pt-4">
+                        <p className="text-sm font-medium text-ink">Opcional</p>
 
                         <CheckboxField
                             id="cookie-analytics"
-                            label="Saber cómo nos usas"
+                            label="Habilita la recolección de datos para análisis de uso"
                             checked={analytics}
                             onChange={setAnalytics}
-                            hint="Saber que tanto disfrutas resolver un caso"
                         />
 
                         <CheckboxField
                             id="cookie-recording"
-                            label="Ayudarnos a arreglar lo confuso"
+                            label="Habilita la recolección de datos para grabaciones de uso"
                             checked={recording}
                             onChange={setRecording}
-                            hint="Nos ayudas a mejorar con tu experiencia"
                         />
+
+                        {adsEnabled && (
+                            <CheckboxField
+                                id="cookie-marketing"
+                                label="Habilita la recolección de datos para publicidad"
+                                checked={marketing}
+                                onChange={setMarketing}
+                            />
+                        )}
                     </div>
                 )}
 
                 {/* Two equal buttons side by side on a phone, the third under
                     them: stacked full-width, the three took half the screen. */}
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
                     {showSettings ? (
                         <>
-                            <Button variant="secondary" onClick={() => decide({ analytics, recording })}>
+                            <Button variant="secondary" onClick={() => decide({ analytics, recording, marketing })}>
                                 Guardar
                             </Button>
                             <Button variant="ghost" onClick={dismissSettings}>
@@ -159,19 +201,24 @@ export default function CookieConsent() {
                         </>
                     ) : (
                         <>
-                            <Button variant="secondary" onClick={() => decide({ analytics: false, recording: false })}>
+                            <Button
+                                variant="secondary"
+                                onClick={() => decide({ analytics: false, recording: false, marketing: false })}
+                            >
                                 Rechazar
                             </Button>
-                            <Button variant="secondary" onClick={() => decide({ analytics: true, recording: true })}>
+                            <Button
+                                variant="secondary"
+                                onClick={() => decide({ analytics: true, recording: true, marketing: true })}
+                            >
                                 Aceptar todo
                             </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setShowSettings(true)}
-                                className="col-span-2 sm:col-span-1"
-                            >
-                                Configurar
-                            </Button>
+                            {/* On a phone this lives next to the title instead. */}
+                            <div className="hidden sm:block">
+                                <Button variant="ghost" onClick={() => setShowSettings(true)}>
+                                    Configurar
+                                </Button>
+                            </div>
                         </>
                     )}
                 </div>

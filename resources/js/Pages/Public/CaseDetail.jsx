@@ -1,27 +1,18 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { Head, Link } from '@inertiajs/react';
 import PublicLayout from '../../Layouts/PublicLayout';
 import Container from '../../components/ui/Container';
 import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
+import PurchaseCta from '../../components/public/PurchaseCta';
 import Badge from '../../components/ui/Badge';
-import Alert from '../../components/ui/Alert';
 import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
 import { CaseFacts } from '../../components/public/CaseCard';
 import Icon from '../../lib/mechanicIcons';
-import { formatPrice } from '../../lib/format';
+import { trackAd } from '../../lib/analytics';
+import { formatPrice, minorUnitValue } from '../../lib/format';
 
 function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
-    const { auth } = usePage().props;
-    const { post, processing } = useForm({});
-
-    // The simulated stand-in acquires immediately — there is nothing to
-    // confirm about a purchase that costs nothing. A real purchase goes to
-    // the review screen first (see Payments/Review), never straight here.
-    function acquireSimulated() {
-        post(route('cases.acquire', mysteryCase.slug));
-    }
-
     return (
         <Card className="lg:sticky lg:top-24">
             <p className="text-2xl font-semibold text-ink">
@@ -32,44 +23,12 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, g
             </p>
 
             <div className="mt-6">
-                {owned ? (
-                    <Button href={route('dashboard')} fullWidth>
-                        Crear una partida
-                    </Button>
-                ) : !auth?.user ? (
-                    <>
-                        <Button href={route('register')} fullWidth>
-                            Crear cuenta para adquirirlo
-                        </Button>
-                        <p className="mt-3 text-center text-sm text-ink-muted">
-                            ¿Ya tienes cuenta?{' '}
-                            <Link href={route('login')} className="text-accent underline">
-                                Ingresar
-                            </Link>
-                        </p>
-                    </>
-                ) : canPurchase ? (
-                    <Button href={route('cases.checkout.review', mysteryCase.slug)} fullWidth>
-                        Comprar
-                    </Button>
-                ) : canSimulatePurchase ? (
-                    <>
-                        <Button onClick={acquireSimulated} loading={processing} fullWidth>
-                            {processing ? 'Añadiendo…' : 'Añadir a mi biblioteca'}
-                        </Button>
-                        {/* Never let a simulated acquisition look like a real
-                            purchase. */}
-                        <Alert variant="warning" className="mt-4 mb-0">
-                            Adquisición simulada: la pasarela de pagos todavía no está
-                            integrada, así que esto no cobra nada.
-                        </Alert>
-                    </>
-                ) : (
-                    <Alert variant="info" className="mb-0">
-                        La compra en línea todavía no está disponible. Escríbenos y te damos
-                        acceso.
-                    </Alert>
-                )}
+                <PurchaseCta
+                    mysteryCase={mysteryCase}
+                    owned={owned}
+                    canPurchase={canPurchase}
+                    canSimulatePurchase={canSimulatePurchase}
+                />
             </div>
 
             <ul className="mt-6 space-y-2.5 border-t border-line pt-6 text-sm text-ink-muted">
@@ -98,6 +57,22 @@ export default function CaseDetail({
     canSimulatePurchase,
     gamesPerCase,
 }) {
+    // Tells the ad pixels which case this visitor looked at (a no-op unless
+    // they accepted the marketing category). Keyed on the slug so moving from
+    // one case page to another counts again.
+    useEffect(() => {
+        trackAd(
+            'ViewContent',
+            {
+                contentId: mysteryCase.slug,
+                contentName: mysteryCase.name,
+                value: minorUnitValue(mysteryCase.price_amount, mysteryCase.currency),
+                currency: mysteryCase.currency,
+            },
+            `view-${mysteryCase.slug}`
+        );
+    }, [mysteryCase.slug]);
+
     return (
         <PublicLayout current="cases.index">
             <Head title={mysteryCase.name} />
