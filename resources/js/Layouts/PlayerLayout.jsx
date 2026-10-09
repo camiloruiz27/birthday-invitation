@@ -3,7 +3,9 @@ import { Link, usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
 import Container from '../components/ui/Container';
+import GuidedTour from '../components/ui/GuidedTour';
 import PrivacyNotice from '../components/player/PrivacyNotice';
+import { startTour } from '../lib/tour';
 import { MECHANIC_ICON_PATHS } from '../lib/mechanicIcons';
 
 /**
@@ -61,6 +63,10 @@ function sectionsFor(player, game) {
         sections.push({
             key: 'interrogation',
             href: route('immersion.player.interrogation.index', player.access_token),
+            // Part of the game but not open yet: the tab stays (so nobody
+            // wonders where the interrogations are) with a lock, and the page
+            // behind it says what opens it.
+            locked: game.interrogation_open === false,
         });
     }
 
@@ -76,6 +82,25 @@ function sectionsFor(player, game) {
     return sections;
 }
 
+function LockMark() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            aria-hidden="true"
+            className="h-3 w-3 shrink-0"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7 11V8a5 5 0 0110 0v3M6 11h12v9H6z"
+            />
+        </svg>
+    );
+}
+
 function SectionLink({ section, active, variant }) {
     const label = SECTION_LABELS[section.key];
 
@@ -84,12 +109,17 @@ function SectionLink({ section, active, variant }) {
             <Link
                 href={section.href}
                 aria-current={active ? 'page' : undefined}
+                data-tour={`nav-${section.key}`}
                 className={`flex min-h-16 flex-1 flex-col items-center justify-center gap-1 px-2 text-center text-[11px] transition-colors ${
                     active ? 'text-accent-strong' : 'text-ink-muted hover:text-ink'
                 }`}
             >
                 <SectionIcon section={section.key} />
-                <span className={active ? 'font-semibold' : ''}>{label}</span>
+                <span className={`inline-flex items-center gap-1 ${active ? 'font-semibold' : ''}`}>
+                    {label}
+                    {section.locked && <LockMark />}
+                    {section.locked && <span className="sr-only">(todavía bloqueado)</span>}
+                </span>
             </Link>
         );
     }
@@ -100,12 +130,15 @@ function SectionLink({ section, active, variant }) {
         <Link
             href={section.href}
             aria-current={active ? 'page' : undefined}
+            data-tour={`nav-${section.key}`}
             className={`group relative inline-flex min-h-11 items-center gap-2 py-1 text-sm transition-colors ${
                 active ? 'text-ink' : 'text-ink-muted hover:text-ink'
             }`}
         >
             <SectionIcon section={section.key} className="h-4 w-4" />
             {label}
+            {section.locked && <LockMark />}
+            {section.locked && <span className="sr-only">(todavía bloqueado)</span>}
             <span
                 aria-hidden="true"
                 className={`absolute inset-x-0 bottom-0 h-px origin-left bg-accent transition-transform duration-300 ${
@@ -149,7 +182,11 @@ function CaseClock({ game }) {
     }
 
     if (game.status === 'paused') {
-        return <p className="case-stamp shrink-0 text-[10px] text-warning-strong">En pausa</p>;
+        return (
+            <p className="case-stamp shrink-0 text-[10px] text-warning-strong" data-tour="case-clock">
+                En pausa
+            </p>
+        );
     }
 
     if (game.status !== 'running') {
@@ -159,7 +196,7 @@ function CaseClock({ game }) {
     const total = base + drift;
 
     return (
-        <p className="shrink-0 text-right">
+        <p className="shrink-0 text-right" data-tour="case-clock">
             <span className="case-stamp block text-[10px] text-ink-subtle">En juego</span>
             <span className="tabular font-mono text-sm text-ink">
                 {Math.floor(total / 60)}:{String(total % 60).padStart(2, '0')}
@@ -173,6 +210,54 @@ function CaseClock({ game }) {
  * interrogation chat), which needs the whole screen and its own back link
  * rather than competing with a bottom bar.
  */
+/**
+ * The first-visit tour of a case, from a player's point of view. Targets that
+ * are not on the current page or in this game (the interrogation tab of a game
+ * without interrogations) are marked optional and simply skipped.
+ */
+function playerTourSteps(game) {
+    return [
+        {
+            title: 'Bienvenido al caso',
+            body: 'Esta es tu mesa de investigación. En menos de un minuto te mostramos dónde está cada cosa; puedes saltarte esto cuando quieras.',
+        },
+        {
+            target: '[data-tour="inbox-main"]',
+            optional: true,
+            title: 'Aquí llegan los sobres',
+            body: 'El expediente llega por partes, a medida que avanza la investigación. Esta página se actualiza sola: déjala abierta. Toca un sobre para leerlo; algunos traen fotos en otra pestaña.',
+        },
+        {
+            target: '[data-tour="nav-inbox"]',
+            optional: true,
+            title: 'Bandeja',
+            body: 'Desde cualquier pantalla vuelves a tus sobres tocando Bandeja.',
+        },
+        {
+            target: '[data-tour="case-clock"]',
+            optional: true,
+            title: 'El reloj del caso',
+            body: 'Marca cuánto lleva la partida en juego. Los sobres salen según este reloj, y se detiene si el Game Master pausa.',
+        },
+        ...(game?.interrogation_enabled
+            ? [
+                  {
+                      target: '[data-tour="nav-interrogation"]',
+                      optional: true,
+                      title: 'Personas',
+                      body: 'Aquí interrogarán a las personas de interés. Se abre solo cuando llega el sobre que las presenta; hasta entonces verás un candado.',
+                  },
+              ]
+            : []),
+        {
+            target: '[data-tour="nav-accusation"]',
+            optional: true,
+            title: 'Acusación',
+            body: 'Cuando el equipo crea saber quién fue, acusen desde aquí. Se habilita más adelante en el caso.',
+        },
+    ];
+}
+
 export default function PlayerLayout({
     player,
     game,
@@ -306,6 +391,18 @@ export default function PlayerLayout({
                             >
                                 Términos
                             </a>
+                            {player && (
+                                <>
+                                    {' · '}
+                                    <button
+                                        type="button"
+                                        onClick={() => startTour('player')}
+                                        className="underline underline-offset-2 hover:text-ink"
+                                    >
+                                        Ver el tutorial
+                                    </button>
+                                </>
+                            )}
                         </p>
                     )}
                 </Container>
@@ -334,6 +431,15 @@ export default function PlayerLayout({
             )}
 
             {needsPrivacyNotice && <PrivacyNotice player={player} />}
+
+            {/* After the privacy notice, never together with it. */}
+            {player && !focused && (
+                <GuidedTour
+                    id="player"
+                    steps={playerTourSteps(game)}
+                    enabled={section === 'inbox' && !needsPrivacyNotice}
+                />
+            )}
         </div>
     );
 }

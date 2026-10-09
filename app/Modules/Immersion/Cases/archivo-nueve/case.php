@@ -131,6 +131,15 @@ return [
             'connection' => 'Director científico del ensayo del compuesto KX-9',
             'motive' => 'Manipuló la versión 2 del expediente por presión regulatoria (sin relación con la desaparición)',
             'alibi' => 'En una cena con inversores externos esa noche, confirmable por múltiples testigos ajenos a la empresa',
+            'public' => [
+                'age' => '52 años',
+                'profile' => 'Director científico del ensayo del compuesto KX-9, el estudio que documenta Archivo Nueve. Conoce a Silvia solo por las auditorías de cumplimiento.',
+                'alibi' => 'Dice haber pasado la noche en una cena con inversores externos.',
+                'facts' => [
+                    'Su usuario figura como autor de la versión 2 del expediente, según el historial de versiones.',
+                    'Tiene mucho en juego en la carrera del ensayo KX-9 y en los plazos regulatorios.',
+                ],
+            ],
         ],
         'patricia-soler' => [
             'name' => 'Patricia Soler',
@@ -140,6 +149,15 @@ return [
             'connection' => 'Directora de compliance/legal',
             'motive' => 'Encubrió la alteración de Marcos por miedo al impacto legal y financiero (sin relación con la desaparición)',
             'alibi' => 'En una llamada de trabajo documentada con el despacho legal externo durante toda la ventana crítica',
+            'public' => [
+                'age' => '48 años',
+                'profile' => 'Directora de compliance y legal de Laboratorios Kestrel; en la cadena de cumplimiento, Silvia depende de su área.',
+                'alibi' => 'Dice haber estado esa noche en una llamada de trabajo con el despacho legal externo.',
+                'facts' => [
+                    'Su usuario figura como autor de la versión 4 del expediente, según el historial de versiones.',
+                    'Revisa los cambios de cumplimiento y responde por el expediente ante la dirección.',
+                ],
+            ],
         ],
         'ruben-ospina' => [
             'name' => 'Rubén Ospina',
@@ -149,6 +167,15 @@ return [
             'connection' => 'Responsable de sistemas',
             'motive' => 'Destruyó una versión/backup por pánico ante su propia negligencia (sin relación con la desaparición)',
             'alibi' => 'Trabajando en remoto esa noche, confirmado por su propio historial de conexión',
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Responsable de sistemas: administra la plataforma documental donde vive Archivo Nueve. No tiene relación personal con Silvia.',
+                'alibi' => 'Dice haber trabajado esa noche en remoto, desde su casa.',
+                'facts' => [
+                    'Tiene permisos de administrador sobre versiones y copias de respaldo del expediente.',
+                    'Es quien responde ante la empresa por el control de versiones del sistema.',
+                ],
+            ],
         ],
         'javier-montes' => [
             'name' => 'Javier Montes',
@@ -158,6 +185,15 @@ return [
             'connection' => 'Colega de Silvia en el equipo de auditoría de cumplimiento',
             'motive' => 'Filtración de información interna a un fondo de inversión externo a cambio de dinero',
             'alibi' => 'Se quedó ayudándola hasta tarde esa noche (aparente colaborador de confianza)',
+            'public' => [
+                'age' => '41 años',
+                'profile' => 'Colega de Silvia en el equipo de auditoría de cumplimiento; colaboraba con ella en la revisión de Archivo Nueve.',
+                'alibi' => 'Según su versión, esa noche se quedó en la oficina trabajando con Silvia en la revisión.',
+                'facts' => [
+                    'Por su rol en auditoría trabaja con los mismos registros y accesos que Silvia.',
+                    'Es de las personas más cercanas a Silvia dentro del equipo.',
+                ],
+            ],
         ],
         'elena-vargas' => [
             'name' => 'Elena Vargas',
@@ -167,6 +203,15 @@ return [
             'connection' => 'Directora general de Laboratorios Kestrel',
             'motive' => 'Preocupación por la reputación y una ronda de financiación (aparente, sin relación con la desaparición)',
             'alibi' => 'En una cena institucional esa noche, con decenas de testigos externos',
+            'public' => [
+                'age' => '44 años',
+                'profile' => 'Directora general de Laboratorios Kestrel; Silvia le reporta en última instancia.',
+                'alibi' => 'Dice haber asistido esa noche a una cena institucional con numerosos invitados.',
+                'facts' => [
+                    'Recibió el correo en que Silvia anunciaba sus hallazgos sobre Archivo Nueve.',
+                    'El informe de Silvia afectaba directamente a la reputación de la empresa.',
+                ],
+            ],
         ],
         'diego-sanz' => [
             'name' => 'Diego Sanz',
@@ -176,6 +221,15 @@ return [
             'connection' => 'Analista junior de cumplimiento, asistente de Silvia',
             'motive' => 'Ninguno; busca empleo en secreto en una empresa competidora',
             'alibi' => 'En su casa esa noche, sin coartada externa fuerte pero sin ningún indicio que lo vincule al caso',
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Analista junior de cumplimiento y asistente de Silvia en tareas rutinarias de auditoría.',
+                'alibi' => 'Dice haber estado esa noche en su casa.',
+                'facts' => [
+                    'Su usuario figura en la versión 3 del expediente, una actualización de formato.',
+                    'Compañeros comentan que últimamente ha faltado a la oficina con frecuencia.',
+                ],
+            ],
         ],
         'carmen-ruiz' => [
             'name' => 'Carmen Ruiz',
@@ -185,6 +239,14 @@ return [
             'connection' => 'Recepcionista',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '55 años',
+                'profile' => 'Recepcionista de Laboratorios Kestrel. No tiene relación directa con Silvia.',
+                'facts' => [
+                    'Desde su puesto registra la entrada y salida del personal.',
+                    'Estaba de turno la noche en que Silvia desapareció.',
+                ],
+            ],
             'accusable' => false,
         ],
         'andres-pelaez' => [
@@ -195,6 +257,14 @@ return [
             'connection' => 'Técnico de laboratorio',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '33 años',
+                'profile' => 'Técnico de laboratorio de Kestrel. No tiene relación directa con Silvia; es colega de la empresa.',
+                'facts' => [
+                    'Estaba en el edificio la noche en que Silvia desapareció.',
+                    'Su trabajo en el laboratorio no depende del equipo de auditoría.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-auditoria' => [
@@ -209,6 +279,13 @@ return [
             'connection' => 'Registros objetivos del sistema documental y de transferencias de datos',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Auditoría externa del sistema documental: registro automático de versiones, eliminaciones, transferencias de datos y accesos por tarjeta.',
+                'facts' => [
+                    'Solo informa de lo que está registrado; no interpreta ni opina.',
+                    'No conserva el contenido de lo que se elimina, solo el registro del hecho.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

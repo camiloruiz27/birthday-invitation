@@ -26,12 +26,17 @@ class LibraryController extends Controller
                 'slug' => $case->slug,
                 'name' => $case->name,
                 'tagline' => $case->tagline,
+                // For the "Ver el caso" modal: the library shows a case without
+                // sending the owner to the public page (which also 404s for a
+                // case that is theirs but not published).
+                'description' => $case->description,
                 'cover_url' => $case->coverUrl(),
                 'difficulty' => $case->difficulty,
                 'duration_minutes' => $case->duration_minutes,
                 'min_players' => $case->min_players,
                 'max_players' => $case->max_players,
                 'mechanics' => Mechanics::describe((array) $case->mechanics),
+                'uses_ai' => collect(Mechanics::describe((array) $case->mechanics))->contains(fn (array $mechanic) => $mechanic['ai']),
                 'quota' => $quotas[$case->slug],
                 // A case whose manifest is not deployed cannot be played, so
                 // the library must not offer to start a game with it.

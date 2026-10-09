@@ -77,7 +77,9 @@ class InterrogationAskTest extends TestCase
         );
 
         $response->assertOk()->assertJson(['closed' => true]);
-        $this->assertNotNull($response->json('original_testimony_html'));
+        // The reward for finishing is the ficha, never the source file.
+        $this->assertNotNull($response->json('ficha.profile'));
+        $this->assertArrayNotHasKey('original_testimony_html', $response->json());
 
         $this->assertTrue($session->fresh()->isClosed());
     }

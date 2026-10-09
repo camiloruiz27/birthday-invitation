@@ -215,16 +215,21 @@ function CostEstimate({ credits, questions, interrogation, endingType }) {
     );
 }
 
-export default function NewGameForm({ library, credits = null }) {
+export default function NewGameForm({ library, credits = null, initialCase = null }) {
     const [players, setPlayers] = useState(() => Array.from({ length: 6 }, emptyPlayer));
 
     // Start on a case that still has room, so the form does not open already
     // blocked when only one of several cases is full.
     const firstWithRoom = library.find((item) => !item.quota.full) || library[0];
 
+    // The case the Game Master clicked "Crear partida" on, when it still has
+    // room. Without this the form opened on the first case in the list, and
+    // it was easy not to notice it was not the one they had chosen.
+    const preselected = library.find((item) => item.slug === initialCase && !item.quota.full);
+
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        case_slug: firstWithRoom?.slug || '',
+        case_slug: (preselected || firstWithRoom)?.slug || '',
         mode: 'gm_led',
         ending_type: 'classic',
         interrogation_enabled: true,

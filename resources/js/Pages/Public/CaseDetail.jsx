@@ -33,7 +33,10 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, g
 
             <div className="mt-6">
                 {owned ? (
-                    <Button href={route('dashboard')} fullWidth>
+                    <Button
+                        href={route('immersion.gm.games.create', { case: mysteryCase.slug })}
+                        fullWidth
+                    >
                         Crear una partida
                     </Button>
                 ) : !auth?.user ? (

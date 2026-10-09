@@ -31,7 +31,7 @@ class SolutionController extends Controller
 
         return Inertia::render('Player/Solution', [
             'player' => $player->revealCredentials(),
-            'game' => $game,
+            'game' => $game->forPlayerView(),
             'solution' => $case->solution(),
 
             // Only names cross between players here, as everywhere else.

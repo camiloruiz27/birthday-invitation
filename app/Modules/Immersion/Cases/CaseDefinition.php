@@ -174,6 +174,92 @@ class CaseDefinition
     }
 
     /**
+     * The same roster as suspects(), cut down to what a PLAYER's browser may
+     * hold: name, role, relation and photo. `motive`, `alibi` and `file` are
+     * author/AI material (the file IS the persona's prompt), so they never go
+     * into a player's page props — anything that is not listed here stays out
+     * by default.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function suspectsForPlayer(): array
+    {
+        return array_map(
+            fn (array $suspect) => $this->playerView($suspect),
+            $this->suspects()
+        );
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function suspectForPlayer(string $slug): ?array
+    {
+        $suspect = $this->suspect($slug);
+
+        return $suspect ? $this->playerView($suspect) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $suspect
+     * @return array<string, mixed>
+     */
+    private function playerView(array $suspect): array
+    {
+        return [
+            'name' => $suspect['name'],
+            'role' => $suspect['role'],
+            'connection' => $suspect['connection'],
+            'photo_url' => $suspect['photo_url'],
+        ];
+    }
+
+    /**
+     * The player-facing "ficha" of a person, shown once their interrogation is
+     * over. It is an allowlist read from the manifest's `public` block — never
+     * a rendering of the suspect's .md, which holds the persona's secrets.
+     * Anything not listed is dropped, and a person without a block falls back
+     * to the single relation line, so a missing entry fails closed.
+     *
+     * @return array{age: ?string, profile: ?string, alibi: ?string, facts: string[]}|null
+     */
+    public function ficha(string $slug): ?array
+    {
+        $entry = $this->manifest['suspects'][$slug] ?? null;
+
+        if (! is_array($entry)) {
+            return null;
+        }
+
+        $public = (array) ($entry['public'] ?? []);
+
+        $ficha = [
+            'age' => $this->plainString($public['age'] ?? null),
+            'profile' => $this->plainString($public['profile'] ?? null),
+            'alibi' => $this->plainString($public['alibi'] ?? null),
+            'facts' => array_values(array_filter(array_map(
+                fn ($fact) => $this->plainString($fact),
+                (array) ($public['facts'] ?? [])
+            ))),
+        ];
+
+        if ($ficha['profile'] === null && $ficha['facts'] === []) {
+            $ficha['profile'] = $this->plainString($entry['connection'] ?? null);
+        }
+
+        return $ficha;
+    }
+
+    private function plainString(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        return trim($value);
+    }
+
+    /**
      * People a player is allowed to accuse.
      *
      * Everyone on the board by default — the witness included, since a case

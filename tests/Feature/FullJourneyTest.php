@@ -202,9 +202,37 @@ class FullJourneyTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Player/Inbox')->has('items', 1));
 
+        // The interrogations are part of this game but not open yet: the
+        // envelope that introduces the people has not come out. Nobody meets
+        // a suspect before they know anything about them.
         $this->get(route('immersion.player.interrogation.index', $token))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->has('suspects', 9));
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('locked', true)
+                ->has('suspects', 0));
+
+        $this->get(route('immersion.player.interrogation.show', [$token, 'elizabeth-foster']))
+            ->assertForbidden();
+
+        $this->postJson(
+            route('immersion.player.interrogation.ask', [$token, 'elizabeth-foster']),
+            ['question' => 'Demasiado pronto']
+        )->assertForbidden();
+
+        // The Game Master sends events until the one that opens them.
+        $this->actingAs($gameMaster);
+        $opener = $game->timelineEvents()->where('cta_interrogation', true)->firstOrFail();
+        while (! $opener->fresh()->sent_at) {
+            $this->post(route('immersion.gm.game.force-next', $game))->assertRedirect();
+        }
+        $this->post(route('logout'))->assertRedirect(route('home'));
+        $this->assertGuest();
+
+        $this->get(route('immersion.player.interrogation.index', $token))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('locked', false)
+                ->has('suspects', 9));
 
         $this->get(route('immersion.player.interrogation.show', [$token, 'elizabeth-foster']))
             ->assertOk();
