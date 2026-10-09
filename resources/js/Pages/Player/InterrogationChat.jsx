@@ -3,7 +3,7 @@ import { Head, router } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
 import Alert from '../../components/ui/Alert';
 import Badge from '../../components/ui/Badge';
-import CaseDocument from '../../components/player/CaseDocument';
+import SuspectFicha from '../../components/player/SuspectFicha';
 import ChatMessage from '../../components/player/ChatMessage';
 import ChatComposer from '../../components/player/ChatComposer';
 import axios from '../../lib/axios';
@@ -17,14 +17,14 @@ export default function InterrogationChat({
     slug,
     suspect,
     session,
-    originalTestimonyHtml,
+    ficha: initialFicha,
     lockedBy,
 }) {
     const [messages, setMessages] = useState(session.messages);
     const [closed, setClosed] = useState(session.closed_at !== null);
     const [questionsUsed, setQuestionsUsed] = useState(session.questions_used);
     const [maxQuestions, setMaxQuestions] = useState(session.max_questions);
-    const [testimonyHtml, setTestimonyHtml] = useState(originalTestimonyHtml);
+    const [ficha, setFicha] = useState(initialFicha);
     const [sending, setSending] = useState(false);
     const [lastQuestion, setLastQuestion] = useState(null);
     const [raceLockedBy, setRaceLockedBy] = useState(null);
@@ -77,7 +77,7 @@ export default function InterrogationChat({
             setQuestionsUsed(data.questions_used);
             setMaxQuestions(data.max_questions);
             setClosed(data.closed);
-            if (data.original_testimony_html) setTestimonyHtml(data.original_testimony_html);
+            if (data.ficha) setFicha(data.ficha);
             setLastQuestion(null);
         } catch (error) {
             if (error.response?.data?.locked) {
@@ -225,8 +225,8 @@ export default function InterrogationChat({
 
             {readOnly &&
                 (outOfCredits && !closed && !effectiveLockedBy ? (
-                    /* Out of AI capacity, not out of questions: the official
-                       statement is not unlocked, so it must not be shown. */
+                    /* Out of AI capacity, not out of questions: the ficha is
+                       not unlocked, so it must not be shown. */
                     <Alert variant="warning" className="mt-5 mb-0">
                         Esta partida se quedó sin créditos de inteligencia artificial, así que{' '}
                         {suspect.name} no puede seguir respondiendo. Avísale al Game Master. Tus
@@ -236,19 +236,11 @@ export default function InterrogationChat({
                     <div className="mt-5">
                         <Alert variant="info">
                             {effectiveLockedBy
-                                ? `${suspect.name} ya fue interrogado por ${effectiveLockedBy}. Arriba tienes lo que se preguntó, y aquí abajo su declaración oficial.`
-                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Aquí abajo tienes su declaración oficial completa.`}
+                                ? `${suspect.name} ya está siendo interrogado por ${effectiveLockedBy}. Arriba tienes lo que se ha preguntado; su ficha aparece cuando termine ese interrogatorio.`
+                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Aquí abajo tienes su ficha.`}
                         </Alert>
 
-                        <p className="case-stamp mb-3 text-[10px] text-accent">
-                            Declaración oficial
-                        </p>
-
-                        <CaseDocument
-                            html={testimonyHtml || ''}
-                            id={`declaracion-${slug}`}
-                            headingLevel={3}
-                        />
+                        <SuspectFicha suspect={suspect} ficha={ficha} />
                     </div>
                 ))}
         </PlayerLayout>

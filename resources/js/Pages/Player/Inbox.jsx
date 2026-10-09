@@ -55,7 +55,7 @@ function readEnvelopes(gameId) {
 export default function Inbox({ player, game, items, case: mysteryCase }) {
     // New envelopes arrive on the server's clock, so the inbox refreshes
     // itself while the player is reading.
-    usePoll(['items'], { interval: 15000 });
+    usePoll(['items', 'game'], { interval: 15000 });
 
     const openId = useOpenEnvelope();
     const selected = items.find((item) => item.event.id === openId) ?? null;
@@ -121,12 +121,14 @@ export default function Inbox({ player, game, items, case: mysteryCase }) {
             <Head title={`Bandeja de ${player.name}`} />
 
             {items.length === 0 ? (
-                <EmptyState
-                    title="Sin mensajes todavía"
-                    description="El expediente llegará por partes a medida que avance la investigación. Deja esta página abierta: se actualiza sola."
-                />
+                <div data-tour="inbox-main">
+                    <EmptyState
+                        title="Sin mensajes todavía"
+                        description="El expediente llegará por partes a medida que avance la investigación. Deja esta página abierta: se actualiza sola."
+                    />
+                </div>
             ) : (
-                <div className="lg:grid lg:grid-cols-[20rem_1fr] lg:items-start lg:gap-8">
+                <div data-tour="inbox-main" className="lg:grid lg:grid-cols-[20rem_1fr] lg:items-start lg:gap-8">
                     {/* On a phone the list and the envelope take turns; from
                         lg they sit side by side like a mail client. */}
                     <div className={selected ? 'hidden lg:block' : ''}>

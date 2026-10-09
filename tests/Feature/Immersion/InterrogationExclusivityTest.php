@@ -57,7 +57,7 @@ class InterrogationExclusivityTest extends TestCase
         $this->assertSame(1, InterrogationSession::where('suspect_slug', 'elizabeth-foster')->count());
     }
 
-    public function test_second_player_sees_readonly_chat_and_official_testimony(): void
+    public function test_second_player_sees_the_readonly_chat_but_not_the_ficha_until_it_ends(): void
     {
         Http::fake(['*' => Http::response(['reply' => 'No fui yo.'], 200)]);
 
@@ -68,16 +68,26 @@ class InterrogationExclusivityTest extends TestCase
             ['question' => 'Donde estabas?']
         )->assertOk();
 
-        // Solo 1 pregunta usada (de 5) - el testimonio se revela igual porque
-        // el jugador B esta bloqueado, no porque la sesion se haya cerrado.
+        // Solo 1 pregunta usada (de 5): el interrogatorio sigue abierto, asi
+        // que la ficha aun no se muestra a nadie.
         $this->get(route('immersion.player.interrogation.show', [$playerB->access_token, 'elizabeth-foster']))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Player/InterrogationChat')
                 ->where('lockedBy', 'Jugador A')
                 ->has('session.messages', 2)
-                ->whereNot('originalTestimonyHtml', null)
+                ->where('ficha', null)
             );
+
+        // Once the interrogation is over, everyone at the table gets it.
+        InterrogationSession::where('suspect_slug', 'elizabeth-foster')
+            ->update(['closed_at' => now()]);
+
+        $this->get(route('immersion.player.interrogation.show', [$playerB->access_token, 'elizabeth-foster']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('lockedBy', 'Jugador A')
+                ->has('ficha.profile'));
     }
 
     public function test_first_player_can_keep_asking_their_own_claimed_session(): void

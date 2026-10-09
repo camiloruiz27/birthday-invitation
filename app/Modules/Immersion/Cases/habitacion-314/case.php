@@ -127,6 +127,16 @@ return [
             'connection' => 'Socio senior, antiguo mentor profesional de Marina',
             'motive' => 'Evitar ser expuesto al día siguiente por un fraude de comisiones encubiertas',
             'alibi' => 'Reapareció tranquilo en la recepción de la convención hacia las 21:50',
+            'public' => [
+                'age' => '52 años',
+                'profile' => 'Socio senior de Vantor Consulting y antiguo mentor profesional de Marina, a quien conoce desde que ella empezaba en la firma.',
+                'alibi' => 'Dice que pasó a saludar a Marina a su habitación un momento y que se fue enseguida.',
+                'facts' => [
+                    'Reconoce haber estado en la habitación de Marina esa noche.',
+                    'Es de los socios con más antigüedad y peso en la convención anual de Vantor.',
+                    'Marina iba a presentar al día siguiente un plan de reestructuración de la firma.',
+                ],
+            ],
         ],
         'daniel-prieto' => [
             'name' => 'Daniel Prieto',
@@ -136,6 +146,16 @@ return [
             'connection' => 'Codirector, rival profesional de Marina',
             'motive' => 'Tensión por la reestructuración y una discusión pública esa tarde (aparente)',
             'alibi' => 'En el bar del hotel junto a Sofía Reguera durante la ventana crítica, confirmado por CCTV',
+            'public' => [
+                'age' => '48 años',
+                'profile' => 'Codirector de Vantor Consulting y rival profesional de Marina: ambos compiten por posiciones de liderazgo dentro de la firma.',
+                'alibi' => 'Dice haber estado en el bar del hotel, tomando algo, entre las nueve y las diez de la noche.',
+                'facts' => [
+                    'Tuvo una discusión pública con Marina esa misma tarde.',
+                    'La reestructuración que Marina iba a presentar también podría afectar su posición.',
+                    'Asiste a la convención anual como parte de la dirección de Vantor.',
+                ],
+            ],
         ],
         'sofia-reguera' => [
             'name' => 'Sofía Reguera',
@@ -145,6 +165,16 @@ return [
             'connection' => 'Directora de otra región, competidora por una nueva posición global',
             'motive' => 'Eliminar competencia por un ascenso (aparente)',
             'alibi' => 'En el bar del hotel junto a Daniel Prieto durante la ventana crítica, mismo CCTV',
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Directora de otra región de Vantor y colega de Marina. Compite por una nueva posición global que se anunciaría durante la convención.',
+                'alibi' => 'Dice haber estado en el bar del hotel durante esa franja de la noche.',
+                'facts' => [
+                    'Marina y ella competían por la misma posición global.',
+                    'Se considera bien posicionada para el ascenso.',
+                    'Asiste a la convención anual como directora de otra región.',
+                ],
+            ],
         ],
         'lucia-ferrer' => [
             'name' => 'Lucía Ferrer',
@@ -154,6 +184,16 @@ return [
             'connection' => 'Asistente y protegida de Marina desde hace tres años',
             'motive' => 'Ninguno homicida; irregularidades menores en sus propios reportes de gastos',
             'alibi' => 'En su propia habitación, confirmado por el registro de actividad de su portátil',
+            'public' => [
+                'age' => '36 años',
+                'profile' => 'Asistente directa de Marina desde hace tres años y su protegida; la relación entre ambas era cercana y de confianza.',
+                'alibi' => 'Dice haber estado en su habitación, contigua a la de Marina, trabajando en las diapositivas de la presentación hasta pasada la medianoche.',
+                'facts' => [
+                    'Fue quien pidió a recepción abrir la 314 y encontró el cuerpo.',
+                    'Tenía acceso a la agenda y a los movimientos de Marina durante la convención.',
+                    'Su habitación estaba junto a la de Marina.',
+                ],
+            ],
         ],
         'hugo-valle' => [
             'name' => 'Hugo Valle',
@@ -163,6 +203,16 @@ return [
             'connection' => 'Exmarido de Marina, representante de un proveedor asistente a la convención',
             'motive' => 'Historial de divorcio conflictivo (aparente)',
             'alibi' => 'En videollamada con su hija durante la ventana crítica, confirmado por registro de red',
+            'public' => [
+                'age' => '44 años',
+                'profile' => 'Exmarido de Marina y representante de un proveedor que asiste a la convención. Se divorciaron hace varios años.',
+                'alibi' => 'Dice haber estado en su habitación, en una videollamada con su hija sobre la boda de ella.',
+                'facts' => [
+                    'Su divorcio con Marina fue conflictivo, con disputas por pensión y bienes compartidos.',
+                    'Marina y él tienen una hija en común.',
+                    'No trabaja en Vantor: asiste como invitado de un proveedor.',
+                ],
+            ],
         ],
         'carlos-mena' => [
             'name' => 'Carlos Mena',
@@ -172,6 +222,14 @@ return [
             'connection' => 'Conserje de turno nocturno del Hotel Alcázar',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '50 años',
+                'profile' => 'Conserje de turno nocturno del Hotel Alcázar, sin relación directa con Marina.',
+                'facts' => [
+                    'Estuvo de turno la noche en que Marina murió.',
+                    'Es personal del hotel y no figura entre los sospechosos.',
+                ],
+            ],
             'accusable' => false,
         ],
         'paola-diaz' => [
@@ -182,6 +240,14 @@ return [
             'connection' => 'Camarera de servicio a la habitación',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '27 años',
+                'profile' => 'Camarera del servicio a la habitación del Hotel Alcázar, sin relación directa con Marina.',
+                'facts' => [
+                    'Entregó el pedido de la 314 a las 22:40.',
+                    'La bandeja quedó en la puerta, sin contacto directo, con el cartel de "no molestar" colgado del picaporte.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-hotel' => [
@@ -196,6 +262,13 @@ return [
             'connection' => 'Registros objetivos del hotel (cerradura, ascensores, pedidos)',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Registro automático del hotel: cerradura de las habitaciones, movimientos de ascensor y pedidos de servicio a la habitación.',
+                'facts' => [
+                    'Sus registros son objetivos y no dependen de ningún testimonio.',
+                    'No indica quién estaba físicamente presente en cada momento.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

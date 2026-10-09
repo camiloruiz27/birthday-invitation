@@ -31,7 +31,25 @@ class InterrogationController extends Controller
 
     public function index(Player $player): Response
     {
-        abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
+        // Not part of this game at all: nothing to show.
+        abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio no está habilitado para esta partida.');
+
+        $case = $player->game->caseDefinition();
+
+        // Part of the game but not open yet. A page that says so beats a bare
+        // 403 for someone who follows a link early, and no suspect is sent:
+        // meeting them is exactly what the envelope that opens this is for.
+        if (! $player->game->interrogationsOpen()) {
+            return Inertia::render('Player/InterrogationIndex', [
+                'player' => $player->revealCredentials(),
+                'game' => $player->game->forPlayerView(),
+                'locked' => true,
+                'suspects' => (object) [],
+                'victim' => $case->victim(),
+                'sessions' => (object) [],
+                'maxQuestions' => $case->interrogationQuestions(),
+            ]);
+        }
 
         // Only the claiming player's NAME is shown to the others, so the
         // related player is serialized with its credentials still hidden.
@@ -40,12 +58,11 @@ class InterrogationController extends Controller
             ->get()
             ->keyBy('suspect_slug');
 
-        $case = $player->game->caseDefinition();
-
         return Inertia::render('Player/InterrogationIndex', [
             'player' => $player->revealCredentials(),
-            'game' => $player->game,
-            'suspects' => $case->suspects(),
+            'game' => $player->game->forPlayerView(),
+            'locked' => false,
+            'suspects' => $case->suspectsForPlayer(),
             'victim' => $case->victim(),
             'sessions' => $sessions,
             'maxQuestions' => $case->interrogationQuestions(),
@@ -54,10 +71,10 @@ class InterrogationController extends Controller
 
     public function show(Player $player, string $slug): Response
     {
-        abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
+        abort_unless($player->game->interrogationsOpen(), 403, 'El interrogatorio todavía no está habilitado para esta partida.');
 
         $case = $player->game->caseDefinition();
-        $suspect = $case->suspect($slug);
+        $suspect = $case->suspectForPlayer($slug);
         abort_if(! $suspect, 404);
 
         $session = InterrogationSession::where('game_id', $player->game_id)
@@ -66,18 +83,18 @@ class InterrogationController extends Controller
             ->first();
 
         $lockedBy = null;
-        $revealTestimony = false;
 
         if ($session && ! $session->isOwnedBy($player)) {
             $lockedBy = $session->player->name;
-            $revealTestimony = true;
-        } elseif ($session) {
-            $revealTestimony = $session->isClosed();
         }
+
+        // The ficha is the reward for finishing an interrogation, for the
+        // player who ran it and for everyone else once it is over.
+        $revealTestimony = $session?->isClosed() ?? false;
 
         return Inertia::render('Player/InterrogationChat', [
             'player' => $player->revealCredentials(),
-            'game' => $player->game,
+            'game' => $player->game->forPlayerView(),
             'slug' => $slug,
             'suspect' => $suspect,
             'session' => $session ?? [
@@ -89,15 +106,13 @@ class InterrogationController extends Controller
                 'messages' => [],
             ],
             'lockedBy' => $lockedBy,
-            'originalTestimonyHtml' => $revealTestimony
-                ? $case->content()->renderFile($suspect['file'])
-                : null,
+            'ficha' => $revealTestimony ? $case->ficha($slug) : null,
         ]);
     }
 
     public function ask(Request $request, Player $player, string $slug): JsonResponse
     {
-        abort_unless($player->game->interrogation_enabled, 403, 'El interrogatorio todavia no esta habilitado para esta partida.');
+        abort_unless($player->game->interrogationsOpen(), 403, 'El interrogatorio todavía no está habilitado para esta partida.');
 
         $case = $player->game->caseDefinition();
         $suspect = $case->suspect($slug);
@@ -227,9 +242,7 @@ class InterrogationController extends Controller
             'questions_remaining' => $session->questionsRemaining(),
             'max_questions' => $session->max_questions,
             'closed' => $session->isClosed(),
-            'original_testimony_html' => $session->isClosed()
-                ? $case->content()->renderFile($suspect['file'])
-                : null,
+            'ficha' => $session->isClosed() ? $case->ficha($slug) : null,
         ]);
     }
 
@@ -266,7 +279,7 @@ class InterrogationController extends Controller
             'questions_remaining' => $session->questionsRemaining(),
             'max_questions' => $session->max_questions,
             'closed' => $session->isClosed(),
-            'original_testimony_html' => null,
+            'ficha' => null,
             'ai_degraded' => true,
         ]);
     }

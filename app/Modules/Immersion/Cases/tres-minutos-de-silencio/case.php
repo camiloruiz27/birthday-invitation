@@ -128,6 +128,15 @@ return [
             'connection' => 'Director de operaciones, superior jerárquico de Martina',
             'motive' => 'El informe de auditoría de Martina documenta aforos excesivos y salidas de emergencia bloqueadas que él aprobó',
             'alibi' => 'Dice haber coordinado la respuesta de emergencia desde el punto de control todo el tiempo',
+            'public' => [
+                'age' => '46 años',
+                'profile' => 'Director de operaciones del Centro Cultural Meridiano y superior jerárquico directo de Martina. Supervisa toda la gestión del evento.',
+                'alibi' => 'Dice haber coordinado la respuesta de emergencia desde el punto de control todo el tiempo.',
+                'facts' => [
+                    'Coordinar la respuesta ante un corte de energía forma parte de su función.',
+                    'Aprueba las condiciones operativas del recinto para cada evento.',
+                ],
+            ],
         ],
         'ignacio-farias' => [
             'name' => 'Ignacio Farías',
@@ -137,6 +146,15 @@ return [
             'connection' => 'Jefe de mantenimiento del recinto',
             'motive' => 'Conectó equipo de iluminación adicional sin verificar la capacidad del circuito (falta real, sin relación con la muerte)',
             'alibi' => 'En la sala de control técnico durante todo el apagón, confirmable por su equipo',
+            'public' => [
+                'age' => '50 años',
+                'profile' => 'Jefe de mantenimiento y responsable técnico general del recinto. Orgulloso de su experiencia y a la defensiva cuando se cuestiona su trabajo.',
+                'alibi' => 'Dice haber estado en la sala de control técnico intentando restablecer el sistema durante todo el apagón.',
+                'facts' => [
+                    'Es responsable del circuito eléctrico del recinto, donde se originó el corte.',
+                    'No tenía relación personal con Martina.',
+                ],
+            ],
         ],
         'paola-irigoyen' => [
             'name' => 'Paola Irigoyen',
@@ -146,6 +164,15 @@ return [
             'connection' => 'Jefa de seguridad del recinto',
             'motive' => 'Desactivó sensores por un favor personal y editó después el registro (falta real, sin relación con la muerte)',
             'alibi' => 'Registro de acceso a la propia central de seguridad durante toda la ventana crítica',
+            'public' => [
+                'age' => '37 años',
+                'profile' => 'Jefa de seguridad del recinto. Controlada y muy atenta a los detalles técnicos; colega de Martina en la cadena operativa.',
+                'alibi' => 'Dice haber estado en la central de seguridad intentando diagnosticar el apagón.',
+                'facts' => [
+                    'Controla las cámaras, los sensores y los accesos del recinto.',
+                    'Su central depende de las cámaras y comunicaciones que cayeron durante el apagón.',
+                ],
+            ],
         ],
         'camila-estevez' => [
             'name' => 'Camila Estévez',
@@ -155,6 +182,15 @@ return [
             'connection' => 'Productora externa del evento',
             'motive' => 'Solicitó el equipo adicional que causó la sobrecarga (aparente); infla facturas de proveedores (real, sin relación)',
             'alibi' => 'En la sala principal con decenas de invitados durante todo el apagón',
+            'public' => [
+                'age' => '33 años',
+                'profile' => 'Productora externa del evento. Colega de Martina en la organización de la gala; algo ansiosa cuando se habla de presupuesto.',
+                'alibi' => 'Dice haber estado en la sala principal, con decenas de invitados, durante todo el apagón.',
+                'facts' => [
+                    'Gestiona proveedores y presupuesto del evento sin pertenecer a la plantilla del recinto.',
+                    'Tomó decisiones de última hora sobre el montaje de la gala.',
+                ],
+            ],
         ],
         'bruno-castro' => [
             'name' => 'Bruno Castro',
@@ -164,6 +200,15 @@ return [
             'connection' => 'Patrocinador principal, invitado VIP',
             'motive' => 'Usó una ruta discreta facilitada por Paola durante el apagón (aparente); encuentro extramatrimonial (real, sin relación)',
             'alibi' => 'En una sala privada distinta a la zona restringida, aclarable por Paola',
+            'public' => [
+                'age' => '41 años',
+                'profile' => 'Patrocinador principal del evento e invitado de honor de la gala. Encantador en el trato, reservado en lo personal.',
+                'alibi' => 'Dice no haberse acercado a la zona restringida durante el apagón.',
+                'facts' => [
+                    'Su patrocinio pesa de forma importante en las finanzas del evento.',
+                    'Como invitado VIP recibía atención especial por parte de la organización.',
+                ],
+            ],
         ],
         'lucia-font' => [
             'name' => 'Lucía Font',
@@ -173,6 +218,15 @@ return [
             'connection' => 'Asistente directa de Martina; encontró el cuerpo',
             'motive' => 'Acceso privilegiado a la agenda de Martina (aparente); distraída con una crisis familiar personal (real, sin relación)',
             'alibi' => 'Mensajes personales con marca de hora durante toda la ventana crítica',
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Asistente directa y de confianza de Martina. Fue quien encontró el cuerpo durante el recorrido de seguridad posterior al corte.',
+                'alibi' => 'Dice haber estado lejos de la zona restringida durante el apagón.',
+                'facts' => [
+                    'Tenía acceso a la agenda y a los movimientos de Martina.',
+                    'Su relación con Martina era de cercanía y confianza.',
+                ],
+            ],
         ],
         'elena-marti' => [
             'name' => 'Elena Martí',
@@ -182,6 +236,14 @@ return [
             'connection' => 'Azafata de sala',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '52 años',
+                'profile' => 'Azafata de sala. Atendía a los invitados en el salón principal durante la gala.',
+                'facts' => [
+                    'Sin relación directa con Martina más allá del trabajo del evento.',
+                    'Estaba trabajando en la sala cuando se produjo el corte de energía.',
+                ],
+            ],
             'accusable' => false,
         ],
         'tomas-quiroga' => [
@@ -192,6 +254,14 @@ return [
             'connection' => 'Técnico de sonido',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '34 años',
+                'profile' => 'Técnico de sonido de la gala. Colaborador y algo inseguro por no haber visto nada en la oscuridad.',
+                'facts' => [
+                    'Sin relación directa con Martina más allá del trabajo del evento.',
+                    'Trabajaba en las áreas técnicas del recinto cuando se produjo el corte.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-seguridad' => [
@@ -204,6 +274,13 @@ return [
             'connection' => 'Registros objetivos del recinto (energía, puertas, sensores)',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Central de seguridad y sistema de control del recinto. Registra de forma objetiva la energía, el estado de las puertas y los sensores.',
+                'facts' => [
+                    'Registra el corte de energía de 21:52 a 21:55, tres minutos exactos.',
+                    'No identifica personas en zonas sin cobertura: solo entrega registros.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

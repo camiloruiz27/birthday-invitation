@@ -127,6 +127,15 @@ return [
             'connection' => 'Jefe de tren',
             'motive' => 'El informe de Celia lo implica en la falsificación de registros de mantenimiento',
             'alibi' => 'Dice haber hecho la ronda de rutina hasta las once; su coartada depende de la pantalla que él mismo alteró',
+            'public' => [
+                'age' => '48 años',
+                'profile' => 'Jefe de tren del Expreso Nocturno Meridian: supervisa toda la operación del trayecto. Registró a Celia al revisar billetes al inicio del viaje.',
+                'alibi' => 'Dice haber hecho su ronda de rutina hasta cerca de las once, sin nada fuera de lo normal.',
+                'facts' => [
+                    'Tiene acceso a todos los vagones, incluido el de servicio.',
+                    'No tenía relación previa con Celia.',
+                ],
+            ],
         ],
         'rebeca-duarte' => [
             'name' => 'Rebeca Duarte',
@@ -136,6 +145,15 @@ return [
             'connection' => 'Pasajera, excolega de Celia',
             'motive' => 'Conversación tensa poco antes de la desaparición (aparente)',
             'alibi' => 'Encuentro con Celia a las 22:40, antes del reinicio; permaneció después en su asiento, visible para otros pasajeros',
+            'public' => [
+                'age' => '41 años',
+                'profile' => 'Pasajera del Expreso y excompañera de Celia en una auditoría anterior.',
+                'alibi' => 'Dice haber hablado con Celia a las 22:40 y haber vuelto después a su asiento.',
+                'facts' => [
+                    'Conversó con Celia esa noche, poco antes de que se notara su ausencia.',
+                    'Su relación con Celia era tensa, aunque profesional.',
+                ],
+            ],
         ],
         'mateo-figueroa' => [
             'name' => 'Mateo Figueroa',
@@ -145,6 +163,15 @@ return [
             'connection' => 'Pasajero nervioso',
             'motive' => 'Comportamiento nervioso y cercanía al compartimento de Celia (aparente)',
             'alibi' => 'En el vagón bar la mayor parte de la noche, confirmable por Hugo',
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Pasajero que viaja solo y sin relación conocida con Celia.',
+                'alibi' => 'Dice haber pasado la mayor parte de la noche en el vagón bar.',
+                'facts' => [
+                    'Otros pasajeros notaron su comportamiento nervioso durante el viaje.',
+                    'Viaja en un vagón próximo al de Celia.',
+                ],
+            ],
         ],
         'hugo-pastor' => [
             'name' => 'Hugo Pastor',
@@ -154,6 +181,15 @@ return [
             'connection' => 'Camarero del vagón restaurante',
             'motive' => 'Acceso a pasillos y carros de servicio toda la noche (aparente)',
             'alibi' => 'Una vez corregido su testimonio (pantalla → hora real), su ubicación no coincide con el vagón de servicio',
+            'public' => [
+                'age' => '37 años',
+                'profile' => 'Camarero del vagón restaurante del Expreso. Atendió a Celia durante la cena, al inicio del viaje.',
+                'alibi' => 'Dice haber estado trabajando en el servicio nocturno del vagón restaurante.',
+                'facts' => [
+                    'Por su trabajo circula por pasillos y carros de servicio durante toda la noche.',
+                    'Su turno incluye la cena y el servicio nocturno.',
+                ],
+            ],
         ],
         'ines-roman' => [
             'name' => 'Inés Román',
@@ -163,6 +199,15 @@ return [
             'connection' => 'Amiga de Celia',
             'motive' => 'Discusión previa al viaje (aparente)',
             'alibi' => 'En su propio asiento, varios vagones más allá, confirmada por otros pasajeros',
+            'public' => [
+                'age' => '35 años',
+                'profile' => 'Amiga cercana de Celia. Viajaban en el mismo tren, pero en vagones distintos por disponibilidad de billetes.',
+                'alibi' => 'Dice haber estado en su propio asiento, varios vagones más allá del de Celia.',
+                'facts' => [
+                    'Tuvo una discusión con Celia antes del viaje.',
+                    'Es de las personas más cercanas a Celia a bordo.',
+                ],
+            ],
         ],
         'daniel-cortez' => [
             'name' => 'Daniel Cortez',
@@ -172,6 +217,15 @@ return [
             'connection' => 'Supervisor de Celia',
             'motive' => 'El informe también podría afectar su propia gestión (aparente)',
             'alibi' => 'En su compartimento trabajando; registro de puertas sin accesos irregulares',
+            'public' => [
+                'age' => '44 años',
+                'profile' => 'Supervisor de Celia en la firma auditora; viaja en el mismo tren que ella.',
+                'alibi' => 'Dice haber estado en su compartimento, trabajando en otros documentos.',
+                'facts' => [
+                    'Es el responsable directo de la auditoría que Celia llevaba a entregar.',
+                    'El informe de Celia podría afectar también a su propia gestión.',
+                ],
+            ],
         ],
         'olga-ventura' => [
             'name' => 'Olga Ventura',
@@ -181,6 +235,14 @@ return [
             'connection' => 'Pasajera, compartimento contiguo al de Celia',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '58 años',
+                'profile' => 'Pasajera del compartimento contiguo al de Celia, sin relación previa con ella.',
+                'facts' => [
+                    'Dice haber oído voces alteradas a través de la pared esa noche.',
+                    'Es testigo, no figura entre los sospechosos.',
+                ],
+            ],
             'accusable' => false,
         ],
         'lucas-medina' => [
@@ -191,6 +253,13 @@ return [
             'connection' => 'Auxiliar de tren',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'age' => '26 años',
+                'profile' => 'Auxiliar de tren del Expreso Nocturno Meridian, sin relación directa con Celia.',
+                'facts' => [
+                    'Es personal del tren y no figura entre los sospechosos.',
+                ],
+            ],
             'accusable' => false,
         ],
         'sistema-tren' => [
@@ -204,6 +273,13 @@ return [
             'connection' => 'Registros objetivos del tren (puertas, hitos kilométricos, corrección de desfase)',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Registro objetivo del tren y del centro de control: puertas, hitos kilométricos y avisos operativos.',
+                'facts' => [
+                    'Funciona de forma independiente del sistema de pantallas de los vagones.',
+                    'No registra lo que ocurre dentro de cada vagón.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

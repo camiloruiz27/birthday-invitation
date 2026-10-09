@@ -22,7 +22,7 @@ class AccusationController extends Controller
 
         return Inertia::render('Player/Accusation', [
             'player' => $player->revealCredentials(),
-            'game' => $game,
+            'game' => $game->forPlayerView(),
             'unlocked' => $game->accusationsUnlocked(),
             'locked' => $game->accusationsLocked(),
 

@@ -119,6 +119,15 @@ return [
             'connection' => 'Comandante de la estación',
             'motive' => 'Tensión por recortes de seguridad',
             'alibi' => 'Módulo de comunicaciones, confirmado parcialmente por Jonas',
+            'public' => [
+                'age' => '50 años',
+                'profile' => 'Comandante de la estación y superior de toda la tripulación; fue quien encontró el cuerpo de Elena.',
+                'alibi' => 'Dice haber estado en el módulo de comunicaciones intentando restablecer el enlace durante buena parte de la noche.',
+                'facts' => [
+                    'Mantenía una relación tensa con Elena por los recortes de seguridad.',
+                    'Encontró el cuerpo de Elena esta madrugada, en el túnel de conexión exterior.',
+                ],
+            ],
         ],
         'marcos-vega' => [
             'name' => 'Marcos Vega',
@@ -128,6 +137,15 @@ return [
             'connection' => 'Técnico de comunicaciones y energía',
             'motive' => 'Fraude de suministros que Elena había descubierto',
             'alibi' => 'Módulo de energía durante el ataque, visto por Raúl',
+            'public' => [
+                'age' => '34 años',
+                'profile' => 'Técnico de comunicaciones y energía de la estación. Compañero de trabajo de Elena, sin vínculo personal estrecho.',
+                'alibi' => 'Dice haber estado en el módulo de energía durante la ventana del ataque.',
+                'facts' => [
+                    'Tiene acceso técnico total a las comunicaciones, justo lo que falló anoche.',
+                    'Se encarga del generador y del mástil de la antena.',
+                ],
+            ],
         ],
         'camila-sosa' => [
             'name' => 'Dra. Camila Sosa',
@@ -137,6 +155,15 @@ return [
             'connection' => 'Bióloga, coautora de Elena',
             'motive' => 'Manipulación de datos bajo presión de Nordkern',
             'alibi' => 'Sola en el módulo científico durante el ataque',
+            'public' => [
+                'age' => '41 años',
+                'profile' => 'Bióloga y coautora de Elena en las publicaciones de metano del permafrost. Serena y profesional en el trato.',
+                'alibi' => 'Dice haber estado en el laboratorio del módulo científico, revisando archivos.',
+                'facts' => [
+                    'Era la coautora más cercana de Elena en el proyecto científico.',
+                    'Los resultados que se reportan a la financiadora pasan por su trabajo.',
+                ],
+            ],
         ],
         'hugo-prieto' => [
             'name' => 'Dr. Hugo Prieto',
@@ -146,6 +173,15 @@ return [
             'connection' => 'Médico de la estación',
             'motive' => 'Ninguno',
             'alibi' => 'Enfermería, confirmada por Sofía',
+            'public' => [
+                'age' => '58 años',
+                'profile' => 'Médico de la estación. Mantenía una relación profesional respetuosa con Elena.',
+                'alibi' => 'Dice haber estado en la enfermería durante la tarde y la noche.',
+                'facts' => [
+                    'Examinó el cuerpo de Elena antes de que la escena se alterara.',
+                    'Su propio hallazgo forense lo pone, sin querer, bajo sospecha.',
+                ],
+            ],
         ],
         'tatiana-kovac' => [
             'name' => 'Tatiana Kovac',
@@ -155,6 +191,15 @@ return [
             'connection' => 'Subordinada de Elena, ingeniera de perforación',
             'motive' => 'Años de crédito profesional robado',
             'alibi' => 'Túnel de conexión (parcialmente cierta, omite el encuentro)',
+            'public' => [
+                'age' => '37 años',
+                'profile' => 'Ingeniera de campo de perforación, subordinada de Elena desde hace años. La más discreta y reservada del grupo.',
+                'alibi' => 'Dice haber estado guardando equipo en el módulo de perforación, como cada noche antes de dormir.',
+                'facts' => [
+                    'Trabaja en el módulo de perforación, donde se guarda el equipo de extracción de núcleos.',
+                    'Lleva años bajo las órdenes de Elena en el trabajo de campo.',
+                ],
+            ],
         ],
         'diego-almada' => [
             'name' => 'Diego Almada',
@@ -164,6 +209,15 @@ return [
             'connection' => 'Representante corporativo de Nordkern Energy',
             'motive' => 'Aparente (corporativo); real, invertido',
             'alibi' => 'Su habitación, confirmada por Sofía',
+            'public' => [
+                'age' => '45 años',
+                'profile' => 'Representante corporativo de Nordkern Energy, de visita en la estación. Supervisa el proyecto y la renovación de su financiamiento.',
+                'alibi' => 'Dice haber estado en su habitación preparando un informe la mayor parte de la noche.',
+                'facts' => [
+                    'Representa a la corporación que financia el proyecto, con intereses propios en sus resultados.',
+                    'No pertenece a la tripulación habitual: llegó como visitante.',
+                ],
+            ],
         ],
         'sofia-reyes' => [
             'name' => 'Sofía Reyes',
@@ -173,6 +227,14 @@ return [
             'connection' => 'Cocinera, logística interna',
             'motive' => 'Ninguno',
             'alibi' => null,
+            'public' => [
+                'age' => '29 años',
+                'profile' => 'Cocinera y encargada de la logística interna de la estación. Observadora y conversadora.',
+                'facts' => [
+                    'Se movió entre módulos durante la noche llevando comida y bebida.',
+                    'Compañera de estación, sin conflicto conocido con Elena.',
+                ],
+            ],
         ],
         'jonas-weber' => [
             'name' => 'Jonas Weber',
@@ -182,6 +244,14 @@ return [
             'connection' => 'Meteorólogo, técnico ambiental',
             'motive' => 'Ninguno',
             'alibi' => null,
+            'public' => [
+                'age' => '39 años',
+                'profile' => 'Meteorólogo y técnico ambiental. Preciso con los datos del clima y las horas.',
+                'facts' => [
+                    'Pasó la noche en el módulo meteorológico siguiendo la tormenta.',
+                    'Compañero de estación, sin conflicto conocido con Elena.',
+                ],
+            ],
         ],
         'sistema-estacion' => [
             'name' => 'Sistema Automatizado de la Estación',
@@ -194,6 +264,13 @@ return [
             'connection' => 'Registros objetivos de la estación',
             'motive' => null,
             'alibi' => null,
+            'public' => [
+                'profile' => 'Sistema automatizado de la estación. Registra de forma objetiva los accesos por tarjeta, el consumo de energía y las sesiones del servidor.',
+                'facts' => [
+                    'Es un sistema, no una persona: solo entrega registros.',
+                    'El túnel de conexión no tiene lector de tarjeta, solo una puerta mecánica.',
+                ],
+            ],
             'accusable' => false,
         ],
     ],

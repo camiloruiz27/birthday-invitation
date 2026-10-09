@@ -4,6 +4,7 @@ import Tabs from '../ui/Tabs';
 import AudioPlayer from './AudioPlayer';
 import CaseDocument from './CaseDocument';
 import GalleryGrid from './GalleryGrid';
+import useSessionState from '../../hooks/useSessionState';
 import { formatDateTime } from '../../lib/format';
 
 /**
@@ -114,6 +115,11 @@ export function EnvelopeRow({ item, number, active, unread }) {
  */
 export default function InboxItem({ item, playerToken, game }) {
     const { event, body_html: bodyHtml, gallery } = item;
+
+    // Which tab is open is remembered per envelope: closing a photo makes
+    // Inertia remount the page, and without this the reader lands back on
+    // "Documento" with the rest of the photos still to look at.
+    const [tab, setTab] = useSessionState(`case-inbox:${game?.id}:tab:${event.id}`, 'document');
     const isAudio = event.type === 'audio_email';
 
     const galleryFallback =
@@ -152,6 +158,8 @@ export default function InboxItem({ item, playerToken, game }) {
                 {gallery.length > 0 ? (
                     <Tabs
                         label="Contenido del sobre"
+                        active={tab}
+                        onChange={setTab}
                         tabs={[
                             { key: 'document', label: 'Documento', content: document },
                             {
@@ -190,7 +198,7 @@ export default function InboxItem({ item, playerToken, game }) {
             {/* The one event flagged cta_interrogation is by definition the
                 moment the suspects open up. The payload has carried this flag
                 since the beginning and only the email ever used it. */}
-            {event.cta_interrogation && game?.interrogation_enabled && (
+            {event.cta_interrogation && game?.interrogation_open && (
                 <div className="mt-8 rounded-card border border-line bg-surface-raised p-5">
                     <p className="text-sm text-ink">
                         Este sobre abre los interrogatorios. Ya puedes sentarte con las personas
