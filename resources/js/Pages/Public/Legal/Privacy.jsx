@@ -150,7 +150,7 @@ export default function Privacy({ legal }) {
                         <li>
                             Medir el uso del sitio y mejorarlo: de forma básica y anónima, sin
                             cookies, para saber cuántas personas llegan y desde dónde; y con mayor
-                            detalle (tiempo de visita, abandono, grabaciones de uso) únicamente si
+                            detalle (tiempo de visita, abandono, uso) únicamente si
                             usted lo autoriza.
                         </li>
                         <li>

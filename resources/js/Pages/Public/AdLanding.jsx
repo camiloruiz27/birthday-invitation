@@ -39,6 +39,56 @@ const STEPS = [
     },
 ];
 
+/** "20% de descuento", "$10.000 de descuento" or "Caso de regalo". */
+function offerHeadline(offer, currency = 'COP') {
+    if (offer.kind === 'percent') return `${offer.value}% de descuento`;
+    if (offer.kind === 'fixed') return `${formatPrice(offer.value, currency)} de descuento`;
+
+    return 'Caso de regalo';
+}
+
+/**
+ * What the ad promised, said on the page the ad lands on. The discount used to
+ * show up only at the checkout, after signing up: someone who clicked an ad
+ * saying "20% off" saw the full price here and had no way to know. The code is
+ * already remembered (see Attribution) and applies by itself at the end, so
+ * this only has to say so, and say it where the price is.
+ */
+function OfferStrip({ offer, currency, mysteryCase = null }) {
+    const until = offer.expires_at
+        ? new Date(offer.expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
+        : null;
+
+    return (
+        <div className="border-b border-accent bg-accent-dim px-4 py-3 text-center text-sm text-ink">
+            {offer.kind === 'gift' ? (
+                <p>
+                    <strong className="font-semibold">
+                        Tienes {mysteryCase ? 'este caso' : 'un caso'} de regalo
+                    </strong>{' '}
+                    con el código {offer.code}. Crea tu cuenta y actívalo: no se te cobrará nada.
+                </p>
+            ) : (
+                <p>
+                    <strong className="font-semibold">{offerHeadline(offer, currency)}</strong> con el
+                    código {offer.code}. Se aplica solo cuando vayas a pagar.
+                    {until && ` Válido hasta el ${until}.`}
+                </p>
+            )}
+        </div>
+    );
+}
+
+/** The list price, struck through, and what it comes to with the offer. */
+function OfferPrice({ price, finalAmount, currency, className = '' }) {
+    return (
+        <span className={`inline-flex items-baseline gap-2 ${className}`}>
+            <span className="text-base text-ink-subtle line-through">{price}</span>
+            <span>{finalAmount === 0 ? 'Gratis' : formatPrice(finalAmount, currency)}</span>
+        </span>
+    );
+}
+
 function HowItWorks() {
     return (
         <Section kicker="Cómo se juega" title="Tres pasos">
@@ -106,11 +156,13 @@ function StickyBar({ visible, children }) {
     );
 }
 
-function CaseLanding({ mysteryCase, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
+function CaseLanding({ mysteryCase, offer, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
     const heroCta = useRef(null);
     const showBar = useScrolledPast(heroCta);
     const price = formatPrice(mysteryCase.price_amount, mysteryCase.currency);
     const { ad } = mysteryCase;
+    // Only when it really changes the price here; the strip shows either way.
+    const discounted = offer && offer.final_amount !== null && offer.final_amount < mysteryCase.price_amount;
 
     // Tells the ad pixels which case this visitor looked at (a no-op unless
     // they accepted the marketing category). Same event as the case's own
@@ -147,7 +199,17 @@ function CaseLanding({ mysteryCase, owned, canPurchase, canSimulatePurchase, gam
                 <StickyBar visible={showBar}>
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
-                            <p className="text-lg font-semibold leading-tight text-ink">{price}</p>
+                            <p className="text-lg font-semibold leading-tight text-ink">
+                                {discounted ? (
+                                    <OfferPrice
+                                        price={price}
+                                        finalAmount={offer.final_amount}
+                                        currency={mysteryCase.currency}
+                                    />
+                                ) : (
+                                    price
+                                )}
+                            </p>
                             <p className="text-xs text-ink-muted">Pago único</p>
                         </div>
                         <div className="min-w-0 flex-1">
@@ -166,6 +228,8 @@ function CaseLanding({ mysteryCase, owned, canPurchase, canSimulatePurchase, gam
         >
             <Head title={mysteryCase.name} />
 
+            {offer && <OfferStrip offer={offer} currency={mysteryCase.currency} mysteryCase={mysteryCase} />}
+
             {/* First screen: what it is, what it costs, the button. */}
             <header className="border-b border-line">
                 <Container width="wide" className="grid gap-6 py-5 sm:gap-8 sm:py-14 lg:grid-cols-2 lg:items-center lg:gap-12">
@@ -181,7 +245,17 @@ function CaseLanding({ mysteryCase, owned, canPurchase, canSimulatePurchase, gam
                         <CaseFacts mysteryCase={mysteryCase} className="mt-3 sm:mt-5" />
 
                         <div className="mt-3 flex items-baseline gap-3 sm:mt-6">
-                            <span className="text-3xl font-semibold text-ink">{price}</span>
+                            <span className="text-3xl font-semibold text-ink">
+                                {discounted ? (
+                                    <OfferPrice
+                                        price={price}
+                                        finalAmount={offer.final_amount}
+                                        currency={mysteryCase.currency}
+                                    />
+                                ) : (
+                                    price
+                                )}
+                            </span>
                             <span className="text-sm text-ink-muted">pago único</span>
                         </div>
 
@@ -251,7 +325,18 @@ function CaseLanding({ mysteryCase, owned, canPurchase, canSimulatePurchase, gam
                     <h2 className="font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
                         {mysteryCase.name}
                     </h2>
-                    <p className="mx-auto mt-3 max-w-xl text-base text-ink-muted">{price} · pago único</p>
+                    <p className="mx-auto mt-3 max-w-xl text-base text-ink-muted">
+                        {discounted ? (
+                                    <OfferPrice
+                                        price={price}
+                                        finalAmount={offer.final_amount}
+                                        currency={mysteryCase.currency}
+                                    />
+                                ) : (
+                                    price
+                                )}{' '}
+                        · pago único
+                    </p>
                     <div className="mx-auto mt-6 max-w-sm">{cta}</div>
                 </div>
             </Section>
@@ -282,7 +367,15 @@ function PickCard({ mysteryCase }) {
                 <CaseFacts mysteryCase={mysteryCase} className="mt-4" />
                 <div className="mt-5 flex items-baseline justify-between gap-3 border-t border-line pt-4">
                     <span className="font-semibold text-ink">
-                        {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                        {mysteryCase.offer_amount != null && mysteryCase.offer_amount < mysteryCase.price_amount ? (
+                            <OfferPrice
+                                price={formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                                finalAmount={mysteryCase.offer_amount}
+                                currency={mysteryCase.currency}
+                            />
+                        ) : (
+                            formatPrice(mysteryCase.price_amount, mysteryCase.currency)
+                        )}
                     </span>
                     <span className="text-sm text-accent group-hover:text-accent-strong">Quiero este →</span>
                 </div>
@@ -291,7 +384,7 @@ function PickCard({ mysteryCase }) {
     );
 }
 
-function PlatformLanding({ featured, canPurchase }) {
+function PlatformLanding({ featured, offer, canPurchase }) {
     const { auth } = usePage().props;
     const heroCta = useRef(null);
     const showBar = useScrolledPast(heroCta);
@@ -318,6 +411,8 @@ function PlatformLanding({ featured, canPurchase }) {
             }
         >
             <Head title="Resuelvan un crimen en equipo" />
+
+            {offer && <OfferStrip offer={offer} currency={featured[0]?.currency} />}
 
             <header className="relative overflow-hidden border-b border-line bg-surface">
                 <div className="absolute inset-0 opacity-40">
@@ -401,6 +496,7 @@ function PlatformLanding({ featured, canPurchase }) {
 export default function AdLanding({
     mode,
     case: mysteryCase,
+    offer = null,
     featured = [],
     owned = false,
     canPurchase = false,
@@ -411,6 +507,7 @@ export default function AdLanding({
         return (
             <CaseLanding
                 mysteryCase={mysteryCase}
+                offer={offer}
                 owned={owned}
                 canPurchase={canPurchase}
                 canSimulatePurchase={canSimulatePurchase}
@@ -419,5 +516,5 @@ export default function AdLanding({
         );
     }
 
-    return <PlatformLanding featured={featured} canPurchase={canPurchase} />;
+    return <PlatformLanding featured={featured} offer={offer} canPurchase={canPurchase} />;
 }

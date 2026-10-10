@@ -4,8 +4,11 @@ namespace App\Modules\Platform\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Support\GameQuota;
+use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Http\Resources\CaseCardData;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Models\PromoCode;
+use App\Modules\Platform\Support\Attribution;
 use App\Modules\Platform\Support\Mechanics;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,11 +30,19 @@ use Inertia\Response;
  */
 class AdLandingController extends Controller
 {
-    public function platform(Request $request): Response
+    public function platform(Request $request, RedeemPromoCode $promos): Response
     {
+        // The code that came with the ad (or an earlier click), if it is
+        // something worth showing: an ad that promises a discount has to keep
+        // the promise on the page it lands on, not only at the checkout.
+        $code = Attribution::pendingPromo($request, $request->user());
+        $offer = $code ? $promos->landingOffer($request->user(), $code) : null;
+        $promo = $offer ? PromoCode::where('code', $offer['code'])->first() : null;
+
         return Inertia::render('Public/AdLanding', [
             'mode' => 'platform',
             'case' => null,
+            'offer' => $offer,
             'featured' => fn () => MysteryCase::published()
                 ->ordered()
                 ->limit(3)
@@ -40,6 +51,12 @@ class AdLandingController extends Controller
                 // original 1.5-2 MB art, which three cards must not download.
                 ->map(fn (MysteryCase $case) => CaseCardData::summary($case) + [
                     'thumb_url' => $case->landingCoverUrl(),
+                    // What each card costs WITH the offer, worked out by the
+                    // same code that charges, so the page never promises a
+                    // price the checkout will not give.
+                    'offer_amount' => $promo && $promo->isDiscount()
+                        ? $promo->discountedAmount($case->price_amount)
+                        : null,
                 ])
                 ->values(),
             'mechanics' => Mechanics::list(),
@@ -57,7 +74,7 @@ class AdLandingController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $slug): Response
+    public function show(Request $request, string $slug, RedeemPromoCode $promos): Response
     {
         // Same rule as the case's own page: route model binding would also
         // serve unpublished rows, and an ad must never lead to a case that
@@ -66,9 +83,13 @@ class AdLandingController extends Controller
 
         $landing = CaseCardData::landing($case);
 
+        $code = Attribution::pendingPromo($request, $request->user());
+        $offer = $code ? $promos->landingOffer($request->user(), $code, $case) : null;
+
         return Inertia::render('Public/AdLanding', [
             'mode' => 'case',
             'case' => $landing,
+            'offer' => $offer,
             'owned' => (bool) $request->user()?->ownsCase($case),
             'canPurchase' => (bool) config('platform.payments.enabled'),
             'canSimulatePurchase' => (bool) config('platform.simulated_checkout'),

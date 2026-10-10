@@ -201,7 +201,7 @@ export default function CookieConsent() {
 
                                 <CheckboxField
                                     id="cookie-recording"
-                                    label="Habilita la recolección de datos para grabaciones de uso"
+                                    label="Habilita la recolección de datos de uso de la plataforma"
                                     checked={recording}
                                     onChange={setRecording}
                                 />

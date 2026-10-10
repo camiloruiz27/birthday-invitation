@@ -279,6 +279,79 @@ class RedeemPromoCode
     }
 
     /**
+     * What a visitor on an ad landing is being offered by the code that came
+     * with the ad, or null when there is nothing honest to show.
+     *
+     * Read-only and meant for someone who may not even have an account yet, so
+     * the per-person limit is only checked when there is a user. It answers
+     * null — and the landing simply shows the normal price — for anything that
+     * would not work at checkout: unknown, off, expired, used up, a credits-only
+     * code, or a gift that does not cover this case. The checkout review stays
+     * the place that explains a rejected code; this must never contradict it,
+     * so it applies the same rules and nothing looser.
+     *
+     * @return array{code: string, kind: string, value: ?int, expires_at: ?string, final_amount: ?int, discount_amount: ?int}|null
+     */
+    public function landingOffer(?User $user, string $code, ?MysteryCase $case = null): ?array
+    {
+        $promo = PromoCode::where('code', strtoupper(trim($code)))->first();
+
+        if (! $promo || ! $promo->active || $promo->isExpired() || $promo->isExhausted()) {
+            return null;
+        }
+
+        if ($user && $promo->max_redemptions_per_user !== null) {
+            $used = PromoCodeRedemption::where('promo_code_id', $promo->id)
+                ->where('user_id', $user->id)
+                ->count();
+
+            if ($used >= $promo->max_redemptions_per_user) {
+                return null;
+            }
+        }
+
+        $offer = [
+            'code' => $promo->code,
+            'kind' => 'gift',
+            'value' => null,
+            'expires_at' => $promo->expires_at?->toIso8601String(),
+            'final_amount' => null,
+            'discount_amount' => null,
+        ];
+
+        if ($promo->isGift()) {
+            $covers = $case
+                ? $this->coversCase($promo, $case)
+                : ($promo->grants_any_case || $promo->grants_case_slug !== null);
+
+            if (! $covers) {
+                return null;
+            }
+
+            if ($case) {
+                $offer['final_amount'] = 0;
+                $offer['discount_amount'] = $case->price_amount;
+            }
+
+            return $offer;
+        }
+
+        if (! $promo->isDiscount() || ! $promo->appliesTo(PromoCode::APPLIES_CASE)) {
+            return null;
+        }
+
+        $offer['kind'] = $promo->discount_type;
+        $offer['value'] = $promo->discount_value;
+
+        if ($case) {
+            $offer['final_amount'] = $promo->discountedAmount($case->price_amount);
+            $offer['discount_amount'] = $case->price_amount - $offer['final_amount'];
+        }
+
+        return $offer;
+    }
+
+    /**
      * A discount limited to cases or to credit packages, used on the other.
      * The kind of purchase is already known from $case — only a case purchase
      * passes one — so no extra argument is needed.
