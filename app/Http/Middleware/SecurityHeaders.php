@@ -98,8 +98,26 @@ class SecurityHeaders
             'https://*.clarity.ms',
         ];
 
-        $script = ["'self'", "'nonce-{$nonce}'", $turnstile, ...$analyticsScript];
-        $connect = ["'self'", ...$analyticsConnect];
+        // TikTok and Meta pixels (advertising measurement). The browser
+        // loads each one's script and then sends events by beacon, fetch and
+        // a 1x1 image, so each host is needed under script-src, connect-src
+        // and img-src. Only ever injected after the visitor accepts the
+        // marketing category (resources/js/lib/consent.js), and listed
+        // unconditionally for the same reason as the analytics hosts above.
+        // The Events API / Conversions API hosts (business-api.tiktok.com,
+        // graph.facebook.com) are deliberately NOT here: the server calls
+        // those, never the browser.
+        $adsScript = ['https://analytics.tiktok.com', 'https://connect.facebook.net'];
+        $adsConnect = [
+            'https://analytics.tiktok.com',
+            'https://*.tiktok.com',
+            'https://www.facebook.com',
+            'https://connect.facebook.net',
+        ];
+        $adsImg = ['https://analytics.tiktok.com', 'https://*.tiktok.com', 'https://www.facebook.com'];
+
+        $script = ["'self'", "'nonce-{$nonce}'", $turnstile, ...$analyticsScript, ...$adsScript];
+        $connect = ["'self'", ...$analyticsConnect, ...$adsConnect];
 
         // The Vite dev server hands modules over its own origin and pushes
         // hot updates over a websocket. Neither exists in a built deploy, so
@@ -124,7 +142,7 @@ class SecurityHeaders
             // data: for the gallery's inline assets; blob: for audio the
             // browser builds locally. The analytics hosts cover GA's pixel
             // fallback when a fetch/beacon isn't available.
-            "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com",
+            "img-src 'self' data: blob: https://www.google-analytics.com https://*.google-analytics.com ".implode(' ', $adsImg),
             "media-src 'self' blob:",
 
             'connect-src '.implode(' ', $connect),

@@ -96,6 +96,7 @@ class SyncMysteryCases extends Command
             'tagline' => $catalog['tagline'],
             'description' => $catalog['description'],
             'cover_path' => $catalog['cover_path'],
+            'ad' => $catalog['ad'],
             'difficulty' => $catalog['difficulty'],
             'duration_minutes' => $catalog['duration_minutes'],
             'min_players' => $catalog['min_players'],

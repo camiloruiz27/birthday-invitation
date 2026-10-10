@@ -262,7 +262,7 @@ export function SelectField({
 export function CheckboxField({ id, label, checked, onChange, hint, error, required = false }) {
     return (
         <div>
-            <label htmlFor={id} className="flex items-start gap-2.5 text-sm text-ink">
+            <label htmlFor={id} className="flex items-start gap-2.5 py-2 text-sm text-ink">
                 <input
                     id={id}
                     name={id}

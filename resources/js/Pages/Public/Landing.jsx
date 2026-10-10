@@ -9,6 +9,7 @@ import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
 import CaseCard from '../../components/public/CaseCard';
 import Icon from '../../lib/mechanicIcons';
+import { FAQ } from '../../components/public/faqItems';
 
 /**
  * The session, as phases rather than absolute minutes — every case has its
@@ -40,33 +41,6 @@ const CASE_CLOCK = [
     {
         label: 'La verdad',
         body: 'Se revela la solución, y quién de la mesa acertó.',
-    },
-];
-
-const FAQ = [
-    {
-        question: '¿Hay que imprimir algo?',
-        answer: 'No. Todo pasa en el navegador y en el correo de cada jugador. No hay PDFs que imprimir, recortar ni repartir.',
-    },
-    {
-        question: '¿Los jugadores necesitan cuenta?',
-        answer: 'No. Solo quien dirige la partida tiene cuenta. Los jugadores entran con un enlace único que tú les compartes.',
-    },
-    {
-        question: '¿Se puede jugar a distancia?',
-        answer: 'Sí. Cada jugador recibe su material por separado, así que funciona igual si están en la misma mesa o en una videollamada.',
-    },
-    {
-        question: '¿Puedo repetir un caso?',
-        answer: 'Puedes dirigirlo cuantas veces quieras con grupos distintos. Eso sí, quien ya lo jugó conoce la solución.',
-    },
-    {
-        question: '¿Cuánto dura una partida?',
-        answer: 'Depende del caso; cada uno indica su duración en su página. La mayoría está pensada para una sesión de una tarde o una noche.',
-    },
-    {
-        question: '¿Necesito preparar algo antes?',
-        answer: 'Crear la partida y cargar los nombres y correos de tus jugadores. Nada más: el caso trae su propia línea de tiempo.',
     },
 ];
 
@@ -136,7 +110,20 @@ export default function Landing({ featured, mechanics }) {
                 alone carries the hero until public/brand/hero-01.png exists. */}
             <header className="relative flex min-h-[90vh] items-center overflow-hidden border-b border-line bg-surface">
                 <div className="absolute inset-0 opacity-40">
-                    <img src="/brand/hero-01.png" alt="" className="h-full w-full object-cover" />
+                    {/* A 41 KB JPEG, not the 1.6 MB PNG it came from: this is
+                        the first thing on the page and was most of what a
+                        phone had to download. Dimensions let the box be
+                        reserved before it loads. */}
+                    <img
+                        src="/brand/hero-01-1200.jpg"
+                        srcSet="/brand/hero-01-700.jpg 700w, /brand/hero-01-1200.jpg 1200w"
+                        sizes="100vw"
+                        width="1200"
+                        height="675"
+                        fetchpriority="high"
+                        alt=""
+                        className="h-full w-full object-cover"
+                    />
                 </div>
 
                 <Container width="wide" className="relative z-10 pb-20 pt-40 sm:pb-28 sm:pt-48">

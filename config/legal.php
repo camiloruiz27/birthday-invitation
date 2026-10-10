@@ -44,11 +44,13 @@ return [
     // Bump a version whenever its text changes in a way a user must be told
     // about. The versions are stored on the user at registration, which is
     // the proof of what they accepted and when.
-    'privacy_version' => env('LEGAL_PRIVACY_VERSION', '1.0'),
+    // 1.1 (2026-10-09): advertising measurement (TikTok and Meta pixels and
+    // server-side events) added to the privacy and cookies texts.
+    'privacy_version' => env('LEGAL_PRIVACY_VERSION', '1.1'),
     'terms_version' => env('LEGAL_TERMS_VERSION', '1.0'),
-    'cookies_version' => env('LEGAL_COOKIES_VERSION', '1.0'),
+    'cookies_version' => env('LEGAL_COOKIES_VERSION', '1.1'),
 
     // Date the current texts took effect (Y-m-d).
-    'updated_at' => env('LEGAL_UPDATED_AT', '2026-10-01'),
+    'updated_at' => env('LEGAL_UPDATED_AT', '2026-10-09'),
 
 ];

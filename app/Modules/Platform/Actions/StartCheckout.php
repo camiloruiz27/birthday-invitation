@@ -5,11 +5,14 @@ namespace App\Modules\Platform\Actions;
 use App\Models\User;
 use App\Modules\Immersion\Models\CreditLedgerEntry;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Platform\Ads\AdEvents;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Support\Attribution;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Throwable;
@@ -30,6 +33,8 @@ class StartCheckout
         private RedeemPromoCode $promos,
         private GrantCaseAccess $access,
         private AiCredits $credits,
+        private AdEvents $ads,
+        private Request $request,
     ) {
     }
 
@@ -63,6 +68,10 @@ class StartCheckout
     {
         $redemption = null;
 
+        // The price before any code, kept because `amount` is about to be
+        // overwritten with what is actually charged.
+        $attributes['list_amount'] = $attributes['amount'];
+
         if ($promoCode) {
             // Computed and claimed BEFORE the Order exists — Bold needs the
             // already-discounted amount. If the checkout below never
@@ -74,8 +83,15 @@ class StartCheckout
             // package passes none, so a gift there is still turned away.
             $discount = $this->promos->applyDiscount($user, $promoCode, $attributes['amount'], $case);
             $attributes['amount'] = $discount->amount;
+            $attributes['discount_amount'] = $attributes['list_amount'] - $discount->amount;
+            $attributes['promo_code_id'] = $discount->redemption->promo_code_id;
             $redemption = $discount->redemption;
         }
+
+        // Where the buyer came from and whether they allowed advertising
+        // measurement, taken now while there is still a browser to ask — the
+        // webhook that settles this order will have none.
+        $attributes += AdEvents::orderContext($this->request, $user);
 
         // Never the auto-incrementing id: this is what leaves the platform
         // (sent to Bold, printed in a checkout URL), so it must not reveal
@@ -89,12 +105,21 @@ class StartCheckout
             $redemption->update(['order_id' => $order->id]);
         }
 
+        // They got where they were going; confirming their email later must
+        // not drop them back on this checkout.
+        Attribution::consumeIntent($this->request, $user);
+
         // A code that discounted this all the way to zero: nothing to
         // actually charge, so there is nothing for Bold to do. Deliver
         // directly — Order still ends up the single source of truth for
         // "how did this access come to exist", even for a free one.
         if ($redemption && $order->amount === 0) {
             $this->deliverDirectly($order, $redemption->promoCode);
+
+            // A free order never reaches SettleOrder, which is where a paid
+            // one is reported. Reported after the transaction, not inside it.
+            $this->ads->purchase($order->refresh());
+            $this->forgetUsedPromo($user, $redemption->promoCode);
 
             return $order;
         }
@@ -114,7 +139,20 @@ class StartCheckout
             'provider_link_id' => $link->providerLinkId,
         ]);
 
+        if ($redemption) {
+            $this->forgetUsedPromo($user, $redemption->promoCode);
+        }
+
         return $order;
+    }
+
+    /**
+     * The code that arrived with an ad click has now been used: stop offering
+     * it on every later purchase.
+     */
+    private function forgetUsedPromo(User $user, PromoCode $promo): void
+    {
+        Attribution::consumePromo($this->request, $user, $promo->code);
     }
 
     /**

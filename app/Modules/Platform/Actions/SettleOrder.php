@@ -4,6 +4,7 @@ namespace App\Modules\Platform\Actions;
 
 use App\Modules\Immersion\Models\CreditLedgerEntry;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Platform\Ads\AdEvents;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\PaymentWebhookEvent;
@@ -28,6 +29,7 @@ class SettleOrder
         private GrantCaseAccess $access,
         private AiCredits $credits,
         private RedeemPromoCode $promos,
+        private AdEvents $ads,
     ) {
     }
 
@@ -67,16 +69,19 @@ class SettleOrder
 
         if ($order->type === Order::TYPE_CASE) {
             $this->access->grant($order->user, $order->mysteryCase, Entitlement::SOURCE_PURCHASE);
-
-            return;
+        } else {
+            $this->credits->grant(
+                $order->user,
+                (int) $order->credits_granted,
+                CreditLedgerEntry::REASON_TOPUP,
+                "Recarga: {$order->credit_package_id}"
+            );
         }
 
-        $this->credits->grant(
-            $order->user,
-            (int) $order->credits_granted,
-            CreditLedgerEntry::REASON_TOPUP,
-            "Recarga: {$order->credit_package_id}"
-        );
+        // Last, and after the grant: reporting the sale to the ad networks is
+        // never allowed to get in the way of delivering it (AdEvents
+        // swallows its own failures).
+        $this->ads->purchase($order);
     }
 
     /**

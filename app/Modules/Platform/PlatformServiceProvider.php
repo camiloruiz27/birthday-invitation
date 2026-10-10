@@ -5,6 +5,7 @@ namespace App\Modules\Platform;
 use App\Modules\Platform\Console\Commands\ClaimGames;
 use App\Modules\Platform\Console\Commands\CreatePromoCode;
 use App\Modules\Platform\Console\Commands\CreatePromoCodeBatch;
+use App\Modules\Platform\Console\Commands\BuildCaseImages;
 use App\Modules\Platform\Console\Commands\CronStatus;
 use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
@@ -170,6 +171,7 @@ class PlatformServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncMysteryCases::class,
+                BuildCaseImages::class,
                 CronStatus::class,
                 GrantCaseAccessCommand::class,
                 ClaimGames::class,

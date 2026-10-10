@@ -52,9 +52,22 @@ class EmailVerificationController extends Controller
             event(new Verified($request->user()));
         }
 
+        // On to what they came to do — this session's own memory of it, or
+        // what was saved on the account when the link is opened on another
+        // device — and only the panel when there is none.
         return redirect()
-            ->route('dashboard')
-            ->with('status', 'Tu correo quedó confirmado. Ya puedes comprar y canjear códigos.');
+            ->intended($this->savedIntent($request) ?? route('dashboard'))
+            ->with('status', 'Tu correo quedó confirmado. Ya puedes crear partidas y enviar los enlaces a tus jugadores.');
+    }
+
+    /**
+     * The address stored at registration, if it is still one of ours.
+     */
+    private function savedIntent(Request $request): ?string
+    {
+        $intended = ((array) $request->user()->attribution)['intended'] ?? null;
+
+        return is_string($intended) && str_starts_with($intended, url('/')) ? $intended : null;
     }
 
     /**

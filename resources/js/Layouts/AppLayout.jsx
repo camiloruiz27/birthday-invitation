@@ -1,6 +1,7 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Alert from '../components/ui/Alert';
+import Button from '../components/ui/Button';
 import UserMenu from '../components/ui/UserMenu';
 import Brand from '../components/ui/Brand';
 
@@ -33,6 +34,36 @@ function NavLink({ item, active, className = '' }) {
     );
 }
 
+/**
+ * Buying does not need a confirmed address, but creating a game and mailing
+ * its players does (see the `verified` routes). So an account that has not
+ * confirmed yet is told, on every signed-in page, what is still missing and
+ * how to fix it — instead of discovering it at the moment it tries to start
+ * a game.
+ */
+function VerifyEmailNotice({ email }) {
+    function resend() {
+        router.post(route('verification.send'), {}, { preserveScroll: true });
+    }
+
+    return (
+        <Alert variant="warning">
+            <p>
+                <span className="font-medium">Falta confirmar tu correo</span> ({email}). Lo necesitas para
+                crear partidas y enviar los enlaces a tus jugadores.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button variant="secondary" size="sm" onClick={resend}>
+                    Reenviar el correo
+                </Button>
+                <Link href={route('profile.edit')} className="text-sm text-accent underline">
+                    ¿Correo mal escrito? Corrígelo
+                </Link>
+            </div>
+        </Alert>
+    );
+}
+
 export default function AppLayout({
     title,
     kicker,
@@ -43,7 +74,15 @@ export default function AppLayout({
 }) {
     const { props } = usePage();
     const user = props.auth?.user;
-    const status = props.flash?.status;
+    // `verification-link-sent` is a key the resend action flashes for the
+    // confirmation page to word itself; here it is turned into a sentence
+    // instead of being printed raw.
+    const rawStatus = props.flash?.status;
+    const status =
+        rawStatus === 'verification-link-sent'
+            ? 'Listo, te enviamos el correo otra vez. Puede tardar un par de minutos.'
+            : rawStatus;
+    const unverified = Boolean(user) && user.email_verified === false;
     const errors = props.errors || {};
     const errorList = Object.values(errors);
 
@@ -130,6 +169,8 @@ export default function AppLayout({
                     </div>
 
                     <Alert variant="status">{status}</Alert>
+
+                    {unverified && <VerifyEmailNotice email={user.email} />}
 
                     {errorList.length > 0 && (
                         <Alert variant="error" title="Revisa lo siguiente">

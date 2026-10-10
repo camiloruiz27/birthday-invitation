@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import Button from '../ui/Button';
 import TextLink from '../ui/TextLink';
 import { CheckboxField } from '../ui/Field';
-import { OPEN_SETTINGS_EVENT, getConsent, setConsent } from '../../lib/consent';
+import { OPEN_SETTINGS_EVENT, adsConfigured, getConsent, setConsent } from '../../lib/consent';
 
 /**
  * The cookie consent banner.
  *
- * Three levels (see lib/consent.js): anonymous cookieless measurement that is
- * always on and only disclosed here, and two opt-in choices — audience
- * analytics (Google Analytics cookies) and session recordings (Microsoft
- * Clarity), each off until the visitor says yes. Ley 1581 de 2012 asks for
+ * Four levels (see lib/consent.js): anonymous cookieless measurement that is
+ * always on and only disclosed here, and three opt-in choices — audience
+ * analytics (Google Analytics cookies), session recordings (Microsoft
+ * Clarity) and advertising measurement (the TikTok and Meta pixels), each off
+ * until the visitor says yes. Ley 1581 de 2012 asks for
  * prior and express authorization; tacit consent is not valid in Colombia.
  *
  * "Aceptar todo" and "Rechazar" are the same size and weight on purpose:
@@ -21,17 +22,61 @@ import { OPEN_SETTINGS_EVENT, getConsent, setConsent } from '../../lib/consent';
  * Mounted once from app.jsx, outside the Inertia page, so it survives
  * navigation and every layout gets it without each one remembering to.
  */
+function CookieIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            aria-hidden="true"
+            className="h-5 w-5 shrink-0 text-accent-strong"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 12.4A9 9 0 1111.6 3a3.4 3.4 0 004.4 4.4 3 3 0 005 5z"
+            />
+            <circle cx="9" cy="11" r="1" fill="currentColor" stroke="none" />
+            <circle cx="13" cy="16" r="1" fill="currentColor" stroke="none" />
+            <circle cx="8.5" cy="15.5" r=".7" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+function CheckIcon() {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 shrink-0 text-accent-strong"
+        >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg>
+    );
+}
+
 export default function CookieConsent() {
     const [open, setOpen] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [analytics, setAnalytics] = useState(false);
     const [recording, setRecording] = useState(false);
+    const [marketing, setMarketing] = useState(false);
+    // Only ask about advertising when a pixel is actually configured; read
+    // after mount like the stored choice, since it comes from the page's own
+    // <meta> tag.
+    const [adsEnabled, setAdsEnabled] = useState(false);
     const dialogRef = useRef(null);
 
     // Decide whether to show it only after mount: the choice lives in a
     // cookie that the server cannot see, and reading it during render would
     // mismatch whatever was rendered before.
     useEffect(() => {
+        setAdsEnabled(adsConfigured());
+
         const consent = getConsent();
 
         if (consent === null) {
@@ -39,6 +84,7 @@ export default function CookieConsent() {
         } else {
             setAnalytics(consent.analytics);
             setRecording(consent.recording);
+            setMarketing(consent.marketing);
         }
 
         const reopen = () => {
@@ -46,6 +92,7 @@ export default function CookieConsent() {
 
             setAnalytics(current?.analytics ?? false);
             setRecording(current?.recording ?? false);
+            setMarketing(current?.marketing ?? false);
             setShowSettings(true);
             setOpen(true);
         };
@@ -70,6 +117,7 @@ export default function CookieConsent() {
         setConsent(choice);
         setAnalytics(choice.analytics);
         setRecording(choice.recording);
+        setMarketing(choice.marketing);
         setShowSettings(false);
         setOpen(false);
     }
@@ -96,84 +144,126 @@ export default function CookieConsent() {
             className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]"
         >
             <div className="mx-auto max-h-[85dvh] w-full max-w-3xl overflow-y-auto rounded-card border border-line-strong bg-surface-raised p-4 shadow-overlay sm:p-6">
-                <h2 id="cookie-consent-title" className="font-display text-base font-semibold text-ink sm:text-lg">
-                    Una cosa rápida sobre las cookies
-                </h2>
+                {/* Text on the left, answers on the right from sm up; on a phone
+                    everything stacks and stays short (it used to take 40% of
+                    the screen and sat on top of the page's own button).
 
-                {/* Kept short and friendly on purpose: the detail lives in the
-                    two policies linked here. It still says the two things that
-                    must be said up front — we count visits anonymously, and
-                    anything more needs a yes. */}
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted sm:mt-2 sm:text-sm">
-                    Usamos cookies para que todo funcione y, si nos dejas, para entender cómo usas
-                    MisterioCode y mejorarlo. Siempre contamos las visitas de forma anónima, sin
-                    cookies. Tú decides lo demás, y puedes cambiarlo cuando quieras. Si quieres el
-                    detalle, está en{' '}
-                    <TextLink href={route('cookies')}>Cookies</TextLink> y{' '}
-                    <TextLink href={route('privacy')}>Privacidad</TextLink>.
-                </p>
+                    The mandatory notice is a line of text with a check, not a
+                    box with a "Siempre activo" tag: it is not a choice, so it
+                    must not look like a control. The detail lives in the two
+                    policies. */}
+                <div className="sm:flex sm:items-start sm:gap-8">
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2
+                                id="cookie-consent-title"
+                                className="flex items-center gap-2.5 font-display text-base font-semibold text-ink sm:text-lg"
+                            >
+                                <CookieIcon />
+                                <span className="sm:hidden">Cookies</span>
+                                <span className="hidden sm:inline">Tu privacidad, en corto</span>
+                            </h2>
 
-                {showSettings && (
-                    <div className="mt-5 space-y-4 border-t border-line pt-5">
-                        <div>
-                            <div className="flex items-center justify-between gap-4">
-                                <p className="text-sm font-medium text-ink">Lo necesario</p>
-                                <span className="text-xs font-medium text-ink-muted">
-                                    Siempre activo
-                                </span>
-                            </div>
-                            <p className="mt-1 text-xs text-ink-muted">
-                                Para que el sitio funcione, verificación de tu sesión y la seguridad.
-                            </p>
+                            {!showSettings && (
+                                <div className="sm:hidden">
+                                    <Button variant="ghost" onClick={() => setShowSettings(true)}>
+                                        Configurar
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
-                        <CheckboxField
-                            id="cookie-analytics"
-                            label="Saber cómo nos usas"
-                            checked={analytics}
-                            onChange={setAnalytics}
-                            hint="Saber que tanto disfrutas resolver un caso"
-                        />
+                        <p className="mt-3 flex items-start gap-2 text-[13px] leading-snug text-ink-muted sm:text-sm sm:leading-relaxed">
+                            <CheckIcon />
+                            <span>
+                                <span className="sr-only">Siempre activo: </span>
+                                Es obligatorio para el correcto funcionamiento y conocimiento de la
+                                plataforma.
+                            </span>
+                        </p>
 
-                        <CheckboxField
-                            id="cookie-recording"
-                            label="Ayudarnos a arreglar lo confuso"
-                            checked={recording}
-                            onChange={setRecording}
-                            hint="Nos ayudas a mejorar con tu experiencia"
-                        />
+                        <p className="mt-2 text-[13px] leading-snug text-ink-muted sm:text-sm sm:leading-relaxed">
+                            Lo demás es opcional y lo decides tú. Más detalle en{' '}
+                            <TextLink href={route('cookies')}>Cookies</TextLink> y{' '}
+                            <TextLink href={route('privacy')}>Privacidad</TextLink>.
+                        </p>
+
+                        {showSettings && (
+                            <div className="mt-4 space-y-3 border-t border-line pt-4">
+                                <p className="case-stamp text-[10px] text-ink-subtle">Opcional</p>
+
+                                <CheckboxField
+                                    id="cookie-analytics"
+                                    label="Habilita la recolección de datos para análisis de uso"
+                                    checked={analytics}
+                                    onChange={setAnalytics}
+                                />
+
+                                <CheckboxField
+                                    id="cookie-recording"
+                                    label="Habilita la recolección de datos de uso de la plataforma"
+                                    checked={recording}
+                                    onChange={setRecording}
+                                />
+
+                                {adsEnabled && (
+                                    <CheckboxField
+                                        id="cookie-marketing"
+                                        label="Habilita la recolección de datos para publicidad"
+                                        checked={marketing}
+                                        onChange={setMarketing}
+                                    />
+                                )}
+                            </div>
+                        )}
                     </div>
-                )}
 
-                {/* Two equal buttons side by side on a phone, the third under
-                    them: stacked full-width, the three took half the screen. */}
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-5 sm:flex sm:flex-wrap sm:items-center sm:gap-2.5">
-                    {showSettings ? (
-                        <>
-                            <Button variant="secondary" onClick={() => decide({ analytics, recording })}>
-                                Guardar
-                            </Button>
-                            <Button variant="ghost" onClick={dismissSettings}>
-                                {getConsent() === null ? 'Volver' : 'Cerrar'}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button variant="secondary" onClick={() => decide({ analytics: false, recording: false })}>
-                                Rechazar
-                            </Button>
-                            <Button variant="secondary" onClick={() => decide({ analytics: true, recording: true })}>
-                                Aceptar todo
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setShowSettings(true)}
-                                className="col-span-2 sm:col-span-1"
-                            >
-                                Configurar
-                            </Button>
-                        </>
-                    )}
+                    {/* "Rechazar" and "Aceptar todo" are the same size and weight
+                        on purpose: refusing must be as easy as accepting. Two
+                        side by side on a phone, a column from sm up. */}
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-0 sm:flex sm:w-44 sm:shrink-0 sm:flex-col">
+                        {showSettings ? (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    fullWidth
+                                    onClick={() => decide({ analytics, recording, marketing })}
+                                >
+                                    Guardar
+                                </Button>
+                                <Button variant="ghost" fullWidth onClick={dismissSettings}>
+                                    {getConsent() === null ? 'Volver' : 'Cerrar'}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    fullWidth
+                                    onClick={() =>
+                                        decide({ analytics: false, recording: false, marketing: false })
+                                    }
+                                >
+                                    Rechazar
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    fullWidth
+                                    onClick={() =>
+                                        decide({ analytics: true, recording: true, marketing: true })
+                                    }
+                                >
+                                    Aceptar todo
+                                </Button>
+                                {/* On a phone this lives next to the title instead. */}
+                                <div className="hidden sm:block">
+                                    <Button variant="ghost" fullWidth onClick={() => setShowSettings(true)}>
+                                        Configurar
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

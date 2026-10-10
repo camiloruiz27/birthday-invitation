@@ -65,6 +65,19 @@ return [
         // Sin cover art dedicado todavia: cae al retrato de la victima.
         'cover' => null,
 
+        // Texto para anuncios (opcional; lo usa /jugar/steve-jacobs).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Un ejecutivo farmacéutico aparece muerto en la habitación 803, con una pieza de ajedrez que nadie sabe explicar.',
+            'bullets' => [
+                '3 a 8 jugadores: se reparten los interrogatorios y comparten lo que averigüen',
+                'Nueve personas con algo que esconder',
+                '90 minutos con recortes, reportes de laboratorio y mensajes de voz',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'medium',
         'duration_minutes' => 90,
         'min_players' => 3,

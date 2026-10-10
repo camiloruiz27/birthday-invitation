@@ -74,6 +74,19 @@ return [
         // Archivo esperado en public/immersion/el-brindis-22-14/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/el-brindis-22-14).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'A las 22:14, en pleno brindis, una copa resulta letal. Y quien la bebió no era quien debía beberla.',
+            'bullets' => [
+                '4 a 6 jugadores, con fotos, documentos y audios del expediente',
+                'Cinco sospechosos y una testigo a quienes interrogar',
+                'Solo 45 minutos: cabe en una sola noche',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'medium',
         'duration_minutes' => 45,
         'min_players' => 4,

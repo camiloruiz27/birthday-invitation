@@ -38,7 +38,7 @@ function interrogationTour(maxQuestions) {
         },
         {
             title: '2. Pregunta con intención',
-            body: `Tienes ${maxQuestions} preguntas por persona, y cada una cuenta. Las respuestas las genera una inteligencia artificial que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
+            body: `Tienes ${maxQuestions} preguntas por persona, y cada una cuenta. Las respuestas las genera nuestro sistema que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
         },
         {
             title: '3. Al terminar, su ficha',

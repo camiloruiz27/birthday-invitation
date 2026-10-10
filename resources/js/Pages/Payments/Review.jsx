@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Alert from '../../components/ui/Alert';
+import InAppBrowserNotice from '../../components/ui/InAppBrowserNotice';
 import TextLink from '../../components/ui/TextLink';
 import { CheckboxField, TextField } from '../../components/ui/Field';
-import { formatPrice } from '../../lib/format';
+import { trackAd } from '../../lib/analytics';
+import { formatPrice, minorUnitValue } from '../../lib/format';
 
 /**
  * The stop between "I want this" and Bold's own payment page. Every real
@@ -39,6 +41,26 @@ export default function Review({
 
     // Starts unticked on every visit: accepting is an act, not a default.
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+    const { auth } = usePage().props;
+
+    // Someone reached the last screen before paying. Once per product, not
+    // per applied code: applying one reloads this page in place.
+    useEffect(() => {
+        if (alreadyOwned) return;
+
+        trackAd(
+            'InitiateCheckout',
+            {
+                value: minorUnitValue(original_amount, currency || 'COP'),
+                currency: currency || 'COP',
+                contentId: isCase ? case_slug : package_id,
+                contentName: title,
+            },
+            `checkout-${isCase ? case_slug : package_id}`
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [case_slug, package_id]);
 
     const codeForm = useForm(
         isCase
@@ -193,6 +215,24 @@ export default function Review({
                         {is_gift && gift_credits > 0 && ` Además recibirás ${gift_credits} créditos.`}
                     </Alert>
                 )}
+
+                {/* Which account this buys for, said before paying: a mistyped
+                    address is the one thing a purchase cannot recover from
+                    (the account is where the case lands), and it is cheap to
+                    catch here. */}
+                {auth?.user && (
+                    <p className="mt-6 text-sm text-ink-muted">
+                        Compras con la cuenta{' '}
+                        <span className="font-medium text-ink">{auth.user.email}</span>.
+                    </p>
+                )}
+
+                {/* The payment page is where an in-app browser is most likely to
+                    misbehave, and where the buyer is about to leave the site. */}
+                <InAppBrowserNotice className="mt-4 mb-0">
+                    Si al volver del pago te pide ingresar, usa esta misma cuenta: tu caso aparece en tu
+                    biblioteca en cuanto se confirme.
+                </InAppBrowserNotice>
 
                 <form onSubmit={confirmPurchase} className="mt-6 space-y-4">
                     {/* What Ley 1480 de 2011 (art. 50) wants the buyer told

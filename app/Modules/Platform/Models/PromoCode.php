@@ -24,6 +24,14 @@ class PromoCode extends Model
 
     public const DISCOUNT_FIXED = 'fixed';
 
+    /**
+     * What a code may be used on. A null `applies_to` means both — what every
+     * code created before the column existed does.
+     */
+    public const APPLIES_CASE = 'case';
+
+    public const APPLIES_CREDITS = 'credits';
+
     protected $fillable = [
         'code',
         'grants_case_slug',
@@ -35,6 +43,8 @@ class PromoCode extends Model
         'max_redemptions_per_user',
         'redemptions_count',
         'active',
+        'expires_at',
+        'applies_to',
         'note',
     ];
 
@@ -46,6 +56,7 @@ class PromoCode extends Model
         'max_redemptions_per_user' => 'integer',
         'redemptions_count' => 'integer',
         'active' => 'boolean',
+        'expires_at' => 'datetime',
     ];
 
     public function redemptions(): HasMany
@@ -66,6 +77,21 @@ class PromoCode extends Model
     public function isExhausted(): bool
     {
         return $this->max_redemptions !== null && $this->redemptions_count >= $this->max_redemptions;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
+    }
+
+    /**
+     * Whether this code may be used on a purchase of the given kind
+     * (APPLIES_CASE or APPLIES_CREDITS). A code with no restriction fits
+     * either.
+     */
+    public function appliesTo(string $target): bool
+    {
+        return $this->applies_to === null || $this->applies_to === $target;
     }
 
     /**

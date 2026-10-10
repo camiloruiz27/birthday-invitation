@@ -96,6 +96,19 @@ return [
         // Archivo esperado en public/immersion/la-casa-de-cristal/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/la-casa-de-cristal).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Una empresaria aparece sin vida en una sala vigilada por cámaras. Ninguna grabación muestra a nadie entrando.',
+            'bullets' => [
+                '4 a 7 investigadores, revisando las cámaras fotograma por fotograma',
+                'Cinco sospechosos y dos testigos a quienes interrogar',
+                '65 minutos con el expediente llegando en tiempo real',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'hard',
         'duration_minutes' => 65,
         'min_players' => 4,

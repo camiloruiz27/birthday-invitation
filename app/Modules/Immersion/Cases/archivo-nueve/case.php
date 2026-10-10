@@ -97,6 +97,19 @@ return [
         // Archivo esperado en public/immersion/archivo-nueve/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/archivo-nueve).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Una auditora encontró «alteraciones en Archivo Nueve» y prometió un informe completo en dos días. Horas después, desapareció.',
+            'bullets' => [
+                '5 a 8 investigadores, en la misma mesa o por videollamada',
+                'Seis sospechosos y dos testigos a quienes interrogar',
+                '90 minutos con el expediente llegando en tiempo real',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'hard',
         'duration_minutes' => 90,
         'min_players' => 5,

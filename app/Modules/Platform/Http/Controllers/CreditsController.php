@@ -9,6 +9,7 @@ use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Actions\StartCheckout;
 use App\Modules\Platform\Exceptions\PromoCodeException;
+use App\Modules\Platform\Support\Attribution;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -100,7 +101,15 @@ class CreditsController extends Controller
             abort(404);
         }
 
+        // See CheckoutController::review: the code on this URL wins, else the
+        // one that arrived with the ad click.
         $promoCode = $request->query('promo_code');
+        $fromAdLink = ! $promoCode;
+
+        if ($fromAdLink) {
+            $promoCode = Attribution::pendingPromo($request, $request->user());
+        }
+
         $finalAmount = (int) $package['price_amount'];
         $discountAmount = null;
         $promoError = null;
@@ -120,6 +129,11 @@ class CreditsController extends Controller
                 $promoRedirect = $exception->isWrongArea()
                     ? route('promo.redeem', ['code' => strtoupper(trim($promoCode))])
                     : null;
+
+                if ($fromAdLink) {
+                    Attribution::consumePromo($request, $request->user(), $promoCode);
+                }
+
                 $promoCode = null;
             }
         }

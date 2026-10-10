@@ -4,6 +4,7 @@ namespace App\Modules\Platform\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Platform\Rules\CaptchaRule;
+use App\Modules\Platform\Support\PurchaseIntent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,10 +14,16 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    /**
+     * `?case={slug}` works here like on the register screen (PurchaseIntent):
+     * a customer who comes back from an ad or a case page lands on that case's
+     * checkout after signing in, not on the panel.
+     */
     public function create(Request $request): Response
     {
         return Inertia::render('Auth/Login', [
             'status' => $request->session()->get('status'),
+            'case' => PurchaseIntent::remember($request),
         ]);
     }
 

@@ -9,6 +9,7 @@ use App\Modules\Platform\Actions\StartCheckout;
 use App\Modules\Platform\Exceptions\PromoCodeException;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Support\Attribution;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -50,7 +51,16 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // The code typed or linked on this very URL wins; otherwise the one
+        // that came with the ad click, remembered across registering and
+        // confirming the email (see Attribution).
         $promoCode = $request->query('promo_code');
+        $fromAdLink = ! $promoCode;
+
+        if ($fromAdLink) {
+            $promoCode = Attribution::pendingPromo($request, $request->user());
+        }
+
         $finalAmount = $case->price_amount;
         $discountAmount = null;
         $promoError = null;
@@ -76,6 +86,13 @@ class CheckoutController extends Controller
                 $promoRedirect = $exception->isWrongArea()
                     ? route('promo.redeem', ['code' => strtoupper(trim($promoCode))])
                     : null;
+
+                // A remembered code that no longer works is told once, not
+                // on every purchase screen from now on.
+                if ($fromAdLink) {
+                    Attribution::consumePromo($request, $request->user(), $promoCode);
+                }
+
                 $promoCode = null;
             }
         }

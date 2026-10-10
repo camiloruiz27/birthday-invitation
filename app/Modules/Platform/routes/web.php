@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Platform\Http\Controllers\AdLandingController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -38,6 +39,11 @@ Route::get('/casos/{slug}', [CatalogController::class, 'show'])->name('cases.sho
 Route::get('/mecanicas', [CatalogController::class, 'mechanics'])->name('mechanics');
 Route::get('/inteligencia-artificial', [CatalogController::class, 'ai'])->name('ai');
 Route::get('/precios', [CatalogController::class, 'pricing'])->name('pricing');
+
+// What paid ads point at: /jugar/{slug} for one case, /jugar for the platform
+// as a whole. A short, stable path on purpose — it is printed into campaigns.
+Route::get('/jugar', [AdLandingController::class, 'platform'])->name('ads.platform');
+Route::get('/jugar/{slug}', [AdLandingController::class, 'show'])->name('ads.case');
 
 // Legal documents: Ley 1581 de 2012 (data policy), Ley 1480 de 2011 (terms of
 // an online sale) and the cookie policy the consent banner points to.
@@ -110,8 +116,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/panel', DashboardController::class)->name('dashboard');
     Route::get('/biblioteca', LibraryController::class)->name('library');
 
-    // The AI credit wallet. Reading the balance and the ledger needs no
-    // confirmed address; spending money does — see the group below.
+    // The AI credit wallet: the balance and the ledger. Buying more is below.
     Route::get('/creditos', [CreditsController::class, 'index'])->name('credits');
 
     // Gift codes only — a discount code is entered on the checkout screens
@@ -120,50 +125,58 @@ Route::middleware('auth')->group(function () {
 
     /*
     |----------------------------------------------------------------------
-    | Anything that spends money or claims value
+    | Buying and redeeming
     |----------------------------------------------------------------------
     |
-    | `verified` is the line: an address nobody has proved they own must not
-    | be able to buy. It is not squeamishness about spam — it is that the
-    | receipt, the player links and the password recovery for that purchase
-    | all go to an address the buyer may not be able to read, and a payment
-    | that lands nowhere is the worst kind of support ticket to receive.
+    | Deliberately NOT behind `verified`. Someone arriving from an ad registers
+    | and pays in the same sitting; making them leave for their mail app and
+    | come back through a link that opens in another browser (with no session,
+    | so another login and captcha) loses most of them before they pay.
+    |
+    | What a purchase needs from the account is only the account itself: Bold
+    | is never given the account's address, and access is an Entitlement on the
+    | account, so a mistyped address cannot make a payment land nowhere. What an
+    | unconfirmed address CANNOT do is make the platform send mail to other
+    | people — that is gated where it happens (creating a game, sending player
+    | links, starting a game; see the `partidas` routes in the Immersion
+    | module), which is the line that actually matters for abuse.
     |
     | `throttle:promo` only counts requests that actually carry a code, so a
     | buyer walking through the review screen without one is never charged an
     | attempt (see PlatformServiceProvider::registerPromoRateLimiter).
     |
     */
-    Route::middleware('verified')->group(function () {
-        // A real purchase always lands on review() first — what you're
-        // buying, any discount applied, the actual total — before store()
-        // ever runs. review() 404s when payments are off; store() is also
-        // the simulated stand-in's endpoint, so it stays reachable either
-        // way.
-        Route::get('/casos/{slug}/comprar', [CheckoutController::class, 'review'])
-            ->middleware('throttle:promo')
-            ->name('cases.checkout.review');
-        Route::post('/casos/{slug}/adquirir', [CheckoutController::class, 'store'])
-            ->middleware('throttle:promo')
-            ->name('cases.acquire');
+    // A real purchase always lands on review() first — what you're buying,
+    // any discount applied, the actual total — before store() ever runs.
+    // review() 404s when payments are off; store() is also the simulated
+    // stand-in's endpoint, so it stays reachable either way.
+    Route::get('/casos/{slug}/comprar', [CheckoutController::class, 'review'])
+        ->middleware('throttle:promo')
+        ->name('cases.checkout.review');
+    Route::post('/casos/{slug}/adquirir', [CheckoutController::class, 'store'])
+        ->middleware('throttle:promo')
+        ->name('cases.acquire');
 
-        Route::get('/creditos/comprar', [CreditsController::class, 'review'])
-            ->middleware('throttle:promo')
-            ->name('credits.checkout.review');
-        Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])
-            ->middleware('throttle:promo')
-            ->name('credits.purchase');
+    Route::get('/creditos/comprar', [CreditsController::class, 'review'])
+        ->middleware('throttle:promo')
+        ->name('credits.checkout.review');
+    Route::post('/creditos/recargar', [CreditsController::class, 'purchase'])
+        ->middleware('throttle:promo')
+        ->name('credits.purchase');
 
-        Route::post('/canjear', [RedeemCodeController::class, 'store'])
-            ->middleware('throttle:promo')
-            ->name('promo.redeem.store');
-    });
+    Route::post('/canjear', [RedeemCodeController::class, 'store'])
+        ->middleware('throttle:promo')
+        ->name('promo.redeem.store');
 
-    // Platform administration. Granted only from the console
+    // Platform administration. Admin status is granted only from the console
     // (php artisan platform:make-admin), never through a screen.
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
-        Route::get('/codigos', AdminPromoCodesController::class)->name('codes');
+        Route::get('/codigos', [AdminPromoCodesController::class, 'index'])->name('codes');
+        Route::post('/codigos', [AdminPromoCodesController::class, 'store'])->name('codes.store');
+        Route::patch('/codigos/{promoCode}/activo', [AdminPromoCodesController::class, 'toggle'])
+            ->whereNumber('promoCode')
+            ->name('codes.toggle');
     });
 
     // Where Bold sends the buyer back after checkout. The page itself polls

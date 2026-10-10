@@ -90,6 +90,19 @@ return [
         // Archivo esperado en public/immersion/la-ultima-funcion/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/la-ultima-funcion).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Héctor Delgado muere entre escenas en la última función de la temporada. El objeto de la caja fue cambiado por otro mucho más pesado.',
+            'bullets' => [
+                '4 a 7 jugadores, presencial o por videollamada',
+                'Cinco sospechosos y dos testigos a quienes interrogar',
+                '65 minutos reconstruyendo la función minuto a minuto',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'medium',
         'duration_minutes' => 65,
         'min_players' => 4,

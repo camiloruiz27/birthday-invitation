@@ -264,4 +264,42 @@ return [
         'basic_measurement' => (bool) env('PLATFORM_ANALYTICS_BASIC', true),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Advertising measurement (TikTok + Meta)
+    |--------------------------------------------------------------------------
+    |
+    | Each platform is off until its pixel id is set, same convention as
+    | analytics above. Unlike analytics there is no cookieless "basic" mode:
+    | nothing is loaded in the browser, and no server-side event is sent, unless
+    | the visitor accepted the marketing category in the consent banner (see
+    | resources/js/lib/consent.js and Orders.marketing_consent).
+    |
+    | pixel_id    Loaded in the browser once marketing consent is given.
+    | access_token  Server-side events (TikTok Events API / Meta Conversions
+    |             API). Without it only the browser pixel runs.
+    | test_event_code  Optional; makes events show up in the platform's "Test
+    |             Events" tab instead of the live data. Remove for production.
+    |
+    | TikTok: Events Manager -> Web events -> pixel id / "Generate access token".
+    | Meta: Events Manager -> Data sources -> pixel id / Conversions API token.
+    |
+    */
+
+    'ads' => [
+        'tiktok' => [
+            'pixel_id' => env('PLATFORM_TIKTOK_PIXEL_ID', ''),
+            'access_token' => env('PLATFORM_TIKTOK_ACCESS_TOKEN', ''),
+            'test_event_code' => env('PLATFORM_TIKTOK_TEST_EVENT_CODE', ''),
+        ],
+        'meta' => [
+            'pixel_id' => env('PLATFORM_META_PIXEL_ID', ''),
+            'access_token' => env('PLATFORM_META_ACCESS_TOKEN', ''),
+            'test_event_code' => env('PLATFORM_META_TEST_EVENT_CODE', ''),
+            'api_version' => env('PLATFORM_META_API_VERSION', 'v21.0'),
+        ],
+        // Seconds. A slow ad platform must never hold up a payment webhook.
+        'timeout' => (int) env('PLATFORM_ADS_TIMEOUT', 5),
+    ],
+
 ];

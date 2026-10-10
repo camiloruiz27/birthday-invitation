@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import usePoll from '../../hooks/usePoll';
 import TextLink from '../../components/ui/TextLink';
-import { trackEvent } from '../../lib/analytics';
+import { trackAd, trackEvent } from '../../lib/analytics';
 import { minorUnitValue } from '../../lib/format';
 
 /**
@@ -35,6 +35,19 @@ export default function Confirming({ order }) {
             currency: order.currency || 'COP',
             items: [{ item_id: order.case_slug || order.type, item_name: order.type }],
         });
+
+        // The ad pixels. event_id is the order id, the same value the server
+        // sends (Ads/AdEvents.php), so each network counts the sale once.
+        trackAd(
+            'Purchase',
+            {
+                value: minorUnitValue(order.amount, order.currency || 'COP'),
+                currency: order.currency || 'COP',
+                contentId: order.case_slug || order.type,
+                contentName: order.type,
+            },
+            String(order.id)
+        );
     }, [order.status, order.id, order.amount, order.currency, order.case_slug, order.type]);
 
     useEffect(() => {
@@ -73,8 +86,9 @@ export default function Confirming({ order }) {
                         </p>
                         {waitedLong && (
                             <p className="mt-4 text-sm text-ink-muted">
-                                Está tardando más de lo normal. Si el pago se completó, te llega
-                                un correo de confirmación en cuanto lo procesemos; si no, puedes
+                                Está tardando más de lo normal. Si el pago se completó, tu compra
+                                aparece en tu biblioteca en cuanto lo procesemos (si pagaste en
+                                otra app, puedes volver aquí cuando quieras); si no, puedes
                                 cerrar esta página e intentarlo de nuevo.
                             </p>
                         )}

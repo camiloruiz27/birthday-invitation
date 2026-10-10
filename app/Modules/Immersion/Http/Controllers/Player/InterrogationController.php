@@ -183,7 +183,7 @@ class InterrogationController extends Controller
             // hidden behind it: past the limit the player is told.
             if ($failures > max(0, (int) config('immersion.ai.evasions_before_error'))) {
                 return response()->json([
-                    'message' => 'Estamos teniendo un problema con la inteligencia artificial y el sospechoso no esta respondiendo. No se te cobro ni se gasto tu pregunta: intentalo de nuevo en unos minutos o avisa al Game Master.',
+                    'message' => 'Estamos teniendo un problema con la generación y el sospechoso no esta respondiendo. No se te cobro ni se gasto tu pregunta: intentalo de nuevo en unos minutos o avisa al Game Master.',
                     'ai_unavailable' => true,
                 ], 503);
             }

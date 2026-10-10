@@ -51,6 +51,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'terms_version',
         'privacy_accepted_at',
         'privacy_version',
+        // Campaign touches captured before registering. Written only by
+        // RegisteredUserController from the session, never from a payload.
+        'attribution',
     ];
 
     /**
@@ -75,6 +78,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_admin' => 'boolean',
         'terms_accepted_at' => 'datetime',
         'privacy_accepted_at' => 'datetime',
+        'attribution' => 'array',
     ];
 
     /**

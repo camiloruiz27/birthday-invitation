@@ -2,6 +2,7 @@
 
 namespace App\Modules\Platform\Console\Commands;
 
+use App\Modules\Platform\Actions\CreatePromoCodes;
 use App\Modules\Platform\Console\Commands\Concerns\ResolvesPromoCodeGrant;
 use App\Modules\Platform\Models\PromoCode;
 use Illuminate\Console\Command;
@@ -13,7 +14,7 @@ use Illuminate\Console\Command;
  * is good for exactly one redemption, ever (see CreatePromoCode for a single
  * code shared by several people instead).
  *
- * Console-only, same reasoning as CreatePromoCode: a rare, privileged write.
+ * The write itself is CreatePromoCodes, shared with the admin screen.
  */
 class CreatePromoCodeBatch extends Command
 {
@@ -27,19 +28,13 @@ class CreatePromoCodeBatch extends Command
                             {--credits= : Grants this many free credits (combine with --case/--any-case for a gift bundle)}
                             {--discount-percent= : Percentage off a real purchase, 1-100}
                             {--discount-fixed= : Fixed amount off a real purchase}
+                            {--expires= : Last day the codes work, e.g. 2026-11-30 (through the end of that day); omit for no expiry}
+                            {--applies-to= : Limit a discount to "case" purchases or "credits" top-ups; omit for both}
                             {--note= : A reminder of what campaign this batch is for}';
 
     protected $description = 'Create a batch of single-use promo/gift codes to hand out one per person';
 
-    // Excludes 0/O and 1/I: a code read off a screenshot or typed from a
-    // printed flyer must not be ambiguous.
-    private const SUFFIX_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-    private const SUFFIX_LENGTH = 6;
-
-    private const MAX_COUNT = 500;
-
-    public function handle(): int
+    public function handle(CreatePromoCodes $creator): int
     {
         $prefix = strtoupper(trim($this->argument('prefix')));
 
@@ -51,8 +46,8 @@ class CreatePromoCodeBatch extends Command
 
         $count = (int) $this->option('count');
 
-        if ($count < 1 || $count > self::MAX_COUNT) {
-            $this->error('--count tiene que estar entre 1 y '.self::MAX_COUNT.'.');
+        if ($count < 1 || $count > CreatePromoCodes::MAX_BATCH) {
+            $this->error('--count tiene que estar entre 1 y '.CreatePromoCodes::MAX_BATCH.'.');
 
             return self::FAILURE;
         }
@@ -63,17 +58,7 @@ class CreatePromoCodeBatch extends Command
             return self::FAILURE;
         }
 
-        $codes = $this->generateUniqueCodes($prefix, $count);
-        $note = $this->option('note');
-
-        foreach ($codes as $code) {
-            PromoCode::create([
-                'code' => $code,
-                'note' => $note,
-                'max_redemptions' => 1,
-                'max_redemptions_per_user' => 1,
-            ] + $grant);
-        }
+        $codes = $creator->batch($prefix, $count, ['note' => $this->option('note')] + $grant);
 
         $this->info(count($codes).' códigos creados.');
         $this->line('  '.(new PromoCode($grant))->describeGrant());
@@ -84,44 +69,5 @@ class CreatePromoCodeBatch extends Command
         }
 
         return self::SUCCESS;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function generateUniqueCodes(string $prefix, int $count): array
-    {
-        // Codes already using this prefix count too, so running the same
-        // campaign's batch a second time can never collide with the first.
-        $seen = array_flip(
-            PromoCode::where('code', 'like', "{$prefix}-%")->pluck('code')->all()
-        );
-
-        $codes = [];
-
-        while (count($codes) < $count) {
-            $code = "{$prefix}-".$this->randomSuffix();
-
-            if (isset($seen[$code])) {
-                continue;
-            }
-
-            $seen[$code] = true;
-            $codes[] = $code;
-        }
-
-        return $codes;
-    }
-
-    private function randomSuffix(): string
-    {
-        $alphabet = self::SUFFIX_ALPHABET;
-        $suffix = '';
-
-        for ($i = 0; $i < self::SUFFIX_LENGTH; $i++) {
-            $suffix .= $alphabet[random_int(0, strlen($alphabet) - 1)];
-        }
-
-        return $suffix;
     }
 }

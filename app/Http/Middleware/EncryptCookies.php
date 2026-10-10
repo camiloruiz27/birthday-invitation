@@ -12,6 +12,14 @@ class EncryptCookies extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Written by the browser, not by us (the consent banner and the ad
+        // pixels), so they arrive in plain text and must be read as such —
+        // an encrypted-cookie middleware silently drops anything it cannot
+        // decrypt. Read server-side only to attach a conversion to the ad
+        // click that caused it, and only with marketing consent.
+        'mc_consent',
+        '_fbp',
+        '_fbc',
+        '_ttp',
     ];
 }

@@ -19,7 +19,10 @@ export default function TextLink({
     children,
     ...props
 }) {
-    const classes = `rounded-sm font-medium text-accent underline underline-offset-2 transition-colors hover:text-accent-strong ${className}`;
+    // py-2.5: a link in a sentence is only as tall as its text (~17px), too
+    // small a target for a thumb. Vertical padding on an inline element
+    // enlarges what can be tapped without changing the height of the line.
+    const classes = `rounded-sm py-2.5 font-medium text-accent underline underline-offset-2 transition-colors hover:text-accent-strong ${className}`;
 
     if (external) {
         return (

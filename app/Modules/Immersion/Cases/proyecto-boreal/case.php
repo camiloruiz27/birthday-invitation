@@ -82,6 +82,19 @@ return [
         // Archivo esperado en public/immersion/proyecto-boreal/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/proyecto-boreal).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Una tormenta polar deja la estación incomunicada. Esa noche, la directora científica aparece sin vida en el túnel de conexión.',
+            'bullets' => [
+                '5 a 8 investigadores, con fotos, documentos y audios',
+                'Seis compañeros de estación y dos testigos a quienes interrogar',
+                '95 minutos y nadie puede pedir ayuda',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'hard',
         'duration_minutes' => 95,
         'min_players' => 5,

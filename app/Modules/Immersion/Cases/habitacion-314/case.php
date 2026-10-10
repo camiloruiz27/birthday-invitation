@@ -92,6 +92,19 @@ return [
         // Archivo esperado en public/immersion/habitacion-314/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/habitacion-314).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'El registro de la puerta dice que nadie entró. Pero alguien pidió la cena en su nombre cuando ella llevaba horas muerta.',
+            'bullets' => [
+                '4 a 7 investigadores, presencial o a distancia',
+                'Cinco sospechosos y dos testigos a quienes interrogar',
+                '75 minutos en un hotel lleno de coartadas',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'hard',
         'duration_minutes' => 75,
         'min_players' => 4,
