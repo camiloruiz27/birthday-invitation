@@ -93,35 +93,40 @@ class FullJourneyTest extends TestCase
         $this->get(route('profile.edit'))->assertOk();
 
         /* ---------------------------------------------------------------
-         | 2b. Confirm the email address
+         | 2b. Buy first, confirm the email later
          |
-         | A fresh account can look around, but buying is behind `verified`.
-         | Walking that here rather than seeding a verified user is the whole
-         | point of this test: it is the step a real buyer cannot skip, and a
-         | dead end here would strand every new customer before their first
-         | purchase.
+         | A fresh, unconfirmed account can buy: someone arriving from an ad
+         | pays in the same sitting. What it cannot do is create a game (that
+         | mails other people), so the confirmation is walked here, at the
+         | point it is asked for. Walking it rather than seeding a verified
+         | user is the whole point of this test: a dead end here would strand
+         | every new customer before their first game.
          |-------------------------------------------------------------- */
 
-        $this->post(route('cases.acquire', 'steve-jacobs'))
+        $this->post(route('cases.acquire', 'steve-jacobs'))->assertRedirect(route('dashboard'));
+        $this->assertTrue($gameMaster->fresh()->ownsCase('steve-jacobs'));
+
+        $this->get(route('immersion.gm.games.create'))
             ->assertRedirect(route('verification.notice'));
 
         $this->get(route('verification.notice'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Auth/VerifyEmail'));
 
-        // The same signed URL the notification puts in the mail.
+        // The same signed URL the notification puts in the mail. Confirming
+        // continues to where the buyer was before being turned away (the
+        // verified middleware remembers the page they came from): the form to
+        // create the game they were about to fill in.
         $this->get(URL::temporarySignedRoute('verification.verify', now()->addHour(), [
             'id' => $gameMaster->id,
             'hash' => sha1($gameMaster->email),
-        ]))->assertRedirect(route('dashboard'));
+        ]))->assertRedirect(route('immersion.gm.games.create'));
 
         $this->assertTrue($gameMaster->fresh()->hasVerifiedEmail());
 
         /* ---------------------------------------------------------------
-         | 3. Acquire a case
+         | 3. The case is in the library (bought in 2b)
          |-------------------------------------------------------------- */
-
-        $this->post(route('cases.acquire', 'steve-jacobs'))->assertRedirect(route('dashboard'));
 
         $this->assertTrue($gameMaster->fresh()->ownsCase('steve-jacobs'));
 

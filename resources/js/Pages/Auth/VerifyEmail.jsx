@@ -24,7 +24,7 @@ export default function VerifyEmail({ email, sent }) {
     return (
         <AuthLayout
             title="Confirma tu correo"
-            description="Solo hace falta una vez, y desbloquea las compras de tu cuenta."
+            description="Solo hace falta una vez, y desbloquea crear partidas y enviar los enlaces a tus jugadores."
             footer={
                 <TextLink href={route('dashboard')}>
                     Volver al panel
@@ -47,10 +47,10 @@ export default function VerifyEmail({ email, sent }) {
                 </p>
 
                 <p className="text-sm text-ink-muted">
-                    Te lo pedimos antes de una compra porque a ese correo llegan el
-                    comprobante, los enlaces de tus jugadores y la recuperación de tu
-                    contraseña. Si la dirección tiene un error, un pago se pierde en un
-                    buzón que no puedes abrir.
+                    Comprar no lo necesita, pero crear una partida sí: desde tu cuenta
+                    mandamos correos a tus jugadores con sus enlaces, y a ese mismo
+                    correo llega la recuperación de tu contraseña. Si la dirección tiene
+                    un error, no podrías recuperar la cuenta.
                 </p>
 
                 <p className="text-sm text-ink-muted">

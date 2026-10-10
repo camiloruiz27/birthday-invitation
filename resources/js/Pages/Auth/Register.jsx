@@ -5,9 +5,9 @@ import Button from '../../components/ui/Button';
 import Captcha from '../../components/ui/Captcha';
 import { CheckboxField, TextField, PasswordField } from '../../components/ui/Field';
 import TextLink from '../../components/ui/TextLink';
-import { trackEvent } from '../../lib/analytics';
+import { trackAd, trackEvent } from '../../lib/analytics';
 
-export default function Register() {
+export default function Register({ case: caseSlug = null }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
@@ -24,7 +24,14 @@ export default function Register() {
     function submit(event) {
         event.preventDefault();
         post(route('register'), {
-            onSuccess: () => trackEvent('sign_up'),
+            onSuccess: (page) => {
+                trackEvent('sign_up');
+
+                // Same id the server uses for its own CompleteRegistration
+                // (Ads/AdEvents.php), so each ad network counts it once.
+                const userId = page?.props?.auth?.user?.id;
+                if (userId) trackAd('CompleteRegistration', {}, `reg-${userId}`);
+            },
             onFinish: () => {
                 setData('password', '');
                 setData('password_confirmation', '');
@@ -40,7 +47,7 @@ export default function Register() {
             footer={
                 <>
                     ¿Ya tienes cuenta?{' '}
-                    <TextLink href={route('login')}>
+                    <TextLink href={route('login', caseSlug ? { case: caseSlug } : {})}>
                         Ingresar
                     </TextLink>
                 </>

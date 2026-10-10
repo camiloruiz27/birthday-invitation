@@ -92,6 +92,19 @@ return [
         // Archivo esperado en public/immersion/desaparecida-en-directo/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/desaparecida-en-directo).
+        // Todo campo que falte cae a la tagline y a los datos reales del caso.
+        // `bullets`: hasta 3 puntos de venta, cortos. `cta`: el texto del boton.
+        'ad' => [
+            'hook' => 'Todas las pruebas dicen que se fue por su cuenta. Tu equipo tiene una hora para descubrir quién estaba con ella.',
+            'bullets' => [
+                '4 a 6 investigadores, en la misma mesa o por videollamada',
+                'Cinco personas cercanas y dos testigos a quienes interrogar',
+                '60 minutos con el expediente llegando en tiempo real',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'medium',
         'duration_minutes' => 60,
         'min_players' => 4,

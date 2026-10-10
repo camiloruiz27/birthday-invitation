@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
+import InAppBrowserNotice from '../components/ui/InAppBrowserNotice';
 import { openCookieSettings } from '../lib/consent';
 
 /**
@@ -18,6 +19,11 @@ export default function AuthLayout({ title, description, footer, children }) {
         <div className="flex min-h-dvh flex-col items-center justify-center px-4 py-12">
             <main className="w-full max-w-md">
                 <Brand className="mb-8 justify-center" />
+
+                {/* Inside TikTok's or Instagram's browser the anti-bot check can
+                    fail and the confirmation mail opens somewhere else: say so
+                    before the visitor types anything. */}
+                <InAppBrowserNotice />
 
                 <div className="rounded-card border border-line bg-surface-raised p-6 shadow-raised sm:p-8">
                     {/* Same face and weight as AppLayout's h1, one step down
@@ -45,17 +51,18 @@ export default function AuthLayout({ title, description, footer, children }) {
 
                 {footer && <p className="mt-6 text-center text-sm text-ink-muted">{footer}</p>}
 
-                <nav aria-label="Legal" className="mt-6 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-xs">
-                    <Link href={route('privacy')} className="text-ink-subtle hover:text-ink">
+                {/* Each link is a 44px-tall tap target (min-h-11). */}
+                <nav aria-label="Legal" className="mt-3 flex flex-wrap justify-center gap-x-4 text-xs">
+                    <Link href={route('privacy')} className="inline-flex min-h-11 items-center px-1 text-ink-subtle hover:text-ink">
                         Privacidad
                     </Link>
-                    <Link href={route('terms')} className="text-ink-subtle hover:text-ink">
+                    <Link href={route('terms')} className="inline-flex min-h-11 items-center px-1 text-ink-subtle hover:text-ink">
                         Términos
                     </Link>
-                    <Link href={route('cookies')} className="text-ink-subtle hover:text-ink">
+                    <Link href={route('cookies')} className="inline-flex min-h-11 items-center px-1 text-ink-subtle hover:text-ink">
                         Cookies
                     </Link>
-                    <button type="button" onClick={openCookieSettings} className="text-ink-subtle hover:text-ink">
+                    <button type="button" onClick={openCookieSettings} className="inline-flex min-h-11 items-center px-1 text-ink-subtle hover:text-ink">
                         Preferencias de cookies
                     </button>
                 </nav>

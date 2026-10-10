@@ -4,6 +4,8 @@ namespace App\Modules\Platform\Console\Commands\Concerns;
 
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\PromoCode;
+use Illuminate\Support\Carbon;
+use Throwable;
 
 /**
  * What a code hands over: a GIFT (--case and/or --credits) or a DISCOUNT
@@ -105,6 +107,67 @@ trait ResolvesPromoCodeGrant
             $attributes['discount_value'] = (int) $discountFixed;
         }
 
+        $appliesTo = $this->option('applies-to');
+
+        if ($appliesTo !== null) {
+            if (! in_array($appliesTo, [PromoCode::APPLIES_CASE, PromoCode::APPLIES_CREDITS], true)) {
+                $this->error('--applies-to tiene que ser "case" o "credits".');
+
+                return null;
+            }
+
+            // A gift is redeemed on its own screen and was never limited by
+            // purchase type; only a discount has a purchase to limit.
+            if (! $isDiscount) {
+                $this->error('--applies-to solo tiene sentido en un descuento (--discount-percent o --discount-fixed).');
+
+                return null;
+            }
+
+            $attributes['applies_to'] = $appliesTo;
+        }
+
+        $expires = $this->option('expires');
+
+        if ($expires !== null) {
+            $expiresAt = $this->parseExpiry((string) $expires);
+
+            if ($expiresAt === null) {
+                return null;
+            }
+
+            $attributes['expires_at'] = $expiresAt;
+        }
+
         return $attributes;
+    }
+
+    /**
+     * A bare date ("2026-11-30") lasts through that whole day — the way
+     * anyone saying "until the 30th" means it — while a full date and time is
+     * taken as written. Must be in the future: a code that is already
+     * expired is a typo, not a plan.
+     */
+    private function parseExpiry(string $value): ?Carbon
+    {
+        try {
+            $date = Carbon::parse($value);
+        } catch (Throwable) {
+            $this->error("--expires no es una fecha válida: \"{$value}\". Usa por ejemplo 2026-11-30.");
+
+            return null;
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value)) === 1) {
+            $date = $date->endOfDay();
+        }
+
+        if ($date->isPast()) {
+            $this->error('--expires tiene que ser una fecha futura.');
+
+            return null;
+        }
+
+        return $date;
     }
 }

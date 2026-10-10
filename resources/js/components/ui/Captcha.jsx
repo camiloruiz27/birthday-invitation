@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import InAppBrowserNotice, { useInAppBrowser } from './InAppBrowserNotice';
 
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+// How long the widget gets to produce a token before we assume it is not going
+// to. In some embedded browsers the script or its iframe is blocked without
+// any error event firing, which used to leave a blank space and a form that
+// could never be submitted, with nothing to tell the visitor why.
+const GIVE_UP_AFTER_MS = 10000;
 
 /**
  * Loaded once for the whole session, not once per form.
@@ -56,7 +63,9 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
     const { props } = usePage();
     const siteKey = props.captchaSiteKey;
     const container = useRef(null);
+    const inApp = useInAppBrowser();
     const [failed, setFailed] = useState(false);
+    const solved = useRef(false);
 
     useEffect(() => {
         if (!siteKey || !container.current) {
@@ -65,6 +74,17 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
 
         let widgetId = null;
         let cancelled = false;
+        solved.current = false;
+        setFailed(false);
+
+        // The give-up timer. It never removes the widget: if the visitor is just
+        // slow on a bad connection it can still complete, and the message goes
+        // away on its own when it does.
+        const timer = setTimeout(() => {
+            if (!cancelled && !solved.current) {
+                setFailed(true);
+            }
+        }, GIVE_UP_AFTER_MS);
 
         loadTurnstile()
             .then((turnstile) => {
@@ -75,15 +95,24 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
                 widgetId = turnstile.render(container.current, {
                     sitekey: siteKey,
                     theme: 'auto',
-                    callback: (token) => onToken(token),
+                    callback: (token) => {
+                        solved.current = true;
+                        setFailed(false);
+                        onToken(token);
+                    },
                     // A token that expires before the form is submitted is
                     // worse than no token, so it is cleared rather than left
                     // to be rejected by the server later.
-                    'expired-callback': () => onToken(''),
+                    'expired-callback': () => {
+                        solved.current = false;
+                        onToken('');
+                    },
                     'error-callback': () => {
                         onToken('');
                         setFailed(true);
                     },
+                    'timeout-callback': () => setFailed(true),
+                    'unsupported-callback': () => setFailed(true),
                 });
             })
             .catch(() => {
@@ -94,6 +123,7 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
 
         return () => {
             cancelled = true;
+            clearTimeout(timer);
 
             if (widgetId !== null && window.turnstile) {
                 window.turnstile.remove(widgetId);
@@ -112,7 +142,16 @@ export default function Captcha({ onToken, error, resetKey = 0 }) {
         <div>
             <div ref={container} />
 
-            {failed && (
+            {failed && inApp && (
+                // The likely cause is the browser the visitor is in, so the way
+                // out is the same notice the page already offers: open this in
+                // the phone's own browser, with the link one tap away.
+                <InAppBrowserNotice className="mt-3 mb-0">
+                    La verificación anti-robots no cargó aquí. Ábrelo en tu navegador para continuar.
+                </InAppBrowserNotice>
+            )}
+
+            {failed && !inApp && (
                 <p className="mt-1.5 text-xs text-ink-muted">
                     No pudimos cargar la verificación anti-robots. Revisa tu conexión y
                     recarga la página.

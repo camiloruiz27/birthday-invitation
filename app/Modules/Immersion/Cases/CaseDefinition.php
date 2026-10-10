@@ -89,6 +89,7 @@ class CaseDefinition
                 ? trim((string) $catalog['description'])
                 : null,
             'cover_path' => $cover ? $this->assetUrl('cover/'.$cover) : null,
+            'ad' => $this->adCopy((array) ($catalog['ad'] ?? [])),
             'difficulty' => $catalog['difficulty'] ?? null,
             'duration_minutes' => $catalog['duration_minutes'] ?? null,
             'min_players' => $catalog['min_players'] ?? null,
@@ -98,6 +99,34 @@ class CaseDefinition
             'published' => (bool) ($catalog['published'] ?? false),
             'sort_order' => (int) ($catalog['sort_order'] ?? 0),
         ];
+    }
+
+    /**
+     * The optional `catalog.ad` block: copy for an advertisement pointing at
+     * this case. Anything not written stays null so the ad landing can fall
+     * back field by field, and what IS written is cleaned (trimmed, empty
+     * lines dropped, at most three points) so a stray blank in a manifest
+     * cannot become an empty bullet on a paid landing page.
+     *
+     * @param  array<string, mixed>  $ad
+     * @return array{hook: ?string, bullets: array<int, string>, cta: ?string}|null
+     */
+    private function adCopy(array $ad): ?array
+    {
+        $clean = fn (mixed $value): ?string => is_string($value) && trim($value) !== '' ? trim($value) : null;
+
+        $bullets = array_values(array_filter(
+            array_map($clean, (array) ($ad['bullets'] ?? [])),
+            fn (?string $bullet) => $bullet !== null
+        ));
+
+        $copy = [
+            'hook' => $clean($ad['hook'] ?? null),
+            'bullets' => array_slice($bullets, 0, 3),
+            'cta' => $clean($ad['cta'] ?? null),
+        ];
+
+        return $copy['hook'] === null && $copy['bullets'] === [] && $copy['cta'] === null ? null : $copy;
     }
 
     /**

@@ -13,10 +13,12 @@ use Tests\TestCase;
 /**
  * Confirming the address on an account.
  *
- * The line is drawn at spending money, not at signing in: an unconfirmed
- * account can browse, sign in and read its own panel, and is only stopped
- * where a purchase would otherwise send the receipt, the player links and
- * the password recovery to an address nobody has proved they can read.
+ * The line is drawn at MAILING OTHER PEOPLE, not at spending money and not at
+ * signing in: an unconfirmed account can browse, sign in, read its own panel
+ * and BUY (someone arriving from an ad pays in the same sitting, and Bold is
+ * never given the account's address), but cannot create a game or send player
+ * links, because the platform would be mailing third parties on behalf of an
+ * address nobody has proved they own.
  */
 class EmailVerificationTest extends TestCase
 {
@@ -45,14 +47,17 @@ class EmailVerificationTest extends TestCase
     /**
      * @dataProvider buyingRoutes
      */
-    public function test_an_unconfirmed_account_cannot_reach_a_route_that_spends_money(string $method, string $route, array $parameters): void
+    public function test_an_unconfirmed_account_can_reach_the_routes_that_spend_money(string $method, string $route, array $parameters): void
     {
-        config(['platform.payments.enabled' => true, 'platform.simulated_checkout' => true]);
+        config(['platform.payments.enabled' => true, 'platform.simulated_checkout' => false]);
         $this->catalogCase('steve-jacobs');
 
-        $this->actingAs($this->unverified())
-            ->call($method, route($route, $parameters))
-            ->assertRedirect(route('verification.notice'));
+        $response = $this->actingAs($this->unverified())->call($method, route($route, $parameters));
+
+        // Whatever each route answers (a screen, a validation error, a
+        // redirect on to the payment), it is not "confirm your email first".
+        $this->assertNotSame(route('verification.notice'), $response->headers->get('Location'));
+        $this->assertNotSame(403, $response->getStatusCode());
     }
 
     public static function buyingRoutes(): array
@@ -114,13 +119,13 @@ class EmailVerificationTest extends TestCase
      * the NEW one. Without this, confirming once and then editing the email
      * would be a way to end up verified on an address nobody owns.
      */
-    public function test_changing_the_email_removes_the_confirmation_and_blocks_buying_again(): void
+    public function test_changing_the_email_removes_the_confirmation_and_blocks_creating_games_again(): void
     {
         Notification::fake();
         config(['platform.simulated_checkout' => true]);
         $this->catalogCase('steve-jacobs');
 
-        $user = $this->userWithoutAccess();
+        $user = $this->gameMaster();
         $this->assertTrue($user->hasVerifiedEmail());
 
         $this->actingAs($user)->patch(route('profile.update'), [
@@ -131,8 +136,10 @@ class EmailVerificationTest extends TestCase
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
         Notification::assertSentTo($user->fresh(), VerifyEmail::class);
 
+        // Buying is still open; what the new, unconfirmed address blocks is
+        // mailing other people.
         $this->actingAs($user->fresh())
-            ->post(route('cases.acquire', 'steve-jacobs'))
+            ->get(route('immersion.gm.games.create'))
             ->assertRedirect(route('verification.notice'));
     }
 

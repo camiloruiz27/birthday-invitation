@@ -93,6 +93,19 @@ return [
         // Archivo esperado en public/immersion/kilometro-186/cover/portada.png
         'cover' => 'portada.png',
 
+        // Texto para anuncios (opcional; lo usa /jugar/kilometro-186).
+        // Solo hechos de este caso, sin revelar la solucion. Lo que falte cae a
+        // la tagline y a los datos reales (ver CaseCardData::landing()).
+        'ad' => [
+            'hook' => 'Su bolso sigue en el asiento. Su abrigo, también. Ella desapareció de un tren que no hizo ninguna parada.',
+            'bullets' => [
+                '4 a 7 investigadores, en la misma mesa o por videollamada',
+                'Seis pasajeros y tripulantes y dos testigos a quienes interrogar',
+                '75 minutos para cruzar cada relato con lo que registró el tren',
+            ],
+            'cta' => 'Quiero este caso',
+        ],
+
         'difficulty' => 'hard',
         'duration_minutes' => 75,
         'min_players' => 4,

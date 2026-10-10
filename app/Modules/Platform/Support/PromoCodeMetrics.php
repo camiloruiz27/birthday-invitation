@@ -2,14 +2,17 @@
 
 namespace App\Modules\Platform\Support;
 
+use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\PromoCodeRedemption;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Numbers for the admin "Códigos" screen. Codes are still created only from
- * the console (see CreatePromoCode) — this is read-only, same spirit as
- * PlatformMetrics: aggregates and a short recent list, no money figures
- * (checkout has no revenue reporting elsewhere either).
+ * Numbers for the admin "Códigos" screen: aggregates, every code, and a short
+ * recent list. Same spirit as PlatformMetrics. The only money figures are
+ * what each code has actually taken off paid orders (Order::discount_amount)
+ * and what those orders brought in — the cost of a promotion, which is what
+ * deciding on the next one needs.
  */
 class PromoCodeMetrics
 {
@@ -52,6 +55,22 @@ class PromoCodeMetrics
      */
     private function codes(): array
     {
+        // One query for every code's totals rather than one per row. Only
+        // approved orders count: a pending or rejected one never cost
+        // anything.
+        $money = Order::query()
+            ->where('status', Order::STATUS_APPROVED)
+            ->whereNotNull('promo_code_id')
+            ->groupBy('promo_code_id')
+            ->select(
+                'promo_code_id',
+                DB::raw('COUNT(*) as orders'),
+                DB::raw('COALESCE(SUM(discount_amount), 0) as discounted'),
+                DB::raw('COALESCE(SUM(amount), 0) as collected')
+            )
+            ->get()
+            ->keyBy('promo_code_id');
+
         return PromoCode::query()
             ->orderByDesc('id')
             ->get()
@@ -64,6 +83,12 @@ class PromoCodeMetrics
                 'max_redemptions' => $promo->max_redemptions,
                 'active' => $promo->active,
                 'exhausted' => $promo->isExhausted(),
+                'expired' => $promo->isExpired(),
+                'expires_at' => $promo->expires_at,
+                'applies_to' => $promo->applies_to,
+                'paid_orders' => (int) ($money[$promo->id]->orders ?? 0),
+                'discounted' => (int) ($money[$promo->id]->discounted ?? 0),
+                'collected' => (int) ($money[$promo->id]->collected ?? 0),
                 'note' => $promo->note,
                 'created_at' => $promo->created_at,
             ])
