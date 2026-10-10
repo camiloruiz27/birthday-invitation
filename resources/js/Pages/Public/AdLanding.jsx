@@ -59,21 +59,41 @@ function OfferStrip({ offer, currency, mysteryCase = null }) {
         ? new Date(offer.expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })
         : null;
 
+    // Two wordings on purpose. On a phone the long sentence took three lines,
+    // a fifth of the first screen, and pushed the title and the button down:
+    // there it is one line of facts. From sm up it is the full sentence.
+    // The short date for the one-line phone version ("15 oct").
+    const untilShort = offer.expires_at
+        ? new Date(offer.expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }).replace('.', '')
+        : null;
+
     return (
-        <div className="border-b border-accent bg-accent-dim px-4 py-3 text-center text-sm text-ink">
+        <div className="border-b border-accent bg-accent-dim px-4 py-2.5 text-center text-sm text-ink sm:py-3">
             {offer.kind === 'gift' ? (
-                <p>
-                    <strong className="font-semibold">
-                        Tienes {mysteryCase ? 'este caso' : 'un caso'} de regalo
-                    </strong>{' '}
-                    con el código {offer.code}. Crea tu cuenta y actívalo: no se te cobrará nada.
-                </p>
+                <>
+                    <p className="sm:hidden">
+                        <strong className="font-semibold">Caso de regalo</strong> · código {offer.code}
+                    </p>
+                    <p className="hidden sm:block">
+                        <strong className="font-semibold">
+                            Tienes {mysteryCase ? 'este caso' : 'un caso'} de regalo
+                        </strong>{' '}
+                        con el código {offer.code}. Crea tu cuenta y actívalo: no se te cobrará nada.
+                    </p>
+                </>
             ) : (
-                <p>
-                    <strong className="font-semibold">{offerHeadline(offer, currency)}</strong> con el
-                    código {offer.code}. Se aplica solo cuando vayas a pagar.
-                    {until && ` Válido hasta el ${until}.`}
-                </p>
+                <>
+                    <p className="sm:hidden">
+                        <strong className="font-semibold">{offerHeadline(offer, currency)}</strong> ·{' '}
+                        {offer.code}
+                        {untilShort && ` · hasta el ${untilShort}`}
+                    </p>
+                    <p className="hidden sm:block">
+                        <strong className="font-semibold">{offerHeadline(offer, currency)}</strong> con el
+                        código {offer.code}. Se aplica solo cuando vayas a pagar.
+                        {until && ` Válido hasta el ${until}.`}
+                    </p>
+                </>
             )}
         </div>
     );
@@ -164,6 +184,21 @@ function CaseLanding({ mysteryCase, offer, owned, canPurchase, canSimulatePurcha
     // Only when it really changes the price here; the strip shows either way.
     const discounted = offer && offer.final_amount !== null && offer.final_amount < mysteryCase.price_amount;
 
+    // The button is where the person decides, so it carries the offer too.
+    // (The bar pinned to the bottom of a phone keeps the plain label: the
+    // struck price beside it already says it.)
+    let ctaLabel = `${ad.cta} →`;
+
+    if (discounted) {
+        if (offer.kind === 'percent') {
+            ctaLabel = `Quiero mi ${offer.value}% de descuento →`;
+        } else if (offer.kind === 'fixed') {
+            ctaLabel = `Quiero mi descuento de ${formatPrice(offer.value, mysteryCase.currency)} →`;
+        } else {
+            ctaLabel = 'Reclamar mi caso gratis →';
+        }
+    }
+
     // Tells the ad pixels which case this visitor looked at (a no-op unless
     // they accepted the marketing category). Same event as the case's own
     // page, so a campaign's view counts do not depend on which one it used.
@@ -186,8 +221,8 @@ function CaseLanding({ mysteryCase, offer, owned, canPurchase, canSimulatePurcha
             owned={owned}
             canPurchase={canPurchase}
             canSimulatePurchase={canSimulatePurchase}
-            guestLabel={`${ad.cta} →`}
-            buyLabel={`${ad.cta} →`}
+            guestLabel={ctaLabel}
+            buyLabel={ctaLabel}
             size="lg"
         />
     );
