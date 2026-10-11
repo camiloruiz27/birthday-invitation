@@ -23,47 +23,6 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, g
             </p>
 
             <div className="mt-6">
-                {owned ? (
-                    <Button
-                        href={route('immersion.gm.games.create', { case: mysteryCase.slug })}
-                        fullWidth
-                    >
-                        Crear una partida
-                    </Button>
-                ) : !auth?.user ? (
-                    <>
-                        <Button href={route('register')} fullWidth>
-                            Crear cuenta para adquirirlo
-                        </Button>
-                        <p className="mt-3 text-center text-sm text-ink-muted">
-                            ¿Ya tienes cuenta?{' '}
-                            <Link href={route('login')} className="text-accent underline">
-                                Ingresar
-                            </Link>
-                        </p>
-                    </>
-                ) : canPurchase ? (
-                    <Button href={route('cases.checkout.review', mysteryCase.slug)} fullWidth>
-                        Comprar
-                    </Button>
-                ) : canSimulatePurchase ? (
-                    <>
-                        <Button onClick={acquireSimulated} loading={processing} fullWidth>
-                            {processing ? 'Añadiendo…' : 'Añadir a mi biblioteca'}
-                        </Button>
-                        {/* Never let a simulated acquisition look like a real
-                            purchase. */}
-                        <Alert variant="warning" className="mt-4 mb-0">
-                            Adquisición simulada: la pasarela de pagos todavía no está
-                            integrada, así que esto no cobra nada.
-                        </Alert>
-                    </>
-                ) : (
-                    <Alert variant="info" className="mb-0">
-                        La compra en línea todavía no está disponible. Escríbenos y te damos
-                        acceso.
-                    </Alert>
-                )}
                 <PurchaseCta
                     mysteryCase={mysteryCase}
                     owned={owned}

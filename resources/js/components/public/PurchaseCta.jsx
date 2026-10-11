@@ -38,7 +38,12 @@ export default function PurchaseCta({
 
     if (owned) {
         return (
-            <Button href={route('dashboard')} size={size} fullWidth className={className}>
+            <Button
+                href={route('immersion.gm.games.create', { case: mysteryCase.slug })}
+                size={size}
+                fullWidth
+                className={className}
+            >
                 Crear una partida
             </Button>
         );
