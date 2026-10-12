@@ -141,46 +141,50 @@ export default function CaseDocument({
         setOpenIds(initialOpenIds(doc, initial));
     }, [signature, doc, initial]);
 
-    const markRead = useCallback(
-        (pieceId) =>
-            setReadIds((previous) => {
-                if (previous.has(pieceId)) {
-                    return previous;
-                }
+    // "Sin abrir" means the section has never been open, however it got open:
+    // a click, "Abrir todo", a deep link, find-in-page — or simply being open
+    // by default. It used to be tied to the click alone, so a document that
+    // opened expanded still stamped every visible section "sin abrir", and the
+    // first click closed it and cleared the stamp: the reverse of what the
+    // control says. Watching openIds makes the two impossible to disagree.
+    useEffect(() => {
+        const collapsibleIds = doc.pieces.filter((piece) => piece.collapsible).map((piece) => piece.id);
 
-                const next = new Set(previous).add(pieceId);
-                writeStorage(storageKey, next);
+        setReadIds((previous) => {
+            const seen = collapsibleIds.filter((pieceId) => openIds.has(pieceId) && !previous.has(pieceId));
 
-                return next;
-            }),
-        [storageKey]
-    );
+            if (seen.length === 0) {
+                return previous;
+            }
 
-    const openPiece = useCallback(
-        (pieceId) => {
-            setOpenIds((previous) => new Set(previous).add(pieceId));
-            markRead(pieceId);
-        },
-        [markRead]
-    );
+            const next = new Set([...previous, ...seen]);
+            writeStorage(storageKey, next);
 
-    const togglePiece = useCallback(
-        (pieceId) => {
-            setOpenIds((previous) => {
-                const next = new Set(previous);
+            return next;
+        });
+    }, [openIds, doc, storageKey]);
 
-                if (next.has(pieceId)) {
-                    next.delete(pieceId);
-                } else {
-                    next.add(pieceId);
-                }
+    // Derived for the render itself: the effect above runs after paint, and an
+    // open section must never flash the stamp in that gap.
+    const isRead = (pieceId) => readIds.has(pieceId) || openIds.has(pieceId);
 
-                return next;
-            });
-            markRead(pieceId);
-        },
-        [markRead]
-    );
+    const openPiece = useCallback((pieceId) => {
+        setOpenIds((previous) => new Set(previous).add(pieceId));
+    }, []);
+
+    const togglePiece = useCallback((pieceId) => {
+        setOpenIds((previous) => {
+            const next = new Set(previous);
+
+            if (next.has(pieceId)) {
+                next.delete(pieceId);
+            } else {
+                next.add(pieceId);
+            }
+
+            return next;
+        });
+    }, []);
 
     // A deep link has to survive its section being closed: open first, then
     // scroll, or the browser scrolls to a zero-height hidden panel.
@@ -240,17 +244,13 @@ export default function CaseDocument({
     }
 
     const collapsible = doc.pieces.filter((piece) => piece.collapsible);
-    const unread = collapsible.filter((piece) => !readIds.has(piece.id)).length;
+    const unread = collapsible.filter((piece) => !isRead(piece.id)).length;
     const allOpen = collapsible.every((piece) => openIds.has(piece.id));
     const showToc = toc === true || (toc === 'auto' && allOpen && collapsible.length >= 4);
 
     const setAll = (open) => {
         if (open) {
             setOpenIds(new Set(doc.pieces.map((piece) => piece.id)));
-
-            const next = new Set([...readIds, ...collapsible.map((piece) => piece.id)]);
-            setReadIds(next);
-            writeStorage(storageKey, next);
 
             return;
         }
@@ -298,7 +298,7 @@ export default function CaseDocument({
                             total={collapsible.length}
                             headingLevel={headingLevel}
                             open={openIds.has(piece.id)}
-                            read={readIds.has(piece.id)}
+                            read={isRead(piece.id)}
                             onToggle={() => togglePiece(piece.id)}
                             onFound={() => openPiece(piece.id)}
                         />
