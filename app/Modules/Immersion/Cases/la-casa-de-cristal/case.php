@@ -48,6 +48,7 @@ return [
 
     'victim' => [
         'name' => 'Claudia Mercader',
+        'label' => 'Víctima',
         'photo' => 'claudia-mercader.png',
     ],
 
@@ -140,6 +141,11 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/raul-septien.md',
             'photo' => 'raul-septien.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 1, 'after' => ['V4'], 'confrontation' => true, 'note' => 'Con el fotograma completo del pasillo'],
+                ['questions' => 2, 'after' => ['V5', 'V7', 'V13'], 'confrontation' => true, 'note' => 'Con las pruebas del giro del caso'],
+            ]],
             'connection' => 'Exsocio de negocios de Claudia',
             'motive' => 'Evitar un segmento de confrontación en cámara sobre irregularidades financieras',
             'alibi' => 'Su presencia esa tarde era esperada y legítima (invitado para su propio segmento)',
@@ -158,6 +164,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/ines-bravo.md',
             'photo' => 'ines-bravo.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V9'], 'confrontation' => true, 'note' => 'Con el fotograma de la cámara del set'],
+            ]],
             'connection' => 'Estilista/responsable de vestuario',
             'motive' => 'Ninguno; vende fotos del detrás de cámaras a una revista (sin relación con la muerte)',
             'alibi' => 'Ausente del vestidor durante la ventana crítica, confirmada por Sofía',
@@ -176,6 +186,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/hector-duran.md',
             'photo' => 'hector-duran.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V10'], 'confrontation' => true, 'note' => 'Con el fotograma de la llamada'],
+            ]],
             'connection' => 'Periodista/entrevistador',
             'motive' => 'Ninguno; negociaba en secreto filtrar la entrevista a un medio rival (sin relación con la muerte)',
             'alibi' => 'Afuera de la casa haciendo esa llamada, visto por Óscar, en horario fuera de la ventana crítica',
@@ -194,6 +208,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/camila-andrade.md',
             'photo' => 'camila-andrade.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V11'], 'confrontation' => true, 'note' => 'Con el fotograma de la zona de tomas'],
+            ]],
             'connection' => 'Asistente personal de Claudia',
             'motive' => 'Ninguno; mantiene una relación con Tomás, el marido de Claudia (sin relación con la muerte)',
             'alibi' => 'En la zona de producción durante la ventana crítica, confirmada por Sofía',
@@ -212,6 +230,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/tomas-vega.md',
             'photo' => 'tomas-vega.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V12'], 'confrontation' => true, 'note' => 'Con el fotograma de la cámara del vestidor'],
+            ]],
             'connection' => 'Marido de Claudia',
             'motive' => 'Ninguno; sabía que Claudia sospechaba de su infidelidad (sin relación con la muerte)',
             'alibi' => 'Un fotograma lo sitúa alejándose de la zona del vestidor antes de la ventana crítica',
@@ -351,6 +373,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The accusation and how it is graded
+    |--------------------------------------------------------------------------
+    |
+    | Points straight from the design doc's scoring (30/15/20/20/15).
+    |
+    */
+
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Cómo la mataron y con qué?',
+            'hint' => 'La forma en que murió Claudia y el objeto que se usó.',
+            'points' => 15,
+            'guidance' => 'Lo esencial: estrangulamiento con una prenda del perchero de vestuario. No exigir la hora exacta.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué?',
+            'hint' => 'Qué quería evitar el culpable.',
+            'points' => 20,
+        ],
+        'questions' => [
+            [
+                'key' => 'lugar_real',
+                'label' => '¿Dónde murió realmente Claudia?',
+                'hint' => 'El lugar exacto y por qué ninguna cámara lo registró.',
+                'answer' => 'En el vestidor, la única zona de la casa sin cámara por un acuerdo normal y legítimo de privacidad de producción; no en la sala de lectura donde apareció.',
+                'points' => 20,
+                'guidance' => 'Cero si sostiene que murió en la sala de lectura o que alguna cámara fue manipulada, apagada o desincronizada.',
+            ],
+            [
+                'key' => 'construccion_escena',
+                'label' => '¿Cómo llegó el cuerpo al lugar donde fue hallado?',
+                'hint' => 'Por dónde se movió, cómo pasó desapercibido ante las cámaras y por qué se eligió ese sitio.',
+                'answer' => 'Raúl la trasladó por el pasillo de servicio, que sí tenía cámara, sosteniéndola por los hombros como si ayudara a alguien mareado, y la dejó en el sillón de la sala de lectura aprovechando el hábito conocido de Claudia de descansar allí entre segmentos.',
+                'points' => 15,
+                'guidance' => 'Dar puntaje parcial si describe el traslado por el pasillo pero no el disfraz del gesto o el hábito de Claudia.',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
     |
@@ -417,7 +481,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 65,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para entender que ninguna cámara mintió: el error estaba en asumir que Claudia murió donde apareció. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para entender lo que las cámaras mostraron, y lo que no. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, les hará algunas preguntas sobre el caso.',
             'delivery_mode' => 'all',
         ],
     ],

@@ -60,6 +60,7 @@ class GatewayConfessionProvider implements ConfessionProvider
                     'suspect_name' => $case->suspect($culprit)['name'],
                     'case_code' => $case->code(),
                     'victim_name' => $case->victim()['name'],
+                    'incident' => $case->incident(),
                     'script' => $authored,
                     'questions' => $questions,
                 ]);

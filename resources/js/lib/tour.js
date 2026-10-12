@@ -22,7 +22,10 @@ export const TOUR_VERSIONS = {
     // First visit to a case as a player.
     player: 1,
     // First time the interrogation area is open.
-    interrogation: 1,
+    // v2: preguntas por etapas y confrontaciones.
+    interrogation: 2,
+    // First time the accusation form is open.
+    accusation: 1,
     // First game page as a Game Master.
     gm: 1,
 };

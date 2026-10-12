@@ -71,6 +71,27 @@ class InterrogationSession extends Model
     }
 
     /**
+     * Questions that can be asked right now: those opened so far (never more
+     * than this session's capacity) minus the ones already used.
+     */
+    public function questionsAskableNow(int $availableNow): int
+    {
+        return max(0, min($availableNow, $this->max_questions) - $this->questions_used);
+    }
+
+    /**
+     * Has questions left, but none open yet: the table has to wait for more
+     * of the case to be delivered. Not the same as closed — the owner comes
+     * back to it.
+     */
+    public function isWaiting(int $availableNow): bool
+    {
+        return ! $this->isClosed()
+            && $this->questionsRemaining() > 0
+            && $this->questionsAskableNow($availableNow) === 0;
+    }
+
+    /**
      * Atomically consume one question from this session's budget. Returns
      * false when the budget is already spent or the session is closed, in
      * which case nothing was written and no AI call should be made.
@@ -78,13 +99,21 @@ class InterrogationSession extends Model
      * The WHERE clause is the enforcement point: a read-modify-write in PHP
      * would let two concurrent requests spend the same slot twice.
      */
-    public function reserveQuestion(): bool
+    public function reserveQuestion(?int $availableNow = null): bool
     {
-        $reserved = static::query()
+        $query = static::query()
             ->whereKey($this->getKey())
             ->whereNull('closed_at')
-            ->whereColumn('questions_used', '<', 'max_questions')
-            ->increment('questions_used');
+            ->whereColumn('questions_used', '<', 'max_questions');
+
+        // Questions open in stages as the case delivers evidence, so what can
+        // be asked NOW is lower than the total. Part of the same atomic UPDATE:
+        // a check beforehand would let two concurrent asks both pass it.
+        if ($availableNow !== null) {
+            $query->where('questions_used', '<', $availableNow);
+        }
+
+        $reserved = $query->increment('questions_used');
 
         if ($reserved === 0) {
             return false;

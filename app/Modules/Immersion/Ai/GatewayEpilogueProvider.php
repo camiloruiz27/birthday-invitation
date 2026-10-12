@@ -50,26 +50,46 @@ class GatewayEpilogueProvider implements EpilogueProvider
         $correct = $accusation->suspect_slug === $culpritSlug;
         $solution = $case->solution();
 
+        // A culprit nobody can question has no voice to write in. When the case
+        // names someone who can, THEY tell the winners what happened, from
+        // outside: it is the speaker's testimony the prompt gets, not the
+        // culprit's, and the culprit is just a name in the story.
+        $narrator = null;
+
+        if ($correct && ! $case->isInterrogable($accusation->suspect_slug)) {
+            $narratorSlug = $case->epilogueSpeakerSlug();
+            $narrator = $narratorSlug ? $case->suspect($narratorSlug) : null;
+        }
+
+        $speaker = $narrator ?? $suspect;
+
         $payload = [
-            'suspect_name' => $suspect['name'],
-            'suspect_role' => $suspect['role'],
+            'suspect_name' => $speaker['name'],
+            'suspect_role' => $speaker['role'],
 
             // Where the character's voice comes from. The same testimony the
             // interrogation already sends, so this exposes nothing new — and
             // without it the prompt asks the model to match a temperament it
             // has never been shown.
-            'testimony' => $case->content()->raw($suspect['file']),
+            'testimony' => $case->content()->raw($speaker['file']),
 
             // The case identifies itself: nothing about one case may be baked
             // into a prompt the whole platform shares.
             'case_code' => $case->code(),
+            'authority' => $case->authority(),
             'victim_name' => $case->victim()['name'],
+            'incident' => $case->incident(),
 
             'player_name' => $accusation->player->name,
             'correct' => $correct,
             'accusation_weapon' => $accusation->weapon,
             'accusation_motive' => $accusation->motive,
         ];
+
+        if ($narrator) {
+            $payload['narrator'] = true;
+            $payload['culprit_name'] = $suspect['name'];
+        }
 
         if ($correct) {
             $payload += [

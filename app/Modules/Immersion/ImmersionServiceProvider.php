@@ -2,7 +2,10 @@
 
 namespace App\Modules\Immersion;
 
+use App\Modules\Immersion\Ai\Contracts\AccusationGrader;
 use App\Modules\Immersion\Ai\Contracts\ConfessionProvider;
+use App\Modules\Immersion\Ai\GatewayAccusationGrader;
+use App\Modules\Immersion\Ai\NullAccusationGrader;
 use App\Modules\Immersion\Ai\Contracts\EpilogueProvider;
 use App\Modules\Immersion\Ai\Contracts\InterrogationProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
@@ -80,6 +83,15 @@ class ImmersionServiceProvider extends ServiceProvider
             return $this->aiEnabled('interrogation')
                 ? $this->app->make(GatewayConfessionProvider::class)
                 : $this->app->make(NullConfessionProvider::class);
+        });
+
+        // Grading the accusations has its own switch: it is a judgement, not
+        // dialogue, and a deployment may want one without the other. Off means
+        // the scoreboard ranks by the culprit alone.
+        $this->app->bind(AccusationGrader::class, function () {
+            return $this->aiEnabled('grading')
+                ? $this->app->make(GatewayAccusationGrader::class)
+                : $this->app->make(NullAccusationGrader::class);
         });
     }
 

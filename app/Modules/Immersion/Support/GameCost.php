@@ -50,13 +50,24 @@ class GameCost
 
         $interrogationCost = $questions * $this->questionCost();
         $endingCost = $this->endingCost($endingType);
+        $gradingCost = $this->gradingCost();
 
         return [
             'questions' => $questions,
             'interrogation' => $interrogationCost,
             'ending' => $endingCost,
-            'total' => $interrogationCost + $endingCost,
+            'grading' => $gradingCost,
+            'total' => $interrogationCost + $endingCost + $gradingCost,
         ];
+    }
+
+    /**
+     * Grading the accusations: one model call per game, whatever the ending,
+     * so it is reserved like everything else. Free unless configured.
+     */
+    public function gradingCost(): int
+    {
+        return max(0, (int) config('immersion.credits.costs.grading', 0));
     }
 
     /**
@@ -78,7 +89,7 @@ class GameCost
             array_flip($case->supportedEndings())
         );
 
-        return $this->maxQuestions($case) * $this->questionCost() * $games
+        return ($this->maxQuestions($case) * $this->questionCost() + $this->gradingCost()) * $games
             + ($endings ? max($endings) : 0);
     }
 
@@ -95,7 +106,13 @@ class GameCost
             return 0;
         }
 
-        return count($case->suspects()) * $case->interrogationQuestions();
+        // Only people on the board: someone who cannot be questioned has no
+        // budget to reserve. Every stage counts, the ones that open later
+        // included: the game reserves as if the table will use them all.
+        return array_sum(array_map(
+            fn (string $slug) => $case->totalQuestionsFor($slug),
+            array_keys($case->interrogableSuspects())
+        ));
     }
 
     public function questionCost(): int

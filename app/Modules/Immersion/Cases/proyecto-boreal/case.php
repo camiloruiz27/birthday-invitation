@@ -10,10 +10,10 @@
  * Authoring note: three independent guilty acts (sabotage, data manipulation,
  * murder), each with its own author and motive. The engine still only tracks
  * one "solution.culprit_slug" (the murder), so Marcos's and Camila's own acts
- * are resolved entirely through their confrontations (see their content/
- * files) and through the confession audio delivered on the timeline — never
- * through the accusation/scoring mechanic itself, which only ever asks "who
- * killed Elena".
+ * are explained in the confrontations (see their content/ files) and, since
+ * 2026-10, ALSO asked in the accusation form as graded questions (see the
+ * `accusation` block below): the culprit is still the only exact verdict, but
+ * the table is also graded on the two other acts.
  *
  * This case also opts into the "evidence_codes" per timeline event (see
  * CaseDefinition::evidenceCodeMap() / Game::deliveredEvidenceCodes()): every
@@ -31,6 +31,7 @@ return [
 
     'victim' => [
         'name' => 'Dra. Elena Roth',
+        'label' => 'Víctima',
         'photo' => 'elena-roth.png',
     ],
 
@@ -128,6 +129,10 @@ return [
             'name' => 'Raúl Iturri',
             'role' => 'sospechoso',
             'file' => 'suspects/raul-iturri.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V7'], 'confrontation' => true],
+            ]],
             'photo' => 'raul-iturri.png',
             'connection' => 'Comandante de la estación',
             'motive' => 'Tensión por recortes de seguridad',
@@ -146,6 +151,10 @@ return [
             'name' => 'Marcos Vega',
             'role' => 'sospechoso',
             'file' => 'suspects/marcos-vega.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8', 'V10'], 'confrontation' => true],
+            ]],
             'photo' => 'marcos-vega.png',
             'connection' => 'Técnico de comunicaciones y energía',
             'motive' => 'Fraude de suministros que Elena había descubierto',
@@ -164,6 +173,10 @@ return [
             'name' => 'Dra. Camila Sosa',
             'role' => 'sospechosa',
             'file' => 'suspects/camila-sosa.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V9', 'V11'], 'confrontation' => true],
+            ]],
             'photo' => 'camila-sosa.png',
             'connection' => 'Bióloga, coautora de Elena',
             'motive' => 'Manipulación de datos bajo presión de Nordkern',
@@ -182,6 +195,10 @@ return [
             'name' => 'Dr. Hugo Prieto',
             'role' => 'sospechoso',
             'file' => 'suspects/hugo-prieto.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V3'], 'confrontation' => true],
+            ]],
             'photo' => 'hugo-prieto.png',
             'connection' => 'Médico de la estación',
             'motive' => 'Ninguno',
@@ -200,6 +217,11 @@ return [
             'name' => 'Tatiana Kovac',
             'role' => 'sospechosa',
             'file' => 'suspects/tatiana-kovac.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V13'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['V13', 'V14'], 'confrontation' => true],
+            ]],
             'photo' => 'tatiana-kovac.png',
             'connection' => 'Subordinada de Elena, ingeniera de perforación',
             'motive' => 'Años de crédito profesional robado',
@@ -218,6 +240,11 @@ return [
             'name' => 'Diego Almada',
             'role' => 'sospechoso',
             'file' => 'suspects/diego-almada.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V17'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['A3'], 'confrontation' => true],
+            ]],
             'photo' => 'diego-almada.png',
             'connection' => 'Representante corporativo de Nordkern Energy',
             'motive' => 'Aparente (corporativo); real, invertido',
@@ -362,6 +389,53 @@ return [
     ],
 
     /*
+     * Accusation form. culprit/weapon/motive are the murder only; the
+     * sabotage and the data manipulation are graded as their own questions
+     * (design doc scoring: 25 + 15 + 15 + 15 + 15 + 15 = 100).
+     */
+    'accusation' => [
+        'culprit_points' => 25,
+        'weapon' => [
+            'label' => '¿Cómo mataron a Elena y con qué?',
+            'hint' => 'El objeto usado, dónde ocurrió y qué se hizo con la escena.',
+            'points' => 15,
+            'guidance' => 'Lo esencial es el golpe con la maza de extracción de núcleos en el túnel; mencionar la caída simulada suma. Una caída accidental o el sabotaje como causa de muerte vale cero.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué la mataron?',
+            'hint' => 'La razón personal de quien la mató, no la de los otros actos de esa noche.',
+            'points' => 15,
+            'guidance' => 'Debe apuntar al crédito profesional robado durante años y la negativa de Elena a reconocerla. Cero si da como motivo del asesinato el fraude de suministros o el de los datos.',
+        ],
+        'questions' => [
+            [
+                'key' => 'saboteador',
+                'label' => '¿Quién saboteó las comunicaciones y por qué?',
+                'hint' => 'Nombra a la persona y su razón.',
+                'answer' => 'Marcos Vega dañó el conector de la antena a las 19:32 para retrasar la llamada satelital en la que Elena iba a reportar el fraude de suministros que le había descubierto. No tuvo nada que ver con la muerte de Elena.',
+                'points' => 15,
+                'guidance' => 'Exige nombre y motivo (ocultar su fraude de suministros). Cero si lo presenta como el asesino o como cómplice del asesinato.',
+            ],
+            [
+                'key' => 'manipulacion_datos',
+                'label' => '¿Quién manipuló los datos científicos y por qué?',
+                'hint' => 'Nombra a la persona y su razón.',
+                'answer' => 'La Dra. Camila Sosa entró al servidor científico entre las 20:03 y las 20:44 y alteró los registros de metano que llevaba dos años manipulando bajo presión de Nordkern Energy, por miedo a que Elena expusiera ese fraude científico. No tuvo nada que ver con la muerte de Elena.',
+                'points' => 15,
+                'guidance' => 'Exige nombre y motivo (ocultar su fraude científico, bajo presión corporativa). Cero si la presenta como la asesina o como cómplice del asesinato.',
+            ],
+            [
+                'key' => 'tres_actos',
+                'label' => '¿Qué ocurrió realmente esa noche? ¿Cómo se relacionan entre sí los hechos que investigaste?',
+                'hint' => 'Explica qué pasó y si hubo o no coordinación entre quienes actuaron.',
+                'answer' => 'Hubo tres actos distintos, de tres personas distintas y por tres motivos distintos: el sabotaje de Marcos (19:32, mástil), la manipulación de datos de Camila (20:03–20:44, módulo científico) y el asesinato de Elena a manos de Tatiana (21:20–21:40, túnel). Coincidieron porque Elena iba a reportarlo todo, pero sin coordinación: ninguno sabía del acto del otro.',
+                'points' => 15,
+                'guidance' => 'Cero si trata el sabotaje, la manipulación de datos y el asesinato como una sola conspiración o no los diferencia; sin puntuación parcial en ese caso.',
+            ],
+        ],
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
@@ -447,6 +521,9 @@ return [
             'title' => 'Fragmento privado — agenda de la llamada',
             'source_file' => 'pista-privada-agenda.md',
             'delivery_mode' => 'random_player',
+            // V17 gates Diego's confrontation (Elena planning to expose
+            // something): the agenda fragment is that evidence.
+            'evidence_codes' => ['V17'],
         ],
         [
             'type' => 'email',
@@ -531,7 +608,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 90,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó esa noche — y para distinguir, con claridad, los tres actos entre sí. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó esa noche — y para distinguir, con claridad, los tres actos entre sí. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, incluye algunas preguntas sobre lo que ocurrió esa noche.',
             'delivery_mode' => 'all',
         ],
     ],

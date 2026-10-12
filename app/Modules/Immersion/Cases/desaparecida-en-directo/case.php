@@ -39,6 +39,7 @@ return [
 
     'victim' => [
         'name' => 'Naiara Robles',
+        'label' => 'Desaparecida',
         'photo' => 'naiara-robles.png',
     ],
 
@@ -137,6 +138,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/dario-quintana.md',
             'photo' => 'dario-quintana.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V6', 'V10'], 'confrontation' => true],
+            ]],
             'connection' => 'Mánager de Naiara desde hace cinco años',
             'motive' => 'Comisión personal decisiva ligada a un contrato de exclusividad, y deudas propias contraídas contra ella',
             'alibi' => 'Dice haber hablado con ella un momento y haberse ido; el registro de accesos lo contradice',
@@ -191,6 +196,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/bruno-casal.md',
             'photo' => 'bruno-casal.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V15'], 'confrontation' => true],
+            ]],
             'connection' => 'Expareja de Naiara, también creador de contenido',
             'motive' => 'Historial de mensajes controladores (aparente)',
             'alibi' => 'Entrada registrada a las 22:35, posterior a la publicación del mensaje',
@@ -227,6 +236,10 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/ivan-soler.md',
             'photo' => 'ivan-soler.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
+            ]],
             'connection' => 'Jefe técnico del evento',
             'motive' => null,
             'alibi' => null,
@@ -244,6 +257,10 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/paula-rey.md',
             'photo' => 'paula-rey.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
+            ]],
             'connection' => 'Otra creadora asistente al evento',
             'motive' => null,
             'alibi' => null,
@@ -343,6 +360,36 @@ return [
             Está bien, está a salvo, se lo juro. Pero no debí hacer lo que hice.
             Se me fue de las manos.
             TXT,
+    ],
+
+    /*
+     * Accusation form. Design doc scoring as-is: responsable 30, método 25,
+     * motivo 20, reconstrucción plan vs. ejecución 25 = 100.
+     */
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Qué le hicieron a Naiara y cómo?',
+            'hint' => 'Dónde y cómo intervino el responsable, y qué hizo después.',
+            'points' => 25,
+            'guidance' => 'Lo esencial: la interceptó en el corredor de servicio, la coaccionó para que no se fuera y usó su teléfono para publicar el mensaje en su nombre. Puntos completos con la interceptación/coacción y el mensaje publicado por él.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué lo hizo?',
+            'hint' => 'Qué tenía que perder el responsable si Naiara se iba esa noche.',
+            'points' => 20,
+            'guidance' => 'Debe apuntar a la comisión personal ligada al contrato de exclusividad y sus deudas contra esa comisión. Basta con la comisión o el contrato y el dinero en juego.',
+        ],
+        'questions' => [
+            [
+                'key' => 'que_ocurrio',
+                'label' => '¿Qué ocurrió realmente con Naiara? ¿Se fue por su cuenta?',
+                'hint' => 'Explica qué parte de lo que encontraste era real y qué pasó en realidad entre el final del directo y el mensaje público.',
+                'answer' => 'Naiara tenía un plan real para desaparecer unos días (la maleta, el retiro de efectivo y la cabaña con Carla eran auténticos), pero nunca llegó a ejecutarlo: Darío la interceptó y la retuvo contra su voluntad, físicamente ilesa, mientras intentaba resolver su situación contractual. El mensaje público lo escribió él.',
+                'points' => 25,
+                'guidance' => 'Cero si acepta el mensaje público como prueba de que Naiara se fue por su cuenta o de que está bien por decisión propia; sin puntuación parcial en ese caso. Puntos completos si distingue que el plan era real pero no lo ejecutó ella.',
+            ],
+        ],
     ],
 
     /*
@@ -477,7 +524,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 60,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que ocurrió entre el final del directo y el último mensaje — y para entender que la pregunta correcta nunca fue "¿se fue por su cuenta?", sino "¿quién estuvo con ella?". Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que ocurrió entre el final del directo y el último mensaje — y para entender que la pregunta correcta nunca fue "¿se fue por su cuenta?", sino "¿quién estuvo con ella?". Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, incluye una pregunta sobre lo que ocurrió esa noche.',
             'delivery_mode' => 'all',
         ],
     ],

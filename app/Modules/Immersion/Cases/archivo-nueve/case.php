@@ -12,9 +12,9 @@
  * unrelated act (Javier's disappearance of Silvia). Same precedent as Proyecto
  * Boreal: the engine only tracks one "solution.culprit_slug" (the
  * disappearance), so Marcos', Patricia's and Rubén's own acts are resolved
- * entirely through their own confrontations, never through the accusation
- * mechanic itself, which only ever asks "who is responsible for Silvia's
- * disappearance". The whole point of the case is that identifying the three
+ * through their own confrontations and, since 2026-10, also as graded questions
+ * in the accusation form (see the `accusation` block below). The exact verdict
+ * is still only "who is responsible for Silvia's disappearance". The whole point of the case is that identifying the three
  * document manipulators does NOT answer that question.
  *
  * This case opts into "evidence_codes" per timeline event (see
@@ -48,6 +48,7 @@ return [
 
     'victim' => [
         'name' => 'Silvia Rangel',
+        'label' => 'Desaparecida',
         'photo' => 'silvia-rangel.png',
     ],
 
@@ -141,6 +142,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/marcos-iturbe.md',
             'photo' => 'marcos-iturbe.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V4'], 'confrontation' => true],
+            ]],
             'connection' => 'Director científico del ensayo del compuesto KX-9',
             'motive' => 'Manipuló la versión 2 del expediente por presión regulatoria (sin relación con la desaparición)',
             'alibi' => 'En una cena con inversores externos esa noche, confirmable por múltiples testigos ajenos a la empresa',
@@ -159,6 +164,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/patricia-soler.md',
             'photo' => 'patricia-soler.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V5'], 'confrontation' => true],
+            ]],
             'connection' => 'Directora de compliance/legal',
             'motive' => 'Encubrió la alteración de Marcos por miedo al impacto legal y financiero (sin relación con la desaparición)',
             'alibi' => 'En una llamada de trabajo documentada con el despacho legal externo durante toda la ventana crítica',
@@ -177,6 +186,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/ruben-ospina.md',
             'photo' => 'ruben-ospina.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V7'], 'confrontation' => true],
+            ]],
             'connection' => 'Responsable de sistemas',
             'motive' => 'Destruyó una versión/backup por pánico ante su propia negligencia (sin relación con la desaparición)',
             'alibi' => 'Trabajando en remoto esa noche, confirmado por su propio historial de conexión',
@@ -195,6 +208,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/javier-montes.md',
             'photo' => 'javier-montes.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8', 'V14', 'V9'], 'confrontation' => true],
+            ]],
             'connection' => 'Colega de Silvia en el equipo de auditoría de cumplimiento',
             'motive' => 'Filtración de información interna a un fondo de inversión externo a cambio de dinero',
             'alibi' => 'Se quedó ayudándola hasta tarde esa noche (aparente colaborador de confianza)',
@@ -213,6 +230,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/elena-vargas.md',
             'photo' => 'elena-vargas.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V4'], 'confrontation' => true],
+            ]],
             'connection' => 'Directora general de Laboratorios Kestrel',
             'motive' => 'Preocupación por la reputación y una ronda de financiación (aparente, sin relación con la desaparición)',
             'alibi' => 'En una cena institucional esa noche, con decenas de testigos externos',
@@ -231,6 +252,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/diego-sanz.md',
             'photo' => 'diego-sanz.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
+            ]],
             'connection' => 'Analista junior de cumplimiento, asistente de Silvia',
             'motive' => 'Ninguno; busca empleo en secreto en una empresa competidora',
             'alibi' => 'En su casa esa noche, sin coartada externa fuerte pero sin ningún indicio que lo vincule al caso',
@@ -380,6 +405,51 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The accusation and how it is graded
+    |--------------------------------------------------------------------------
+    |
+    | From the design doc's scoring: 25 for the person responsible for the
+    | disappearance, 25 for method + motive (split 12/13), 30 for the three
+    | document manipulators and 20 for keeping the four lines apart.
+    |
+    */
+
+    'accusation' => [
+        'culprit_points' => 25,
+        'weapon' => [
+            'label' => '¿Qué le ocurrió a Silvia y cómo?',
+            'hint' => 'Cómo la apartaron esa noche, adónde la llevaron y en qué estado está.',
+            'points' => 12,
+            'guidance' => 'Lo esencial: un pretexto para llevarla al sitio externo de archivo, la confrontación y la retención contra su voluntad. No exigir que diga que está ilesa.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué?',
+            'hint' => 'Qué tenía que ocultar el responsable y qué había descubierto Silvia.',
+            'points' => 13,
+            'guidance' => 'Cero si el motivo es la alteración del documento (eso no explica la desaparición).',
+        ],
+        'questions' => [
+            [
+                'key' => 'manipuladores_documento',
+                'label' => '¿Quiénes alteraron Archivo Nueve y qué hizo cada uno?',
+                'hint' => 'Nombra a cada persona que intervino en el documento y qué hizo exactamente.',
+                'answer' => 'Tres personas, por separado: Marcos Iturbe rebajó la clasificación de eventos adversos en la versión 2 (fraude, por presión regulatoria); Patricia Soler encubrió esa alteración en la versión 4 con un memo de reclasificación; Rubén Ospina borró una versión/backup intermedia por pánico ante su propia negligencia. El cambio de Diego en la versión 3 fue legítimo.',
+                'points' => 30,
+                'guidance' => '10 puntos por cada manipulador bien identificado con su conducta. Restar si incluye a Diego como manipulador.',
+            ],
+            [
+                'key' => 'reconstruccion',
+                'label' => 'Reconstruye lo ocurrido: ¿qué hechos distintos hubo alrededor de Archivo Nueve y cómo se relacionan con la desaparición?',
+                'hint' => 'Separa cada hecho, con su autor y su motivo.',
+                'answer' => 'Hay cuatro líneas independientes: el fraude de Marcos, el encubrimiento de Patricia y la destrucción de datos de Rubén, ninguna relacionada con la desaparición (los tres tienen coartadas sólidas y sus motivos solo exigían el silencio del documento); y la desaparición de Silvia, obra de Javier por un motivo distinto, su filtración de datos, que ella descubrió casi por accidente.',
+                'points' => 20,
+                'guidance' => 'Cero si trata la manipulación del documento y la desaparición como un mismo hecho o atribuye la desaparición a alguno de los manipuladores.',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
     |
@@ -464,7 +534,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 90,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para distinguir las cuatro líneas de esta investigación: el fraude de Marcos, el encubrimiento de Patricia, la destrucción de datos de Rubén, y la desaparición de Silvia a manos de Javier. Confirmar quién manipuló el documento no responde quién la hizo desaparecer a ella. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para cerrar la investigación. Recuerden: saber quién tocó el documento no responde, por sí solo, quién hizo desaparecer a Silvia. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, les hará algunas preguntas sobre el caso.',
             'delivery_mode' => 'all',
         ],
     ],

@@ -38,15 +38,58 @@ function AccusationStatus({ row, solved }) {
     );
 }
 
-export default function Results({ game, scoreboard, solution, reveal }) {
+/**
+ * The graded score, or why there is none yet. Grading runs on the queue right
+ * after the reveal, so "Calificando…" is a state the GM will actually see.
+ */
+function Score({ row, maxScore }) {
+    if (row.grading_status === 'pending') {
+        return <span className="text-ink-subtle">Calificando…</span>;
+    }
+
+    if (row.score === null || row.score === undefined) {
+        return <span className="text-ink-subtle">—</span>;
+    }
+
+    return (
+        <span className="tabular font-medium text-ink">
+            {row.score}
+            <span className="text-ink-subtle"> / {maxScore}</span>
+        </span>
+    );
+}
+
+/** The case's extra questions and what this player answered. */
+function ExtraAnswers({ row, questions }) {
+    if (!questions?.length || !row.answers) {
+        return null;
+    }
+
+    return (
+        <dl className="mt-2 space-y-1.5">
+            {questions.map((question) =>
+                row.answers[question.key] ? (
+                    <div key={question.key}>
+                        <dt className="text-xs text-ink-subtle">{question.label}</dt>
+                        <dd className="text-ink-muted">{row.answers[question.key]}</dd>
+                    </div>
+                ) : null
+            )}
+        </dl>
+    );
+}
+
+export default function Results({ game, scoreboard, solution, reveal, maxScore, questions }) {
     const submitted = scoreboard.filter((row) => row.suspect_name);
+    const grading = scoreboard.some((row) => row.grading_status === 'pending');
 
     // Accusations land while the GM is watching this page. Without polling
     // the count sits frozen and the only way to see a new one is to know to
-    // reload — on the screen whose entire job is watching them come in.
+    // reload — on the screen whose entire job is watching them come in. After
+    // the reveal it keeps polling while the grading is still on its way.
     usePoll(['scoreboard'], {
         interval: 10000,
-        enabled: !game.ending_revealed_at && submitted.length < scoreboard.length,
+        enabled: (!game.ending_revealed_at && submitted.length < scoreboard.length) || grading,
     });
     const correct = scoreboard.filter((row) => row.correct === true).length;
 
@@ -128,6 +171,9 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                 <li key={row.player_id} className="p-4">
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="min-w-0 truncate font-medium text-ink">
+                                            {row.rank && reveal.revealed_at && (
+                                                <span className="tabular text-ink-subtle">{row.rank}º · </span>
+                                            )}
                                             {row.player_name}
                                         </span>
                                         <span className="shrink-0">
@@ -149,6 +195,15 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                                 <dt className="text-sm text-ink-muted">Motivo</dt>
                                                 <dd className="text-ink">{row.motive}</dd>
                                             </div>
+                                            <ExtraAnswers row={row} questions={questions} />
+                                            {reveal.revealed_at && (
+                                                <div>
+                                                    <dt className="text-sm text-ink-muted">Puntaje</dt>
+                                                    <dd>
+                                                        <Score row={row} maxScore={maxScore} />
+                                                    </dd>
+                                                </div>
+                                            )}
                                         </dl>
                                     )}
                                 </li>
@@ -166,12 +221,18 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                         <th scope="col" className="px-5 py-3 font-medium">
                                             {solution ? '¿Acertó?' : 'Estado'}
                                         </th>
+                                        {reveal.revealed_at && (
+                                            <th scope="col" className="px-5 py-3 font-medium">Puntaje</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-line">
                                     {scoreboard.map((row) => (
                                         <tr key={row.player_id} className="align-top">
                                             <th scope="row" className="px-5 py-3 font-medium text-ink">
+                                                {row.rank && reveal.revealed_at && (
+                                                    <span className="tabular text-ink-subtle">{row.rank}º · </span>
+                                                )}
                                                 {row.player_name}
                                             </th>
                                             {row.suspect_name ? (
@@ -180,6 +241,7 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                                     <td className="px-5 py-3 text-ink">{row.weapon}</td>
                                                     <td className="max-w-sm px-5 py-3 text-ink-muted">
                                                         {row.motive}
+                                                        <ExtraAnswers row={row} questions={questions} />
                                                     </td>
                                                 </>
                                             ) : (
@@ -193,6 +255,11 @@ export default function Results({ game, scoreboard, solution, reveal }) {
                                                     solved={Boolean(solution)}
                                                 />
                                             </td>
+                                            {reveal.revealed_at && (
+                                                <td className="whitespace-nowrap px-5 py-3">
+                                                    <Score row={row} maxScore={maxScore} />
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

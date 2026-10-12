@@ -78,10 +78,11 @@ Para que sea el caso por defecto de las partidas nuevas:
 | `name`, `version` | Identidad; `version` se estampa en cada partida |
 | `code` | Referencia corta ("SF 554301"): asunto del correo y encabezados |
 | `authority` | Quién "envía" el material: pie del correo y también el nombre del remitente (`From`) del sobre de la línea de tiempo. La dirección de correo nunca cambia, solo este nombre |
-| `victim` | Nombre y foto de la víctima |
+| `victim` | Nombre, foto y `label` (sello en el tablero; por defecto "Víctima", usa "Desaparecida/o" si sigue con vida o el caso lo oculta). El `label` también decide cómo hablan los prompts de la IA: si dice «desaparec…» hablan de «la desaparición de X»; si no, de «la muerte de X». Se puede forzar con `victim.incident` («el secuestro de», o una frase con `{name}`) |
 | `mechanics` | Qué mecánicas existen en este caso |
 | `limits.interrogation_questions` | Presupuesto de preguntas por sospechoso |
-| `suspects` | Roster interrogable (ficha corta + foto + archivo de testimonio) |
+| `suspects` | Roster interrogable (ficha corta + foto + archivo de testimonio). `'accusable' => false` lo saca de la acusación (testigos, sistemas); `'interrogable' => false` lo saca del tablero de interrogatorios pero se puede acusar (un culpable al que nadie localizó) |
+| `accusation` | Opcional. Preguntas extra del formulario de acusación con su respuesta oficial y puntos, más los puntos del culpable, del método y del motivo. Ver "La acusación y su calificación" |
 | `timeline` | Eventos que se adjuntan a toda partida nueva del caso |
 | `gallery` | Imágenes que acompañan el texto de cada `source_file` |
 | `gallery_excluded_headings` | Secciones que ya se ven como imagen y se omiten del texto |
@@ -106,6 +107,12 @@ ponen este material en boca de un personaje.
     // sin una línea autorada por sospechoso, el modelo tendría que razonar
     // el error del jugador, que es justo inventar el desenlace.
     'exonerations' => ['elizabeth-foster' => '…'],
+
+    // Solo si el culpable tiene `'interrogable' => false`: quién escribe el
+    // epílogo de quienes aciertan, contándolo desde fuera (alguien con
+    // testimonio, que sí se pueda interrogar). Sin esto, el epílogo lo
+    // «escribiría» alguien que nadie puede interrogar.
+    'epilogue_speaker' => 'mercedes-quintanilla',
 
     // Guion de confesión, escrito para reproducirse tal cual, y la voz que
     // lo lee (nombre de voz de Gemini; null usa la del gateway).
@@ -144,6 +151,78 @@ sin schema nuevo.
 
 No todos los casos necesitan todas las mecánicas ni todas las claves: lo que
 falte cae a un valor por defecto sensato (ver `CaseDefinition`).
+
+## La acusación y su calificación
+
+El formulario siempre pide **quién**, **cómo** y **por qué**. Un caso puede
+añadir sus propias preguntas y fijar cuánto vale cada parte:
+
+```php
+'accusation' => [
+    'culprit_points' => 30,                       // acertar al culpable (exacto, no lo decide la IA)
+    'weapon' => ['label' => '¿Con qué?', 'hint' => '…', 'points' => 15],   // answer: por defecto solution.method
+    'motive' => ['label' => '¿Por qué?', 'hint' => '…', 'points' => 20],   // answer: por defecto solution.motive
+    'questions' => [
+        [
+            'key' => 'origen_averia',             // [a-z0-9_]
+            'label' => '¿Quién originó la avería y por qué?',
+            'hint' => 'Nombra a la persona y su razón.',
+            'answer' => 'Ramiro, por miedo a los recortes, sin intención de matar.',
+            'points' => 15,
+            'guidance' => 'Cero si lo trata como parte de una conspiración con el asesinato.',
+        ],
+    ],
+],
+```
+
+Al revelarse la solución, `Jobs\GradeAccusations` hace **una sola** llamada al
+gateway (`POST /grade`) con todas las acusaciones de la mesa, para que todas se
+califiquen con el mismo criterio. Cada respuesta recibe puntos (0 al máximo del
+criterio) y un comentario de una frase. El marcador ordena primero a quien
+acertó al culpable y, entre ellos, por puntaje: ese es el desempate.
+
+- Sin el bloque, el caso igual se califica: método y motivo contra la solución
+  (40/30/30 puntos).
+- Las respuestas oficiales nunca llegan al navegador del jugador.
+- Si la IA no responde, cada acusación queda con los puntos del culpable y el
+  marcador sigue funcionando.
+- Costo en créditos: `IMMERSION_COST_GRADING` (por defecto 0); interruptor:
+  `IMMERSION_AI_GRADING`.
+
+## Preguntas del interrogatorio por etapas
+
+Cada persona interrogable tiene **5 preguntas** (sospechosos, testigos y
+sistemas por igual) y **3 más si su caso trae confrontaciones para ella**: 8.
+La partida reserva los créditos de las 8 desde el inicio.
+
+Las preguntas no tienen por qué abrirse todas a la vez. Si la persona podría
+admitir algo que solo se sabe más adelante en el cronograma, se reparten en
+etapas que esperan a la evidencia que las justifica (`interrogation.stages`
+dentro de su entrada de `suspects`):
+
+```php
+'interrogation' => ['stages' => [
+    ['questions' => 3],                                   // desde que abre el interrogatorio
+    ['questions' => 2, 'after' => ['V6']],                // cuando se entrega V6
+    ['questions' => 3, 'after' => ['V14'], 'confrontation' => true],  // las 3 extra
+]],
+```
+
+- `after`: códigos de `evidence_codes` de eventos del cronograma; la etapa se
+  abre cuando **todos** se han entregado en esa partida.
+- La suma de las etapas normales es 5; las de `confrontation => true` suman
+  exactamente 3. `CaseRegistryTest` lo valida, y que el primer bloque no
+  espere a nadie y que todo código de `after` exista en el cronograma.
+- Sin bloque `stages`: una sola etapa de 5, abierta desde el inicio.
+- Una etapa gastada deja la sesión **en espera**, no cerrada: el jugador que
+  empezó el interrogatorio vuelve cuando se abre la siguiente (nadie más puede
+  tomarlo). El correo/bandeja del evento que abre preguntas lo anuncia solo.
+- Las preguntas de etapas posteriores deben coincidir con lo que el `.md` de la
+  persona admite solo «con» una evidencia: si una confrontación del `.md`
+  exige V14, la etapa de confrontación espera a V14.
+- Reglas para decidir: lo que depende de una prueba posterior va a una etapa
+  posterior; si nada depende de ellas, no hace falta bloque. No dividir en más
+  etapas de las que el contenido pide.
 
 ## Contenido faltante
 

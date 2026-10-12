@@ -27,22 +27,37 @@ class SolutionController extends Controller
         abort_unless($case->hasSolution(), 404);
         abort_unless($game->endingRevealed(), 403, 'La solucion todavia no se ha revelado.');
 
-        $board = $scoreboard->for($game);
+        $board = $scoreboard->ranked($game);
+        $form = $case->accusationForm();
 
         return Inertia::render('Player/Solution', [
             'player' => $player->revealCredentials(),
             'game' => $game->forPlayerView(),
             'solution' => $case->solution(),
 
-            // Only names cross between players here, as everywhere else.
-            'scoreboard' => collect($board)->map(fn (array $row) => [
-                'player_name' => $row['player_name'],
-                'is_you' => $row['player_id'] === $player->id,
-                'suspect_name' => $row['suspect_name'],
-                'weapon' => $row['weapon'],
-                'motive' => $row['motive'],
-                'correct' => $row['correct'],
-            ])->values(),
+            // Only names cross between players here, as everywhere else. The
+            // detailed grading (and the extra answers) are each player's own:
+            // everyone else sees a rank and a total.
+            'scoreboard' => collect($board)->map(function (array $row) use ($player) {
+                $isYou = $row['player_id'] === $player->id;
+
+                return [
+                    'player_name' => $row['player_name'],
+                    'is_you' => $isYou,
+                    'suspect_name' => $row['suspect_name'],
+                    'weapon' => $row['weapon'],
+                    'motive' => $row['motive'],
+                    'correct' => $row['correct'],
+                    'rank' => $row['rank'],
+                    'score' => $row['score'],
+                    'grading_status' => $row['grading_status'],
+                    'grading' => $isYou ? $row['grading'] : [],
+                    'answers' => $isYou ? $row['answers'] : [],
+                ];
+            })->values(),
+
+            'maxScore' => $case->accusationRubric()['max'],
+            'questions' => $form['questions'],
 
             'correctCount' => count(array_filter($board, fn ($row) => $row['correct'] === true)),
             'revealedBy' => $game->ending_revealed_by,

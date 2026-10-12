@@ -39,7 +39,7 @@ class CaseTimelineMail extends Mailable
                 'caseCode' => $code,
                 'caseAuthority' => $case->authority(),
                 'interrogationQuestions' => $case->interrogationQuestions(),
-                'bodyHtml' => $case->renderEventBody($this->event->source_file, $this->event->body_markdown),
+                'bodyHtml' => $case->renderEventBody($this->event->source_file, $this->event->body_markdown, (int) $this->event->trigger_offset_minutes),
                 'gallery' => $case->galleryFor($this->event->source_file),
                 'assetPath' => fn (string $url) => $case->assetPath($url),
                 'logoPath' => public_path('brand/isotipo-email.png'),

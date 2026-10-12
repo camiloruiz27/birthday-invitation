@@ -66,6 +66,7 @@ class GatewayInterrogationProvider implements InterrogationProvider
                     'case_code' => $case->code(),
                     'authority' => $case->authority(),
                     'victim_name' => $case->victim()['name'],
+                    'incident' => $case->incident(),
                     'evidence_delivered' => $session->game->deliveredEvidenceCodes(),
                 ]);
         } catch (\Throwable $exception) {

@@ -22,10 +22,11 @@ return [
     'name' => 'El Brindis de las 22:14',
     'version' => '1.0',
     'code' => 'Expediente privado — Restaurante Fermento',
-    'authority' => 'Investigación entre los propios invitados (sin intervención policial formal)',
+    'authority' => 'Investigación entre los propios invitados',
 
     'victim' => [
         'name' => 'Tomás Ferrán',
+        'label' => 'Víctima',
         'photo' => 'tomas-ferran.png',
     ],
 
@@ -122,6 +123,10 @@ return [
             'connection' => 'Madre de la víctima, anfitriona',
             'motive' => 'Ninguno directo; el cambio de asientos la hace parecer sospechosa',
             'alibi' => 'A la vista de todos casi toda la noche',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['E4-completo'], 'confrontation' => true, 'note' => 'Con el registro de reservas completo'],
+            ]],
             'public' => [
                 'age' => '62 años',
                 'profile' => 'Anfitriona de la cena, madre de Tomás y dueña de la finca que se vendía. Organizó la celebración de la venta de Bodega Ferrán.',
@@ -140,6 +145,10 @@ return [
             'connection' => 'Socia minoritaria (30%) de la bodega',
             'motive' => 'Se beneficia de la venta; discutió con Diego esa noche',
             'alibi' => 'Con Margarita revisando papeles (20:35–20:50)',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['E7'], 'confrontation' => true, 'note' => 'Con el memo de auditoría'],
+            ]],
             'public' => [
                 'age' => '39 años',
                 'profile' => 'Socia minoritaria (30%) de Bodega Ferrán, sin parentesco con la familia. Lleva años vinculada al negocio.',
@@ -158,6 +167,10 @@ return [
             'connection' => 'Representante de Altavista Capital, comprador',
             'motive' => 'Ninguno propio; es el objetivo real del veneno',
             'alibi' => 'Sin acceso a cocina ni a las copas',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['E8'], 'confrontation' => true, 'note' => 'Con el recorte de archivo'],
+            ]],
             'public' => [
                 'age' => '45 años',
                 'profile' => 'Representante de Altavista Capital, el fondo que compraba Bodega Ferrán. No tenía relación previa con la familia.',
@@ -176,6 +189,10 @@ return [
             'connection' => 'Encargada de la finca, asistente personal de Margarita',
             'motive' => 'Venganza contra Altavista Capital (ruina de Viña Morales)',
             'alibi' => 'Sola en el pase de cocina (20:35–20:50)',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['E4-completo', 'E8'], 'confrontation' => true, 'note' => 'Con el registro completo y el recorte de archivo'],
+            ]],
             'public' => [
                 'age' => '36 años',
                 'profile' => 'Encargada de la finca y asistente personal de Margarita; de su confianza, conoce bien la casa y el negocio familiar.',
@@ -320,6 +337,47 @@ return [
     ],
 
     /*
+     * Accusation form. Scoring from the design doc (culpable 30, método 20,
+     * motivo 20, reconstrucción 30, bonus objetivo real 10 = 110) squeezed
+     * to 100: the "objetivo real" bonus becomes its own question (10) and
+     * the reconstruction drops to 20, since knowing the intended target is
+     * the heart of that reconstruction anyway.
+     */
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Con qué lo mataron?',
+            'hint' => 'Qué sustancia se usó, en qué bebida y quién tuvo ocasión de prepararla.',
+            'points' => 20,
+            'guidance' => 'Lo esencial es el extracto de adelfa en el digestivo de la copa del asiento 2, preparado antes del cambio de asientos. Basta con la sustancia y la copa; no exigir la hora exacta.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué lo hizo?',
+            'hint' => 'Qué empujó al responsable a envenenar esa copa.',
+            'points' => 20,
+            'guidance' => 'Debe apuntar a la venganza contra Diego Salazar / Altavista Capital por la ruina de Viña Morales. Un motivo dirigido contra Tomás vale cero.',
+        ],
+        'questions' => [
+            [
+                'key' => 'objetivo_real',
+                'label' => '¿A quién iba destinado el veneno?',
+                'hint' => 'Nombra a la persona a la que iba destinada la copa y explica por qué lo sabes.',
+                'answer' => 'Diego Salazar. La copa envenenada estaba en el asiento 2, el puesto de honor asignado a Diego; Tomás murió por error porque Margarita cambió los asientos a las 21:05.',
+                'points' => 10,
+                'guidance' => 'Cero si dice que el objetivo era Tomás. Puntos completos con Diego y una razón (asiento 2 / cambio de asientos).',
+            ],
+            [
+                'key' => 'reconstruccion',
+                'label' => 'Reconstruye la secuencia: ¿cómo llegó la copa envenenada hasta la víctima?',
+                'hint' => 'Ordena lo que pasó con las copas y los asientos desde la preparación hasta el brindis de las 22:14.',
+                'answer' => 'Irene preparó la copa envenenada del asiento 2 (originalmente de Diego) entre las 20:35 y las 20:50. A las 21:05, sin que ella lo supiera, Margarita cambió los asientos por cariño a su hijo: Tomás pasó al asiento 2 y Diego al 6. En el brindis de las 22:14 Tomás bebió por error el veneno destinado a Diego.',
+                'points' => 20,
+                'guidance' => 'Exigir los tres pasos: preparación antes del cambio, cambio de asientos de Margarita (involuntario, no cómplice) y el brindis. Cero si presenta a Margarita como cómplice o si la acusación no reconstruye nada; no dar puntuación parcial a una reconstrucción incompleta.',
+            ],
+        ],
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
@@ -340,6 +398,7 @@ return [
             'title' => 'Apertura del caso',
             'source_file' => 'apertura.md',
             'delivery_mode' => 'all',
+            'evidence_codes' => ['E3', 'E9'],
         ],
         [
             'type' => 'email',
@@ -350,6 +409,7 @@ return [
             // This is the moment the design doc opens interrogations and the
             // witness to all players.
             'cta_interrogation' => true,
+            'evidence_codes' => ['E1', 'E4'],
         ],
         [
             'type' => 'email',
@@ -357,6 +417,7 @@ return [
             'title' => 'Hallazgo confidencial',
             'source_file' => 'memo-confidencial.md',
             'delivery_mode' => 'random_player',
+            'evidence_codes' => ['E7'],
         ],
         [
             'type' => 'email',
@@ -364,6 +425,7 @@ return [
             'title' => 'Complicación — confirmación forense',
             'source_file' => 'complicacion.md',
             'delivery_mode' => 'all',
+            'evidence_codes' => ['E5', 'E6'],
         ],
         [
             'type' => 'email',
@@ -371,6 +433,7 @@ return [
             'title' => 'Giro — el asiento equivocado',
             'source_file' => 'giro.md',
             'delivery_mode' => 'all',
+            'evidence_codes' => ['E2', 'E4-completo'],
         ],
         [
             'type' => 'audio_email',
@@ -388,6 +451,7 @@ return [
                 esto. Por la nueva etapa. Por todos nosotros.
                 TXT,
             'delivery_mode' => 'all',
+            'evidence_codes' => ['A1'],
         ],
         [
             'type' => 'email',
@@ -395,6 +459,7 @@ return [
             'title' => 'Cierre — motivo, oportunidad y error',
             'source_file' => 'cierre.md',
             'delivery_mode' => 'all',
+            'evidence_codes' => ['E8'],
         ],
         [
             'type' => 'audio_email',
@@ -416,12 +481,13 @@ return [
                 la silla.
                 TXT,
             'delivery_mode' => 'all',
+            'evidence_codes' => ['A2'],
         ],
         [
             'type' => 'unlock',
             'trigger_offset_minutes' => 45,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El sistema habilitó el formulario de acusación final.',
+            'body_markdown' => 'El sistema habilitó el formulario de acusación final. Además de quién, cómo y por qué, el formulario incluye algunas preguntas sobre lo que ocurrió esa noche.',
             'delivery_mode' => 'all',
         ],
     ],

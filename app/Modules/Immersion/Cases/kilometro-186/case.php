@@ -41,6 +41,7 @@ return [
 
     'victim' => [
         'name' => 'Celia Ortuño',
+        'label' => 'Desaparecida',
         'photo' => 'celia-ortuno.png',
     ],
 
@@ -149,6 +150,11 @@ return [
                     'No tenía relación previa con Celia.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V5', 'V6'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['V8', 'V12'], 'confrontation' => true],
+            ]],
         ],
         'rebeca-duarte' => [
             'name' => 'Rebeca Duarte',
@@ -167,6 +173,10 @@ return [
                     'Su relación con Celia era tensa, aunque profesional.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V5'], 'confrontation' => true],
+            ]],
         ],
         'mateo-figueroa' => [
             'name' => 'Mateo Figueroa',
@@ -185,6 +195,10 @@ return [
                     'Viaja en un vagón próximo al de Celia.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V5'], 'confrontation' => true],
+            ]],
         ],
         'hugo-pastor' => [
             'name' => 'Hugo Pastor',
@@ -203,6 +217,10 @@ return [
                     'Su turno incluye la cena y el servicio nocturno.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V12'], 'confrontation' => true],
+            ]],
         ],
         'ines-roman' => [
             'name' => 'Inés Román',
@@ -221,6 +239,10 @@ return [
                     'Es de las personas más cercanas a Celia a bordo.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V5'], 'confrontation' => true],
+            ]],
         ],
         'daniel-cortez' => [
             'name' => 'Daniel Cortez',
@@ -239,6 +261,10 @@ return [
                     'El informe de Celia podría afectar también a su propia gestión.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8-completo'], 'confrontation' => true, 'note' => 'Con el informe completo'],
+            ]],
         ],
         'olga-ventura' => [
             'name' => 'Olga Ventura',
@@ -256,6 +282,10 @@ return [
                     'Es testigo, no figura entre los sospechosos.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V12'], 'confrontation' => true],
+            ]],
             'accusable' => false,
         ],
         'lucas-medina' => [
@@ -273,6 +303,10 @@ return [
                     'Es personal del tren y no figura entre los sospechosos.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
+            ]],
             'accusable' => false,
         ],
         'sistema-tren' => [
@@ -293,6 +327,10 @@ return [
                     'No registra lo que ocurre dentro de cada vagón.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+                ['questions' => 1, 'after' => ['V12']],
+            ]],
             'accusable' => false,
         ],
     ],
@@ -365,6 +403,47 @@ return [
             esto sin que todo se derrumbara. Y ahora... ahora ya no hay forma
             de que no se derrumbe.
             TXT,
+    ],
+
+    /*
+     * Accusation form. The design doc scores responsable 30, desfase 25,
+     * motivo 20, cronología 25 and gives "cómo ocurrió" no points of its own.
+     * Since the form always asks "how", 10 points move from the chronology
+     * (which overlapped with it: pretext, service car, retention) to the
+     * method: 30 + 10 + 20 + 25 + 15 = 100.
+     */
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Qué le ocurrió a Celia y cómo?',
+            'hint' => 'Dónde está, cómo llegó hasta allí y en qué estado se encuentra.',
+            'points' => 10,
+            'guidance' => 'Lo esencial: la llevó con un pretexto al vagón de servicio y la retiene allí contra su voluntad, viva e ilesa. Cero si afirma que saltó o cayó del tren, o que está muerta.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué lo hizo?',
+            'hint' => 'Qué tenía que perder el responsable si Celia llegaba a la terminal.',
+            'points' => 20,
+            'guidance' => 'Debe apuntar al informe de auditoría que documentaba registros de mantenimiento falsificados y firmados por él.',
+        ],
+        'questions' => [
+            [
+                'key' => 'desfase_horario',
+                'label' => '¿Por qué los testimonios sobre la hora no encajaban entre sí?',
+                'hint' => 'Explica qué fallaba en las horas que daban los testigos, cuánto y quién lo provocó.',
+                'answer' => 'Durante el reinicio técnico de las 22:50, Simón dejó el reloj de las pantallas de pasajeros 13 minutos por detrás de la hora real. Los testigos que se guiaban por las pantallas (Olga, Hugo) decían la verdad, pero con una hora atrasada; el sistema interno del tren (registro de puertas, hitos kilométricos) siguió exacto.',
+                'points' => 25,
+                'guidance' => 'Puntos completos con el desfase de 13 minutos de las pantallas causado en el reinicio. Cero si concluye que alguno de los testigos mintió; sin puntuación parcial si no identifica ninguna corrección horaria.',
+            ],
+            [
+                'key' => 'cronologia_real',
+                'label' => 'Reconstruye la cronología real de la noche.',
+                'hint' => 'Ordena con horas reales lo que pasó desde la última vez que se vio a Celia con normalidad hasta que se perdió su rastro.',
+                'answer' => '22:40, última vista normal de Celia con Rebeca (sin desfase). 22:50, reinicio de pantallas con el reloj 13 minutos atrasado. 22:53, Simón aborda a Celia con el pretexto del equipaje. 22:55, cruzan hacia el vagón de servicio al entrar al túnel del kilómetro 186 (Lucas y el sistema). 22:58, acceso al vagón de servicio con la tarjeta de Simón. Los testimonios de Olga y Hugo, corregidos con el desfase, caen en esa misma ventana.',
+                'points' => 15,
+                'guidance' => 'No exigir todas las horas: basta con una secuencia coherente en hora real que sitúe a Simón con Celia en el vagón de servicio hacia las 22:53–22:58. Cero si la cronología usa las horas de pantalla sin corregir.',
+            ],
+        ],
     ],
 
     /*
@@ -469,7 +548,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 75,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir la cronología real de esa noche — y para entender que nadie mintió, solo usaban una hora que había dejado de ser fiable. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir la cronología real de esa noche — y para entender que nadie mintió, solo usaban una hora que había dejado de ser fiable. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, incluye algunas preguntas sobre lo que ocurrió esa noche.',
             'delivery_mode' => 'all',
         ],
     ],

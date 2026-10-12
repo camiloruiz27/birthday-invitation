@@ -7,6 +7,7 @@ import SuspectFicha from '../../components/player/SuspectFicha';
 import ChatMessage from '../../components/player/ChatMessage';
 import ChatComposer from '../../components/player/ChatComposer';
 import axios from '../../lib/axios';
+import usePoll from '../../hooks/usePoll';
 
 // Negative ids for optimistic messages, so they cannot collide with real ones.
 let tempId = -1;
@@ -17,6 +18,7 @@ export default function InterrogationChat({
     slug,
     suspect,
     session,
+    availability,
     ficha: initialFicha,
     lockedBy,
 }) {
@@ -33,7 +35,23 @@ export default function InterrogationChat({
     const scrollRef = useRef(null);
 
     const effectiveLockedBy = lockedBy || raceLockedBy;
-    const readOnly = closed || Boolean(effectiveLockedBy) || outOfCredits;
+
+    // Questions open in stages as the case delivers evidence. `open` comes from
+    // the server (and is refreshed while waiting), so the page notices on its
+    // own when new ones are enabled.
+    const open = Math.min(availability?.open ?? maxQuestions, maxQuestions);
+    const askableNow = Math.max(0, open - questionsUsed);
+    const later = Math.max(0, maxQuestions - open);
+    const waiting =
+        !closed && !effectiveLockedBy && questionsUsed < maxQuestions && askableNow === 0;
+    const readOnly = closed || Boolean(effectiveLockedBy) || outOfCredits || waiting;
+
+    // While waiting, look for the evidence that opens the next stage.
+    usePoll(['availability', 'ficha'], { interval: 15000, enabled: waiting });
+
+    useEffect(() => {
+        if (initialFicha) setFicha(initialFicha);
+    }, [initialFicha]);
 
     useEffect(() => {
         const element = scrollRef.current;
@@ -85,6 +103,24 @@ export default function InterrogationChat({
                 // Reload to get their transcript and the official statement.
                 setRaceLockedBy(error.response.data.locked_by);
                 router.reload();
+
+                return;
+            }
+
+            if (error.response?.data?.waiting) {
+                // The stage was already spent (another tab, a double click):
+                // nothing was charged. Drop the optimistic bubbles and let the
+                // page show the waiting state with the right numbers.
+                setMessages((previous) =>
+                    previous.filter(
+                        (message) =>
+                            message.id !== playerTempId && message.id !== suspectTempId
+                    )
+                );
+                setQuestionsUsed(error.response.data.questions_used);
+                if (error.response.data.ficha) setFicha(error.response.data.ficha);
+                setLastQuestion(null);
+                router.reload({ only: ['availability', 'ficha'] });
 
                 return;
             }
@@ -211,11 +247,22 @@ export default function InterrogationChat({
                     <ChatComposer
                         onSend={handleSend}
                         sending={sending}
-                        remaining={maxQuestions - questionsUsed}
-                        total={maxQuestions}
+                        remaining={askableNow}
+                        total={open}
                     />
                 )}
             </div>
+
+            {!readOnly && later > 0 && (
+                <p className="mt-3 text-sm text-ink-muted">
+                    Tienes <strong className="text-ink">{askableNow}</strong>{' '}
+                    {askableNow === 1 ? 'pregunta' : 'preguntas'} ahora.{' '}
+                    {availability?.confrontation_later
+                        ? `Cuando llegue nueva evidencia se habilitarán ${later} más, para confrontarla con lo nuevo.`
+                        : `Cuando llegue nueva evidencia se habilitarán ${later} más.`}{' '}
+                    Podrás volver a interrogarla: sigue siendo tu interrogatorio.
+                </p>
+            )}
 
             {aiNotice && !readOnly && (
                 <Alert variant="warning" className="mt-5 mb-0">
@@ -237,7 +284,13 @@ export default function InterrogationChat({
                         <Alert variant="info">
                             {effectiveLockedBy
                                 ? `${suspect.name} ya está siendo interrogado por ${effectiveLockedBy}. Arriba tienes lo que se ha preguntado; su ficha aparece cuando termine ese interrogatorio.`
-                                : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Aquí abajo tienes su ficha.`}
+                                : waiting
+                                  ? `Terminaste las preguntas disponibles por ahora con ${suspect.name}. Cuando llegue nueva evidencia al expediente se habilitarán ${later} más${
+                                        availability?.confrontation_later
+                                            ? ': será tu momento de confrontarla con lo nuevo'
+                                            : ''
+                                    }, y podrás volver a interrogarla: sigue siendo tu interrogatorio. Esta página se actualiza sola. Mientras tanto, aquí abajo tienes su ficha.`
+                                  : `Usaste tus ${maxQuestions} preguntas con ${suspect.name}. Aquí abajo tienes su ficha.`}
                         </Alert>
 
                         <SuspectFicha suspect={suspect} ficha={ficha} />

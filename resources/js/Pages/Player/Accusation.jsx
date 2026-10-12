@@ -4,8 +4,10 @@ import Alert from '../../components/ui/Alert';
 import Button from '../../components/ui/Button';
 import Card, { CardHeader } from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import GuidedTour from '../../components/ui/GuidedTour';
 import { TextField, TextArea } from '../../components/ui/Field';
 import usePoll from '../../hooks/usePoll';
+import { startTour } from '../../lib/tour';
 
 /**
  * Picking the culprit as a board of people rather than a dropdown.
@@ -73,12 +75,156 @@ function SuspectChoice({ suspects, value, onChange, error }) {
     );
 }
 
-export default function Accusation({ player, game, unlocked, locked, suspects, pending }) {
+const DEFAULT_FORM = {
+    culprit_points: 40,
+    max: 100,
+    weapon: { label: '¿Con qué?', hint: 'El método o el arma: qué usó para hacerlo.', points: 30 },
+    motive: {
+        label: '¿Por qué?',
+        hint: 'Tu razonamiento. Lo leerán los demás cuando se revele la solución.',
+        points: 30,
+    },
+    questions: [],
+};
+
+/** "(15 pts)" next to a label, so it is clear where the effort pays off. */
+function withPoints(label, points) {
+    return points > 0 ? `${label} (${points} pts)` : label;
+}
+
+/**
+ * How the accusation works, written for someone who has never done one.
+ *
+ * Players kept asking "what do I put in each box?" — so this says what each
+ * part is for, what is optional, how it is marked and what a good answer
+ * looks like. It stays on the page (a tour is shown once and forgotten) and
+ * the guided tour below says the same in four short steps.
+ */
+function HowItWorks({ form }) {
+    const extras = form.questions?.length ?? 0;
+
+    return (
+        <Card as="section" className="mb-5">
+            <CardHeader
+                title="Cómo funciona tu acusación"
+                description="Léelo una vez: te ahorra preguntarte qué escribir en cada casilla."
+                actions={
+                    <Button variant="secondary" size="sm" onClick={() => startTour('accusation')}>
+                        Ver el tutorial
+                    </Button>
+                }
+            />
+
+            <ol className="space-y-3 text-sm text-ink-muted">
+                <li>
+                    <strong className="text-ink">1. Elige a una persona</strong> ({form.culprit_points}{' '}
+                    pts). Es la única parte que se corrige exacta: o acertaste, o no. Es lo que
+                    decide quién gana.
+                </li>
+                <li>
+                    <strong className="text-ink">2. Cuenta cómo lo hizo y por qué</strong> (
+                    {form.weapon.points + form.motive.points} pts). Obligatorio. No hace falta que
+                    sea largo: una o dos frases claras con lo esencial valen más que un párrafo
+                    que da vueltas.
+                </li>
+                {extras > 0 && (
+                    <li>
+                        <strong className="text-ink">3. Responde las preguntas del caso</strong> (
+                        {form.max - form.culprit_points - form.weapon.points - form.motive.points}{' '}
+                        pts en total). Son <strong className="text-ink">opcionales</strong>: si no
+                        sabes una, déjala en blanco y no pasa nada, simplemente no suma. Sirven
+                        para desempatar cuando varias personas aciertan a quien culpar.
+                    </li>
+                )}
+            </ol>
+
+            <div className="mt-4 rounded-card border border-line bg-surface-sunken p-4 text-sm text-ink-muted">
+                <p className="font-medium text-ink">Cómo se califica</p>
+                <ul className="mt-2 list-disc space-y-1.5 pl-5">
+                    <li>
+                        Al revelarse la solución, cada respuesta se compara con la solución oficial.
+                        Cuenta lo que dices, no cómo lo escribes: sinónimos y faltas de ortografía no
+                        restan.
+                    </li>
+                    <li>
+                        Puedes ganar puntos parciales si aciertas una parte de la idea y fallas otra.
+                    </li>
+                    <li>
+                        Responde con lo que <em>crees que ocurrió</em>, sin enumerar varias opciones
+                        «por si acaso»: eso no suma.
+                    </li>
+                    <li>
+                        Puedes cambiar tu acusación cuantas veces quieras hasta que se revele la
+                        solución.
+                    </li>
+                    <li>
+                        <strong className="text-ink">No es lo mismo que interrogar.</strong>{' '}
+                        Interrogar y confrontar sirven para <em>averiguar</em> (cada pregunta o
+                        confrontación gasta las preguntas de esa persona). La acusación es tu
+                        respuesta final: no gasta preguntas y la envía cada jugador por su cuenta.
+                    </li>
+                </ul>
+            </div>
+        </Card>
+    );
+}
+
+/** The same explanation as a first-visit tour, in four short steps. */
+function accusationTour(form) {
+    const extras = form.questions?.length ?? 0;
+
+    return [
+        {
+            title: 'Tu acusación final',
+            body: 'Es el último paso: dices quién fue, cómo y por qué. No es lo mismo que interrogar o confrontar (eso es para averiguar y gasta las preguntas de cada persona): esta es tu respuesta final y no gasta preguntas. Puedes cambiarla hasta que se revele la solución.',
+        },
+        {
+            target: '[data-tour="accusation-suspect"]',
+            optional: true,
+            title: '1. Elige a una persona',
+            body: `Es la parte más importante (${form.culprit_points} puntos) y se corrige exacta. Quien acierte a la persona queda por delante de quien no.`,
+        },
+        {
+            target: '[data-tour="accusation-basics"]',
+            optional: true,
+            title: '2. Cómo y por qué',
+            body: 'Obligatorias. Escribe lo esencial en una o dos frases claras: qué hizo y qué lo llevó a hacerlo.',
+        },
+        {
+            target: '[data-tour="accusation-extras"]',
+            optional: true,
+            title: extras > 0 ? '3. Preguntas del caso' : 'Calificación',
+            body:
+                extras > 0
+                    ? 'Son opcionales: si no sabes una, déjala en blanco. Cada respuesta que aciertes suma puntos y sirve de desempate entre quienes acertaron al culpable.'
+                    : 'Al revelarse la solución, tu método y tu motivo se comparan con la oficial. Cuenta lo que dices, no cómo lo escribes.',
+        },
+    ];
+}
+
+export default function Accusation({
+    player,
+    game,
+    unlocked,
+    locked,
+    suspects,
+    pending,
+    form = DEFAULT_FORM,
+}) {
+    const questions = form.questions ?? [];
+
     const { data, setData, post, processing, errors } = useForm({
         suspect_slug: player.accusation?.suspect_slug || '',
         weapon: player.accusation?.weapon || '',
         motive: player.accusation?.motive || '',
+        answers: Object.fromEntries(
+            questions.map((question) => [question.key, player.accusation?.answers?.[question.key] || ''])
+        ),
     });
+
+    function setAnswer(key, value) {
+        setData('answers', { ...data.answers, [key]: value });
+    }
 
     const alreadySent = Boolean(player.accusation);
     const chosen = suspects.find((suspect) => suspect.slug === data.suspect_slug);
@@ -149,34 +295,74 @@ export default function Accusation({ player, game, unlocked, locked, suspects, p
                         </Alert>
                     )}
 
+                    <HowItWorks form={form} />
+
                     <form onSubmit={submit} className="space-y-6">
-                        <SuspectChoice
-                            suspects={suspects}
-                            value={data.suspect_slug}
-                            onChange={(slug) => setData('suspect_slug', slug)}
-                            error={errors.suspect_slug}
-                        />
+                        <div data-tour="accusation-suspect">
+                            <SuspectChoice
+                                suspects={suspects}
+                                value={data.suspect_slug}
+                                onChange={(slug) => setData('suspect_slug', slug)}
+                                error={errors.suspect_slug}
+                            />
+                        </div>
 
-                        <TextField
-                            id="weapon"
-                            label="¿Con qué?"
-                            value={data.weapon}
-                            onChange={(value) => setData('weapon', value)}
-                            error={errors.weapon}
-                            hint="El método o el arma: qué usó para hacerlo."
-                            required
-                        />
+                        <div className="space-y-6" data-tour="accusation-basics">
+                            <TextField
+                                id="weapon"
+                                label={withPoints(form.weapon.label, form.weapon.points)}
+                                value={data.weapon}
+                                onChange={(value) => setData('weapon', value)}
+                                error={errors.weapon}
+                                hint={form.weapon.hint}
+                                required
+                            />
 
-                        <TextArea
-                            id="motive"
-                            label="¿Por qué?"
-                            rows={5}
-                            value={data.motive}
-                            onChange={(value) => setData('motive', value)}
-                            error={errors.motive}
-                            hint="Tu razonamiento. Lo leerán los demás cuando se revele la solución."
-                            required
-                        />
+                            <TextArea
+                                id="motive"
+                                label={withPoints(form.motive.label, form.motive.points)}
+                                rows={5}
+                                value={data.motive}
+                                onChange={(value) => setData('motive', value)}
+                                error={errors.motive}
+                                hint={form.motive.hint}
+                                required
+                            />
+                        </div>
+
+                        {/* The case's own questions. Optional: a blank one just
+                            scores zero. Each is graded against the solution once
+                            it is revealed, and the score breaks ties between
+                            players who named the same culprit. */}
+                        {questions.length > 0 && (
+                            <div className="space-y-6" data-tour="accusation-extras">
+                                <div className="border-t border-line pt-5">
+                                    <p className="text-sm font-medium text-ink">
+                                        Preguntas del caso{' '}
+                                        <span className="font-normal text-ink-subtle">
+                                            (opcionales)
+                                        </span>
+                                    </p>
+                                    <p className="mt-1 text-xs text-ink-subtle">
+                                        Si no sabes una respuesta, déjala en blanco. Suman puntos y
+                                        desempatan entre quienes acierten al culpable.
+                                    </p>
+                                </div>
+
+                                {questions.map((question) => (
+                                    <TextArea
+                                        key={question.key}
+                                        id={`answers-${question.key}`}
+                                        label={withPoints(question.label, question.points)}
+                                        rows={3}
+                                        value={data.answers[question.key] ?? ''}
+                                        onChange={(value) => setAnswer(question.key, value)}
+                                        error={errors[`answers.${question.key}`]}
+                                        hint={question.hint ?? undefined}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
                         {/* Reading the accusation back as one sentence is the
                             last chance to notice it does not hold together. */}
@@ -194,6 +380,12 @@ export default function Accusation({ player, game, unlocked, locked, suspects, p
                     </form>
                 </Card>
             )}
+
+            <GuidedTour
+                id="accusation"
+                steps={accusationTour(form)}
+                enabled={unlocked && !locked && !game.ending_revealed_at}
+            />
         </PlayerLayout>
     );
 }

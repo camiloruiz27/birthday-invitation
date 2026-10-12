@@ -40,6 +40,7 @@ return [
 
     'victim' => [
         'name' => 'Héctor Delgado',
+        'label' => 'Víctima',
         'photo' => 'hector-delgado.png',
     ],
 
@@ -50,7 +51,7 @@ return [
         // por sospechoso. El motor solo soporta un numero plano por caso
         // (CaseDefinition::interrogationQuestions()), mismo precedente que
         // los demas casos.
-        'interrogation_questions' => 4,
+        'interrogation_questions' => 5,
     ],
 
     /*
@@ -133,6 +134,11 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/mario-calvo.md',
             'photo' => 'mario-calvo.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 1, 'after' => ['V6'], 'confrontation' => true, 'note' => 'Con el registro técnico de la función'],
+                ['questions' => 2, 'after' => ['V11', 'A2'], 'confrontation' => true, 'note' => 'Con las pruebas finales del caso'],
+            ]],
             'connection' => 'Director de la obra',
             'motive' => 'Héctor le confesó esa misma noche que ya había firmado un contrato de cine y que esta era, de verdad, su última función con la compañía',
             'alibi' => 'Dice haber estado todo el tiempo en la cabina de dirección coordinando la función',
@@ -151,6 +157,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/santi-robles.md',
             'photo' => 'santi-robles.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V4', 'V5'], 'confrontation' => true, 'note' => 'Con el trofeo real y la réplica'],
+            ]],
             'connection' => 'Utilero de la producción',
             'motive' => 'Olvidó devolver el trofeo real a la vitrina tras el ensayo con prensa (error real, sin relación con la muerte)',
             'alibi' => 'En la sala de utilería revisando el resto del atrezo, visto por otros técnicos durante la ventana crítica',
@@ -169,6 +179,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/laura-mendizabal.md',
             'photo' => 'laura-mendizabal.jpg',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V7', 'V8', 'V9'], 'confrontation' => true, 'note' => 'Con el programa, el registro del ensayo y el vestuario'],
+            ]],
             'connection' => 'Coprotagonista de la obra',
             'motive' => 'Resentimiento por un crédito de guion no reconocido (real, sin relación con la muerte); su coartada es un recuerdo sincero mal fechado',
             'alibi' => 'En su propio camerino esta noche durante la ventana crítica, sin coartada de terceros hasta aclarar la confusión de fechas',
@@ -187,6 +201,10 @@ return [
             'role' => 'sospechosa',
             'file' => 'suspects/carla-iturri.md',
             'photo' => 'carla-iturri.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8', 'V9'], 'confrontation' => true, 'note' => 'Con el registro del ensayo y el vestuario'],
+            ]],
             'connection' => 'Actriz secundaria',
             'motive' => 'Relación secreta con Héctor (real, sin relación con la muerte); su testimonio sobre Santi es un recuerdo sincero mal fechado',
             'alibi' => 'En su camerino y luego brevemente con Héctor antes del cambio de vestuario, sin llegar a la ventana exacta del ataque',
@@ -205,6 +223,10 @@ return [
             'role' => 'sospechoso',
             'file' => 'suspects/gustavo-pena.md',
             'photo' => 'gustavo-pena.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V4', 'V5', 'V13'], 'confrontation' => true, 'note' => 'Tras la complicación del caso'],
+            ]],
             'connection' => 'Productor del teatro',
             'motive' => 'Negocia en secreto vender su participación en la producción (real, sin relación con la muerte)',
             'alibi' => 'En una reunión con patrocinadores desde las 21:00 hasta las 22:00, confirmable por varios asistentes externos',
@@ -344,6 +366,50 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The accusation and how it is graded
+    |--------------------------------------------------------------------------
+    |
+    | Points from the design doc's scoring (30/15/20/15/20). The design's
+    | "reconstruccion_momento_ataque" field carries the 20 points for
+    | recognising that Mario's alibi belongs to the wrong night.
+    |
+    */
+
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Cómo lo mataron y con qué?',
+            'hint' => 'Dónde ocurrió y el objeto que se usó.',
+            'points' => 15,
+            'guidance' => 'Lo esencial: un golpe con el trofeo real (no la réplica) en el corredor junto a la sala de utilería.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué?',
+            'hint' => 'Qué supo el culpable esa noche y por qué le afectaba.',
+            'points' => 20,
+        ],
+        'questions' => [
+            [
+                'key' => 'origen_trofeo',
+                'label' => '¿Por qué había un trofeo real en la caja de utilería esta noche?',
+                'hint' => 'Cuándo llegó allí, por qué y quién debía haberlo retirado.',
+                'answer' => 'El trofeo real sustituyó a la réplica dos noches antes, en el ensayo general con prensa, porque fotografiaba mejor; Santi, el utilero, olvidó devolverlo a la vitrina y recolocar la réplica, y el error pasó inadvertido. Fue un descuido honesto, ajeno al ataque.',
+                'points' => 15,
+                'guidance' => 'Basta con el cambio por las fotos de prensa dos noches antes y el olvido de Santi. Restar si presenta el cambio como parte de un plan para matar.',
+            ],
+            [
+                'key' => 'momento_ataque',
+                'label' => '¿Cuándo ocurrió realmente el ataque, y qué testimonios no encajan con ese momento?',
+                'hint' => 'Sitúa el ataque en el tiempo y explica por qué no encaja cada testimonio contradictorio, incluida la coartada del culpable.',
+                'answer' => 'El ataque ocurrió esta noche, durante el cambio de vestuario y utilería antes de la escena final (hacia las 21:33–21:36), cuando el registro técnico muestra un hueco en los cues de Mario. Su coartada de estar todo el tiempo en la cabina de dirección es cierta, pero de la noche del ensayo con prensa de dos noches antes; también los recuerdos de Laura (repasar el diálogo del trofeo con Héctor) y de Carla (ver a Santi puliendo el trofeo) pertenecen a esa otra noche.',
+                'points' => 20,
+                'guidance' => 'El núcleo es que la coartada de Mario pertenece a la noche del ensayo con prensa. Cero si trata todos los testimonios como referidos a la misma noche sin fechar ninguno.',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
     |
@@ -434,7 +500,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 65,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para fechar correctamente cada recuerdo de esta noche y descubrir cuál pertenece, en realidad, a otra: el ensayo general con prensa de dos noches antes. Nadie mintió sobre lo que recuerda — solo hace falta saber en qué noche ocurrió cada cosa. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó entre bambalinas. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, les hará algunas preguntas sobre el caso.',
             'delivery_mode' => 'all',
         ],
     ],
