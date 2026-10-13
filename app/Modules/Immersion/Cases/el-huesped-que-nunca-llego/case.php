@@ -173,7 +173,7 @@ return [
         // public/immersion/el-huesped-que-nunca-llego/ (ver ASSET_PROMPTS.md).
         // Se siembra solo en el primer sync; luego: cambiar a true y correr
         // `php artisan platform:sync-cases --prices`, o editar la fila en BD.
-        'published' => false,
+        'published' => true,
         'sort_order' => 10,
     ],
 
@@ -537,7 +537,7 @@ return [
             'trigger_offset_minutes' => 1,
             'title' => 'Audio — la llamada de confirmación de la reserva',
 
-            'audio_file' => 'a1-llamada-confirmacion.wav',
+            'audio_file' => 'a1-llamada-confirmacion.mp3',
             'audio_scene' => 'Llamada telefónica corriente a la recepción de un hotel rural pequeño: calidad de línea de teléfono, sin música y un leve ambiente de recepción tranquila al fondo.',
             'audio_context' => 'Un hombre adulto, de voz cálida y algo apresurada, confirma una reserva y pide que le dejen la llave en un casillero para llegar tarde. Una mujer adulta de voz profesional y amable acepta sin problema. Todo suena normal y cordial; nada debe sonar sospechoso en una primera escucha. Duración: 12–15 segundos.',
             'audio_speaker' => 'Speaker 1 - Hombre que llama / Speaker 2 - Mercedes Quintanilla (recepción)',
@@ -597,7 +597,7 @@ return [
             'trigger_offset_minutes' => 45,
             'title' => 'Audio — el último mensaje de voz de Carmen',
 
-            'audio_file' => 'a2-mensaje-voz-carmen.wav',
+            'audio_file' => 'a2-mensaje-voz-carmen.mp3',
             'audio_scene' => 'Mensaje de voz de móvil grabado en un ambiente cálido y cotidiano, con un murmullo suave de fondo; sin música.',
             'audio_context' => 'Carmen, una mujer de 35 años, le cuenta a su hermana, emocionada y algo nerviosa de la buena manera, que el encuentro con alguien a quien conoció por internet va muy bien. Tono ilusionado y cálido; ningún indicio de peligro ni de alarma en la voz. Duración: 12–15 segundos.',
             'audio_speaker' => 'Speaker 1 - Carmen Otero',

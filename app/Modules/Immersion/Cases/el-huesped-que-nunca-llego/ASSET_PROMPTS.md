@@ -10,7 +10,7 @@ Todo se guarda en `public/immersion/el-huesped-que-nunca-llego/`:
 | `cover/` | `portada.png` (después correr `php artisan platform:build-case-images`) |
 | `photos/` | los 10 retratos |
 | `gallery/` | las 13 evidencias visuales |
-| `audio/` | `a1-llamada-confirmacion.wav`, `a2-mensaje-voz-carmen.wav` |
+| `audio/` | `a1-llamada-confirmacion.mp3`, `a2-mensaje-voz-carmen.mp3` |
 
 ## Orden de producción recomendado
 
@@ -173,11 +173,11 @@ logos de marcas reales.
 Los guiones están en `case.php`; se exportan listos para estudio con
 `php artisan immersion:export-audio-scripts el-huesped-que-nunca-llego`. Guardar en `audio/`.
 
-(`audio/a1-llamada-confirmacion.wav` — A1, la llamada de confirmación, 12–15 s)
+(`audio/a1-llamada-confirmacion.mp3` — A1, la llamada de confirmación, 12–15 s)
 **GUION:** *Hombre:* «Buenas tardes, llamo para confirmar una reserva a nombre de Daniel Rivas para este fin de semana. Voy a llegar bastante tarde, ¿sería posible dejar la llave en el casillero de la entrada? No hace falta que nadie me espere despierto.» *Mercedes:* «Sin problema, señor Rivas, se la dejamos lista.»
 **PROMPT:** Llamada telefónica diegética entre un hombre adulto de voz cálida y algo apresurada que confirma una reserva de hotel y pide que le dejen la llave en un casillero para una llegada tardía, y una mujer adulta de voz profesional y amable que acepta el arreglo. Calidad de línea telefónica normal, sin música. **EVITAR:** tono sospechoso o siniestro, música de tensión, ruidos de fondo exagerados.
 
-(`audio/a2-mensaje-voz-carmen.wav` — A2, mensaje de voz de Carmen a su hermana, 12–15 s)
+(`audio/a2-mensaje-voz-carmen.mp3` — A2, mensaje de voz de Carmen a su hermana, 12–15 s)
 **GUION:** *Carmen:* «Lorena, no vas a creer lo bien que va todo. Es exactamente como me lo imaginaba hablando con él estos meses. Mañana seguimos hablando, ¿sí? Te quiero.»
 **PROMPT:** Mensaje de voz diegético de una mujer adulta de 35 años, tono emocionado e ilusionado, que cuenta a su hermana que un encuentro presencial con alguien que conoció por internet va muy bien, sin ningún indicio de peligro o alarma en el tono; ambiente cálido y cotidiano de fondo, sin música. **EVITAR:** tono alarmante o premonitorio, música de tensión, llanto, temblor en la voz.
 
