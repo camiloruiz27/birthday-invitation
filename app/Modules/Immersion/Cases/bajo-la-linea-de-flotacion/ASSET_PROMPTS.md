@@ -10,7 +10,7 @@ Todo se guarda en `public/immersion/bajo-la-linea-de-flotacion/`:
 | `cover/` | `portada.png` (después correr `php artisan platform:build-case-images`) |
 | `photos/` | los 10 retratos |
 | `gallery/` | las 17 evidencias visuales |
-| `audio/` | `a1-alarma-entrada-agua.wav`, `a2-radio-horacio.wav` |
+| `audio/` | `a1-alarma-entrada-agua.mp3`, `a2-radio-horacio.mp3` |
 
 ## Orden de producción recomendado
 
@@ -114,29 +114,29 @@ sin logos de marcas reales.
 **PROMPT:** Captura de pantalla diegética de un sistema simple de control de puertas estancas de un buque, con una tabla funcional de cierres y aperturas de la sección afectada, interfaz sobria. Dejar vacías las celdas de hora. Formato horizontal. **EVITAR:** iconografía de alarma dramatizada.
 **TEXTO A COMPONER:** *Sección inferior de proa — CIERRE 22:15 — APERTURA GENERAL 22:45.*
 
-(`gallery/v6-registro-bombas-alarma.png` — V6, bombas y alarma)
+(`gallery/v6-registro-bombas-alarma.png` — V6, bombas y alarma) (solo esta foto)
 **PROMPT:** Captura de pantalla diegética de un panel simple de monitoreo del sistema de achique de un buque, con una línea de «primera lectura anómala» y otra de «activación de alarma», y una nota técnica breve al pie, interfaz sobria. Dejar vacías las horas y la nota. Formato horizontal. **EVITAR:** iconografía de alarma dramatizada, interpretación escrita de la diferencia.
 **TEXTO A COMPONER:** *Primera lectura anómala 22:05 — Activación de alarma 22:10 — Nota: «registro verificado posteriormente».*
 
-(`gallery/v7-comunicado-recorte.png` — V7, comunicado de recorte; se entrega como fragmento a T+24)
+(`gallery/v7-comunicado-recorte.png` — V7, comunicado de recorte; se entrega como fragmento a T+24) (solo esta foto)
 **PROMPT:** Documento diegético tipo comunicado interno institucional breve, con membrete genérico de un instituto oceanográfico, tono administrativo y sobrio, aspecto de impreso o documento digital simple. Dejar vacío el cuerpo del texto. Formato vertical. **EVITAR:** iconografía de alerta, lenguaje dramatizado, logos reales.
 **TEXTO A COMPONER:** *Asunto: Revisión presupuestaria del ejercicio. Se informa que el Instituto evaluará ajustes en dotación de personal y partidas de mantenimiento de las unidades de campo. Se comunicarán novedades próximamente.*
 
-(`gallery/v8-puente-de-mando.png` — V8, puente de mando)
+(`gallery/v8-puente-de-mando.png` — V8, puente de mando) (solo esta foto)
 **PROMPT:** Fotografía diegética funcional del puente de mando de un buque de investigación de noche, instrumentación de navegación sobria, ventanales hacia el mar oscuro, iluminación técnica tenue, sin personas en primer plano (como mucho una silueta desenfocada de espaldas). Formato horizontal. **EVITAR:** estética futurista, dramatización.
 
-(`gallery/v9-laboratorio.png` — V9, laboratorio científico)
+(`gallery/v9-laboratorio.png` — V9, laboratorio científico) (solo esta foto)
 **PROMPT:** Fotografía diegética funcional de un laboratorio científico de a bordo, con mesas de análisis, muestras etiquetadas en contenedores y equipo de medición sobrio, luz fluorescente fría, sin personas en primer plano. Formato horizontal. **EVITAR:** laboratorio de ciencia ficción, etiquetas legibles críticas.
 
-(`gallery/v10a-inventario-parcial.png` — V10 parcial, entrega privada a T+24)
+(`gallery/v10a-inventario-parcial.png` — V10 parcial, entrega privada a T+24) (solo esta foto)
 **PROMPT:** Documento diegético tipo hoja de inventario científico, con una tabla funcional de muestras, códigos y cantidades registradas, y una breve anotación manuscrita de verificación física que no coincide con una de las cantidades. La zona del responsable queda en blanco. Cortado o parcial, como fragmento. Formato vertical. **EVITAR:** iconografía de alerta, jerga científica innecesaria, nombre de responsable.
 **TEXTO A COMPONER:** tabla *Código · Muestra · Cant. registrada*; una fila con registrado «24» y anotación manuscrita «verif.: 19». Campo *Responsable:* vacío.
 
-(`gallery/v10-inventario-completo.png` — V10 completo, entrega a T+75)
+(`gallery/v10-inventario-completo.png` — V10 completo, entrega a T+75) (solo esta foto)
 **PROMPT:** La misma hoja de inventario que V10 parcial (mismo diseño, mismas filas y misma anotación manuscrita), ahora completa y sin cortes, con el nombre del responsable visible. Formato vertical. **EVITAR:** cambiar el diseño respecto a V10 parcial, iconografía de alerta, resaltados.
 **TEXTO A COMPONER:** idéntico a V10 parcial, más *Responsable: Dra. L. Fernández Mora*.
 
-(`gallery/v11-transcripcion-radio.png` — V11, transcripción de radio)
+(`gallery/v11-transcripcion-radio.png` — V11, transcripción de radio) (solo esta foto)
 **PROMPT:** Documento diegético tipo transcripción simple de comunicaciones de radio interna de un buque, lista breve de transmisiones con hora y remitente, formato de registro funcional del sistema de comunicaciones. El mensaje de Horacio es una transmisión más, sin resaltar. Dejar vacío el texto. Formato vertical. **EVITAR:** iconografía de alarma, texto interpretativo añadido.
 **TEXTO A COMPONER:**
 - *22:12 PUENTE → MÁQUINAS: Confirmen presión de bombas de achique.*
@@ -145,20 +145,20 @@ sin logos de marcas reales.
 - *22:36 PUENTE → H. VALDERRAMA: Recibido.*
 - *22:39 PUENTE → H. VALDERRAMA: Confirme su estado. — sin respuesta*
 
-(`gallery/v12-posicion-cuerpo-zona-seca.png` — V12, plataforma seca)
+(`gallery/v12-posicion-cuerpo-zona-seca.png` — V12, plataforma seca) (solo esta foto)
 **PROMPT:** Fotografía diegética funcional de la misma sección inferior de V2, con el foco en la plataforma metálica elevada y completamente seca, en contraste con el agua residual visible en otras partes de la sección, algún objeto personal caído (un guante de trabajo, un casco). Sin cuerpo explícito (sugerido fuera de cuadro). Luz de emergencia amarillenta, mismo estilo que V2. Formato 4:5. **EVITAR:** sangre, gore, cuerpo en primer plano, dramatización.
 
-(`gallery/v13-extintor.png` — V13, extintor)
+(`gallery/v13-extintor.png` — V13, extintor) (solo esta foto)
 **PROMPT:** Fotografía diegética funcional de un extintor de incendios naval, fuera de su soporte de pared, apoyado en el suelo de la sección inferior, que se ve en el soporte vacío del mismo estilo que V2. Sin daño, sangre ni indicio de violencia: simplemente fuera de lugar. Luz de emergencia, mismo estilo que V2/V12. Formato 4:5. **EVITAR:** sangre, daño, indicios de violencia.
 
-(`gallery/v14-hoja-acceso-seccion.png` — V14, hoja de acceso)
+(`gallery/v14-hoja-acceso-seccion.png` — V14, hoja de acceso) (solo esta foto)
 **PROMPT:** Documento diegético tipo registro de autorización de acceso a zona restringida durante una emergencia naval, con una tabla funcional de nombres y horas de entrada y salida, en formato operativo sobrio. Tres filas, ninguna resaltada. Dejar vacías las celdas. Formato vertical. **EVITAR:** iconografía de alarma, resaltar la fila de Lucía.
 **TEXTO A COMPONER:** *Nombre · Entrada · Salida* — **H. Valderrama 22:16 — sin registro de salida** · **R. Oyarzún 22:16 — 22:27** · **L. Fernández Mora 22:21 — 22:42**.
 
-(`gallery/v15-camara-muestras.png` — V15, cámara de muestras)
+(`gallery/v15-camara-muestras.png` — V15, cámara de muestras) (solo esta foto)
 **PROMPT:** Fotografía diegética funcional de una pequeña cámara de almacenamiento refrigerado dentro de la sección inferior de un buque de investigación, contenedores de muestras etiquetados ordenadamente, sin personas, luz fría funcional. Formato 4:5. **EVITAR:** daños, indicios de violencia, etiquetas legibles críticas.
 
-(`gallery/v16-mensaje-colega-externo.png` — V16, mensaje de colega externo)
+(`gallery/v16-mensaje-colega-externo.png` — V16, mensaje de colega externo) (solo esta foto)
 **PROMPT:** Captura de pantalla diegética de un mensaje breve de correo o mensajería profesional, formato de captura de móvil, interfaz simple y genérica, tono cordial. Dejar vacío el cuerpo del mensaje. Formato vertical. **EVITAR:** iconografía de alarma, mención explícita del fraude, logos de apps reales.
 **TEXTO A COMPONER:** *De: Dr. A. Vergara (colega externo). «Lucía, ¡qué ganas de ver los resultados de la campaña! El comité de la beca está muy atento y todos esperamos que la publicación salga a tiempo. Mucho ánimo, ya casi lo tienes.»*
 
@@ -167,10 +167,10 @@ sin logos de marcas reales.
 Los guiones están en `case.php`; se exportan listos para estudio con
 `php artisan immersion:export-audio-scripts bajo-la-linea-de-flotacion`. Guardar en `audio/`.
 
-(`audio/a1-alarma-entrada-agua.wav` — A1, anuncio de entrada de agua, 12–15 s)
+(`audio/a1-alarma-entrada-agua.mp3` — A1, anuncio de entrada de agua, 12–15 s)
 **PROMPT:** Anuncio de megafonía diegético en un buque, voz adulta profesional y firme, que informa de una entrada de agua confirmada en la sección inferior de proa y del cierre de puertas estancas según protocolo; tono de emergencia controlada, sin pánico. Una breve alarma técnica naval antes del anuncio y, de fondo, motores y viento. Sin música. **EVITAR:** tono de pánico, música de tensión, sonidos de catástrofe exagerados.
 
-(`audio/a2-radio-horacio.wav` — A2, radio de Horacio, 15–18 s)
+(`audio/a2-radio-horacio.mp3` — A2, radio de Horacio, 15–18 s)
 **PROMPT:** Transmisión de radio diegética de un hombre adulto, voz cansada y funcional, desde una sección técnica de un buque durante una emergencia controlada, que menciona que una válvula dañada no parece desgaste normal y que encontró algo que no cuadra en un inventario de muestras; tono de trabajo rutinario, sin urgencia dramática. Estática de radio y bombas funcionando de fondo. Sin música. **EVITAR:** tono de amenaza o revelación dramática, música de tensión.
 
 (A3 — confesión de Lucía) **No se graba.** Es `solution.confession_script` en `case.php`: se genera por partida (con voz Kore) para incluir las preguntas que esa mesa le hizo a Lucía.

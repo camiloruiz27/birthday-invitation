@@ -118,8 +118,7 @@ function HowItWorks({ form }) {
             <ol className="space-y-3 text-sm text-ink-muted">
                 <li>
                     <strong className="text-ink">1. Elige a una persona</strong> ({form.culprit_points}{' '}
-                    pts). Es la única parte que se corrige exacta: o acertaste, o no. Es lo que
-                    decide quién gana.
+                    pts). Solo cuenta si aciertas: o es la persona correcta o no lo es. Quien nombre a la persona correcta queda por delante de quien no, aunque este último sume más puntos en lo demás.
                 </li>
                 <li>
                     <strong className="text-ink">2. Cuenta cómo lo hizo y por qué</strong> (
@@ -182,7 +181,7 @@ function accusationTour(form) {
             target: '[data-tour="accusation-suspect"]',
             optional: true,
             title: '1. Elige a una persona',
-            body: `Es la parte más importante (${form.culprit_points} puntos) y se corrige exacta. Quien acierte a la persona queda por delante de quien no.`,
+            body: `Es lo que más vale (${form.culprit_points} puntos) y solo cuenta si aciertas: o es la persona correcta o no lo es. Quien nombre a la persona correcta queda por delante de quien no, aunque este último sume más puntos en lo demás.`,
         },
         {
             target: '[data-tour="accusation-basics"]',

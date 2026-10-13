@@ -131,7 +131,7 @@ return [
         // public/immersion/bajo-la-linea-de-flotacion/ (ver ASSET_PROMPTS.md).
         // Se siembra solo en el primer sync; luego: cambiar a true y correr
         // `php artisan platform:sync-cases --prices`, o editar la fila en BD.
-        'published' => false,
+        'published' => true,
         'sort_order' => 9,
     ],
 
@@ -489,7 +489,7 @@ return [
             'trigger_offset_minutes' => 1,
             'title' => 'Audio — anuncio de entrada de agua',
 
-            'audio_file' => 'a1-alarma-entrada-agua.wav',
+            'audio_file' => 'a1-alarma-entrada-agua.mp3',
             'audio_scene' => 'Anuncio de megafonía en un buque de investigación durante una emergencia controlada: una breve alarma técnica naval y, de fondo, el sonido de motores y viento.',
             'audio_context' => 'La voz de megafonía del puente informa con tono profesional y firme de una entrada de agua confirmada en la sección inferior de proa y del cierre de puertas estancas según protocolo. Tensión contenida, no pánico.',
             'audio_speaker' => 'Speaker 1 - Voz de megafonía del puente',
@@ -553,7 +553,7 @@ return [
             'trigger_offset_minutes' => 48,
             'title' => 'Audio — fragmento de radio de Horacio',
 
-            'audio_file' => 'a2-radio-horacio.wav',
+            'audio_file' => 'a2-radio-horacio.mp3',
             'audio_scene' => 'Transmisión de radio interna desde una sección técnica de un buque durante una emergencia controlada: estática de radio y bombas funcionando de fondo.',
             'audio_context' => 'Horacio, cansado y funcional, reporta dos observaciones de trabajo como quien hace un informe rutinario, sin urgencia ni dramatismo. No es una amenaza.',
             'audio_speaker' => 'Speaker 1 - Horacio Valderrama',
