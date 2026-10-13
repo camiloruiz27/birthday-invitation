@@ -8,7 +8,9 @@ use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Http\Resources\CaseCardData;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\PromoCode;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
+use App\Modules\Platform\Support\Market;
 use App\Modules\Platform\Support\Mechanics;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -36,8 +38,9 @@ class AdLandingController extends Controller
         // something worth showing: an ad that promises a discount has to keep
         // the promise on the page it lands on, not only at the checkout.
         $code = Attribution::pendingPromo($request, $request->user());
-        $offer = $code ? $promos->landingOffer($request->user(), $code) : null;
+        $offer = $this->inMarket($request, $code ? $promos->landingOffer($request->user(), $code) : null);
         $promo = $offer ? PromoCode::where('code', $offer['code'])->first() : null;
+        $quotes = QuoteBuilder::make();
 
         return Inertia::render('Public/AdLanding', [
             'mode' => 'platform',
@@ -54,8 +57,16 @@ class AdLandingController extends Controller
                     // What each card costs WITH the offer, worked out by the
                     // same code that charges, so the page never promises a
                     // price the checkout will not give.
+                    // Quoted by the same code the checkout uses: a percent code
+                    // off the USD price, anything else discounted in COP and
+                    // converted once.
                     'offer_amount' => $promo && $promo->isDiscount()
-                        ? $promo->discountedAmount($case->price_amount)
+                        ? $quotes->forRequest(
+                            $case->price_amount,
+                            $promo->discountedAmount($case->price_amount),
+                            $request,
+                            QuoteBuilder::percentOff($promo),
+                        )->total
                         : null,
                 ])
                 ->values(),
@@ -84,7 +95,7 @@ class AdLandingController extends Controller
         $landing = CaseCardData::landing($case);
 
         $code = Attribution::pendingPromo($request, $request->user());
-        $offer = $code ? $promos->landingOffer($request->user(), $code, $case) : null;
+        $offer = $this->inMarket($request, $code ? $promos->landingOffer($request->user(), $code, $case) : null, $case);
 
         return Inertia::render('Public/AdLanding', [
             'mode' => 'case',
@@ -107,5 +118,45 @@ class AdLandingController extends Controller
             ]),
             'preloadImage' => $landing['landing_cover_url'],
         ]);
+    }
+
+    /**
+     * RedeemPromoCode::landingOffer works in COP; this puts its amounts in the
+     * visitor's market, through the same quote the checkout uses.
+     *
+     * A fixed code is a COP amount, so for an international visitor it has no
+     * single USD figure unless a case is chosen — without one the landing
+     * simply shows the normal price (the code still applies at checkout),
+     * which is the honest thing to do rather than print a number that can be
+     * wrong.
+     */
+    private function inMarket(Request $request, ?array $offer, ?MysteryCase $case = null): ?array
+    {
+        if ($offer === null || Market::fromRequest($request) !== Market::INTL) {
+            return $offer;
+        }
+
+        if ($offer['kind'] === 'fixed' && ! $case) {
+            return null;
+        }
+
+        if ($case && $offer['final_amount'] !== null) {
+            $quote = QuoteBuilder::make()->forRequest(
+                $case->price_amount,
+                $offer['final_amount'],
+                $request,
+                QuoteBuilder::percentOff(PromoCode::where('code', $offer['code'])->first()),
+            );
+
+            $offer['final_amount'] = $quote->total;
+            $offer['discount_amount'] = $quote->discount;
+
+            if ($offer['kind'] === 'fixed') {
+                // What the code takes off, in the buyer's currency.
+                $offer['value'] = $quote->discount;
+            }
+        }
+
+        return $offer;
     }
 }

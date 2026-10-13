@@ -34,7 +34,7 @@ final class AdEvent
         public readonly ?string $fbp = null,
         public readonly ?string $fbc = null,
         public readonly ?string $ttp = null,
-        public readonly ?int $value = null,
+        public readonly int|float|null $value = null,
         public readonly ?string $currency = null,
         public readonly array $contents = [],
     ) {

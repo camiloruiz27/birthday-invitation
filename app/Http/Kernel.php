@@ -38,6 +38,8 @@ class Kernel extends HttpKernel
             \Illuminate\Session\Middleware\StartSession::class,
             // After the session starts: it stores the ad click it saw there.
             \App\Http\Middleware\CaptureAttribution::class,
+            // Also after the session: the market it resolves is pinned there.
+            \App\Http\Middleware\ResolveMarket::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,

@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Resources;
 
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Mechanics;
 
 /**
@@ -30,8 +31,9 @@ class CaseCardData
             'duration_minutes' => $case->duration_minutes,
             'min_players' => $case->min_players,
             'max_players' => $case->max_players,
-            'price_amount' => $case->price_amount,
-            'currency' => $case->currency,
+            // The price in the visitor's own market (COP, or USD derived from
+            // it), so what a card shows is what checkout charges.
+            ...QuoteBuilder::make()->display((int) $case->price_amount),
             'mechanics' => Mechanics::describe((array) $case->mechanics),
         ];
     }

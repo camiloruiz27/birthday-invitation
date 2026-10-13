@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Platform\Actions\SettleOrder;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -54,8 +55,59 @@ class BoldWebhookController extends Controller
             return response('', 200);
         }
 
+        $this->auditAmount($order, $event->raw);
+
         $settle->apply($order, $event);
 
         return response('', 200);
+    }
+
+    /**
+     * Compares what Bold says it charged with what the order asked for, and
+     * only ever logs.
+     *
+     * It does not block, on purpose: the signature already proves the event is
+     * Bold's, and the link's amount was fixed when it was created, so a buyer
+     * cannot underpay. What can legitimately differ is the currency — Bold
+     * processes in COP at the day's rate unless the card is charged in USD
+     * through DCC — and the unit of `total` for USD is not documented. Until a
+     * real USD payload has been seen, a hard check here could refuse a real
+     * sale; the log is how that payload gets looked at.
+     */
+    private function auditAmount(Order $order, array $payload): void
+    {
+        $amount = $payload['data']['amount'] ?? null;
+
+        if (! is_array($amount) || ! isset($amount['total'])) {
+            return;
+        }
+
+        $currency = strtoupper((string) ($amount['currency'] ?? ''));
+        $total = (float) $amount['total'];
+
+        if ($currency !== $order->currency) {
+            Log::warning('platform_payment_currency_differs', [
+                'order_id' => $order->id,
+                'order_currency' => $order->currency,
+                'order_amount' => $order->amount,
+                'bold_currency' => $currency,
+                'bold_total' => $total,
+            ]);
+
+            return;
+        }
+
+        // Either unit counts as a match for USD: dollars (28) or cents (2800).
+        $matches = abs($total - $order->amount) < 0.01
+            || abs($total - Money::toMajor($order->amount, $order->currency)) < 0.01;
+
+        if (! $matches) {
+            Log::warning('platform_payment_amount_differs', [
+                'order_id' => $order->id,
+                'currency' => $currency,
+                'order_amount' => $order->amount,
+                'bold_total' => $total,
+            ]);
+        }
     }
 }

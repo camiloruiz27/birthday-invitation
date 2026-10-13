@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
 import InAppBrowserNotice from '../components/ui/InAppBrowserNotice';
+import MarketSelector from '../components/public/MarketSelector';
 import { openCookieSettings } from '../lib/consent';
 
 /**
@@ -67,6 +68,7 @@ export default function AdLayout({ brandHref, bar = null, children }) {
                     <button type="button" onClick={openCookieSettings} className="inline-flex min-h-11 items-center px-1 text-ink-subtle hover:text-ink">
                         Preferencias de cookies
                     </button>
+                    <MarketSelector />
                 </nav>
                 <p className="mt-1 text-center text-xs text-ink-subtle">MisterioCode</p>
             </footer>

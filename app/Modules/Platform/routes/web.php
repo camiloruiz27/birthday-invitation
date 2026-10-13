@@ -16,6 +16,7 @@ use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
 use App\Modules\Platform\Http\Controllers\LegalController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
+use App\Modules\Platform\Http\Controllers\MarketController;
 use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
 use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
@@ -50,6 +51,10 @@ Route::get('/jugar/{slug}', [AdLandingController::class, 'show'])->name('ads.cas
 Route::get('/privacidad', [LegalController::class, 'privacy'])->name('privacy');
 Route::get('/terminos', [LegalController::class, 'terms'])->name('terms');
 Route::get('/cookies', [LegalController::class, 'cookies'])->name('cookies');
+
+// The footer selector: a visitor correcting which price list (COP / USD) they
+// were put on. Open to everyone, signed in or not.
+Route::post('/mercado', [MarketController::class, 'update'])->middleware('throttle:30,1')->name('market.update');
 
 /*
 |--------------------------------------------------------------------------

@@ -218,7 +218,11 @@ function CreateCodeForm({ cases }) {
                             value={data.discount_value}
                             onChange={(value) => setData('discount_value', value)}
                             error={errors.discount_value}
-                            hint={data.discount_type === 'percent' ? '100 deja la compra gratis.' : undefined}
+                            hint={
+                                data.discount_type === 'percent'
+                                    ? '100 deja la compra gratis.'
+                                    : 'Siempre en COP. A un comprador internacional se le descuenta en COP y el precio en USD se recalcula.'
+                            }
                             required
                         />
                         <SelectField

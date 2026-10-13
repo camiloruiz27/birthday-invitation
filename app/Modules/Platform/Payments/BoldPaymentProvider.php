@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Payments;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Payments\Exceptions\PaymentProviderException;
+use App\Modules\Platform\Support\Money;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,8 +24,45 @@ use Illuminate\Support\Facades\Log;
  */
 class BoldPaymentProvider implements PaymentProvider
 {
+    /**
+     * The number Bold expects in `total_amount` for this order.
+     *
+     * COP is whole pesos, the same integer the order stores. USD is where the
+     * two can differ: orders keep USD in cents (2800 = USD 28, 1050 = USD
+     * 10.50). Bold's schema types `total_amount` as a "number" (not an
+     * integer), so a decimal like 10.5 is valid as far as the documentation
+     * goes, but it never states the unit or the allowed decimals. Guessing
+     * wrong would charge 100x or 1/100 of the price, so a USD order is refused
+     * until BOLD_USD_AMOUNT_UNIT has been set from what the sandbox showed —
+     * `php artisan platform:bold-probe-usd` does that check.
+     */
+    private function providerAmount(Order $order): int|float
+    {
+        if (Money::exponent($order->currency) === 0) {
+            return $order->amount;
+        }
+
+        $unit = (string) config('platform.payments.usd_amount_unit');
+
+        if ($order->currency !== 'USD' || ! in_array($unit, ['dollars', 'cents'], true)) {
+            throw new PaymentProviderException(
+                "Falta confirmar la unidad de {$order->currency} en Bold (BOLD_USD_AMOUNT_UNIT=dollars|cents); la orden #{$order->id} no se envia."
+            );
+        }
+
+        if ($unit === 'cents') {
+            return $order->amount;
+        }
+
+        // Dollars: 2800 -> 28, 1050 -> 10.5, 250 -> 2.5. A whole amount goes
+        // as an integer, so a USD 28 link is byte-for-byte what a COP one looks like.
+        return Money::toMajor($order->amount, $order->currency);
+    }
+
     public function createCheckoutLink(Order $order, string $callbackUrl): PaymentCheckoutLink
     {
+        $total = $this->providerAmount($order);
+
         $response = Http::baseUrl($this->baseUrl())
             ->withHeaders(['Authorization' => "x-api-key {$this->identityKey()}"])
             ->timeout($this->timeout())
@@ -33,7 +71,7 @@ class BoldPaymentProvider implements PaymentProvider
                 'amount' => [
                     'currency' => $order->currency,
                     'tip_amount' => 0,
-                    'total_amount' => $order->amount,
+                    'total_amount' => $total,
                 ],
                 'reference' => $order->reference,
                 'description' => $this->descriptionFor($order),
