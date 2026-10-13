@@ -10,7 +10,7 @@ Todo se guarda en `public/immersion/la-boda-de-los-ausentes/`:
 | `cover/` | `portada.png` (después correr `php artisan platform:build-case-images`) |
 | `photos/` | los 10 retratos |
 | `gallery/` | las 16 evidencias visuales |
-| `audio/` | `a1-ambiente-recepcion.wav`, `a2-mensaje-voz-lucia.wav` |
+| `audio/` | `a1-ambiente-recepcion.mp3`, `a2-mensaje-voz-lucia.mp3` |
 
 ## Orden de producción recomendado
 
@@ -288,7 +288,7 @@ la investigación a la luz del día. El objeto es pequeño y no se resalta. Luz 
 Los guiones están en `case.php`; se exportan listos para estudio con
 `php artisan immersion:export-audio-scripts la-boda-de-los-ausentes`. Guardar en `audio/`.
 
-(`audio/a1-ambiente-recepcion.wav` — A1, ambiente de la recepción, 10–12 s)
+(`audio/a1-ambiente-recepcion.mp3` — A1, ambiente de la recepción, 10–12 s)
 **Guion:** *«¡Y ahora, en unos minutos, el primer baile de los novios!»* — voz de maestro de ceremonias
 lejana, alegre y cálida.
 **PROMPT:** Ambiente sonoro diegético de una recepción de boda al aire libre: música festiva de fondo,
@@ -296,7 +296,7 @@ risas y conversación distantes, tintineo de copas, un brindis breve a lo lejos 
 alegre de un maestro de ceremonias del próximo primer baile de los novios. Sin música dramática.
 **EVITAR:** tono siniestro o premonitorio, música de tensión.
 
-(`audio/a2-mensaje-voz-lucia.wav` — A2, mensaje de voz de Lucía, 12–15 s)
+(`audio/a2-mensaje-voz-lucia.mp3` — A2, mensaje de voz de Lucía, 12–15 s)
 **Guion:** *«Sebastián, ya llevo un rato aquí. Entiendo si te demoraste con algo de la fiesta, pero no
 puedo quedarme mucho más sin que alguien note que no estoy en mi mesa. Avísame.»*
 **PROMPT:** Mensaje de voz diegético de una mujer adulta, tono bajo y discreto con impaciencia contenida

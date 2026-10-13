@@ -171,7 +171,7 @@ return [
         // public/immersion/la-boda-de-los-ausentes/ (ver ASSET_PROMPTS.md).
         // Se siembra solo en el primer sync; luego: cambiar a true y correr
         // `php artisan platform:sync-cases --prices`, o editar la fila en BD.
-        'published' => false,
+        'published' => true,
         'sort_order' => 11,
     ],
 
@@ -525,7 +525,7 @@ return [
             'trigger_offset_minutes' => 1,
             'title' => 'Audio — ambiente de la recepción',
 
-            'audio_file' => 'a1-ambiente-recepcion.wav',
+            'audio_file' => 'a1-ambiente-recepcion.mp3',
             'audio_scene' => 'Recepción de una boda al aire libre en una finca: música festiva de fondo, risas y conversación distantes, tintineo de copas y un brindis breve a lo lejos. Sin música dramática.',
             'audio_context' => 'Voz de maestro de ceremonias, lejana, alegre y cálida, que anuncia el próximo primer baile de los novios. El contraste con lo que se sabrá después solo debe sentirse en retrospectiva: nada siniestro ni premonitorio.',
             'audio_speaker' => 'Speaker 1 - Maestro de ceremonias',
@@ -588,7 +588,7 @@ return [
             'trigger_offset_minutes' => 50,
             'title' => 'Audio — mensaje de voz de Lucía',
 
-            'audio_file' => 'a2-mensaje-voz-lucia.wav',
+            'audio_file' => 'a2-mensaje-voz-lucia.mp3',
             'audio_scene' => 'Mensaje de voz grabado de noche al aire libre, cerca de una finca: grillos y un rumor lejano de fiesta al fondo, sin música. La mujer habla bajo, para que nadie la oiga.',
             'audio_context' => 'Lucía deja un mensaje a alguien que no llegó a una cita acordada: voz baja y discreta, con impaciencia contenida pero sin alarma; todavía no sabe que algo salió mal.',
             'audio_speaker' => 'Speaker 1 - Lucía Fonseca',
