@@ -181,7 +181,7 @@ return [
         // public/immersion/el-candidato-perfecto/ (ver ASSET_PROMPTS.md).
         // Se siembra solo en el primer sync; luego: cambiar a true y correr
         // `php artisan platform:sync-cases --prices`, o editar la fila en BD.
-        'published' => false,
+        'published' => true,
         'sort_order' => 12,
     ],
 
