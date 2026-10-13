@@ -3,6 +3,7 @@
 namespace App\Modules\Immersion\Support;
 
 use App\Modules\Immersion\Jobs\GenerateEndingAudio;
+use App\Modules\Immersion\Jobs\GradeAccusations;
 use App\Modules\Immersion\Jobs\SendEpilogue;
 use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
@@ -91,9 +92,27 @@ class RevealEnding
         // during this game.
         $this->scoreboard->persistVerdicts($game);
 
+        $this->queueGrading($game);
+
         $this->deliverAdvancedEnding($game);
 
         return true;
+    }
+
+    /**
+     * Every ending gets its accusations graded: the score is how the
+     * scoreboard breaks ties between players who named the same culprit.
+     * Queued, like the epilogues — it is a model call reading the whole table.
+     */
+    private function queueGrading(Game $game): void
+    {
+        $updated = $game->accusations()
+            ->whereNull('grading_status')
+            ->update(['grading_status' => Accusation::GRADING_PENDING]);
+
+        if ($updated > 0) {
+            GradeAccusations::dispatch($game->id);
+        }
     }
 
     /**

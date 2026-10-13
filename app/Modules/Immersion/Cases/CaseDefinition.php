@@ -130,7 +130,12 @@ class CaseDefinition
     }
 
     /**
-     * @return array{name: string, photo_url: string}
+     * The person the case is about. `label` is the stamp shown next to them on
+     * the interrogation board: "Víctima" by default, but a missing person who
+     * may still be alive is not a victim to the table, and stamping them as one
+     * can give away the very thing the case hides.
+     *
+     * @return array{name: string, photo_url: string, label: string}
      */
     public function victim(): array
     {
@@ -139,7 +144,36 @@ class CaseDefinition
         return [
             'name' => (string) ($victim['name'] ?? ''),
             'photo_url' => $this->photoUrl($victim['photo'] ?? null),
+            'label' => $this->plainString($victim['label'] ?? null) ?? 'Víctima',
         ];
+    }
+
+    /**
+     * What happened to the person the case is about, as a noun phrase the
+     * shared AI prompts can drop into a sentence: "la muerte de X" or "la
+     * desaparición de X".
+     *
+     * Derived from the victim's `label` so a case that already says it is
+     * about someone missing needs nothing else, and the shared prompts never
+     * talk about a death in a case where nobody is known to be dead. A case
+     * can still state it itself with `victim.incident` ("el secuestro de…").
+     */
+    public function incident(): string
+    {
+        $victim = $this->manifest['victim'] ?? [];
+        $name = (string) ($victim['name'] ?? '');
+
+        $written = $this->plainString($victim['incident'] ?? null);
+
+        if ($written !== null) {
+            return str_contains($written, '{name}') ? str_replace('{name}', $name, $written) : "{$written} {$name}";
+        }
+
+        $label = mb_strtolower($this->victim()['label']);
+
+        return str_contains($label, 'desaparec')
+            ? "la desaparición de {$name}"
+            : "la muerte de {$name}";
     }
 
     /**
@@ -188,10 +222,151 @@ class CaseDefinition
                 'alibi' => $suspect['alibi'] ?? null,
                 'file' => (string) ($suspect['file'] ?? ''),
                 'photo_url' => $this->photoUrl($suspect['photo'] ?? null),
+                'interrogable' => ($suspect['interrogable'] ?? true) !== false,
             ];
         }
 
         return $suspects;
+    }
+
+    /**
+     * The people the table can question: the roster minus anyone marked
+     * `'interrogable' => false`.
+     *
+     * That flag is for someone who belongs in the accusation but cannot be
+     * reached — a culprit nobody managed to locate. Putting them on the board
+     * would only spend the table's questions on silence. They stay in
+     * suspects(), so they can still be accused and still write an epilogue.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function interrogableSuspects(): array
+    {
+        return array_filter($this->suspects(), fn (array $suspect) => $suspect['interrogable']);
+    }
+
+    public function isInterrogable(string $slug): bool
+    {
+        return (bool) ($this->suspect($slug)['interrogable'] ?? false);
+    }
+
+    /** Extra questions a person gets when their case has a confrontation for them. */
+    public const CONFRONTATION_QUESTIONS = 3;
+
+    /**
+     * How a person's questions open up over the case, in order.
+     *
+     * Optional `interrogation.stages` in their manifest entry:
+     *
+     *   ['questions' => 3],                                    // from the start
+     *   ['questions' => 2, 'after' => ['V6']],                 // once V6 is delivered
+     *   ['questions' => 3, 'after' => ['V14'], 'confrontation' => true],
+     *
+     * Without it, the person has one stage with the case's base budget,
+     * open from the start — exactly how every case behaved before stages.
+     *
+     * @return array<int, array{questions: int, after: string[], confrontation: bool, note: ?string}>
+     */
+    public function interrogationStages(string $slug): array
+    {
+        $stages = (array) ($this->manifest['suspects'][$slug]['interrogation']['stages'] ?? []);
+
+        $normalised = [];
+
+        foreach ($stages as $stage) {
+            $questions = max(0, (int) ($stage['questions'] ?? 0));
+
+            if ($questions === 0) {
+                continue;
+            }
+
+            $normalised[] = [
+                'questions' => $questions,
+                'after' => array_values(array_filter(array_map('strval', (array) ($stage['after'] ?? [])))),
+                'confrontation' => (bool) ($stage['confrontation'] ?? false),
+                'note' => $this->plainString($stage['note'] ?? null),
+            ];
+        }
+
+        return $normalised !== [] ? $normalised : [[
+            'questions' => $this->interrogationQuestions(),
+            'after' => [],
+            'confrontation' => false,
+            'note' => null,
+        ]];
+    }
+
+    /**
+     * Every question a person can ever be asked in this case: what a game
+     * reserves AI credits for, and the session's capacity.
+     */
+    public function totalQuestionsFor(string $slug): int
+    {
+        return array_sum(array_column($this->interrogationStages($slug), 'questions'));
+    }
+
+    /**
+     * Questions open right now, given the evidence codes already delivered
+     * to the table: every stage whose `after` codes have all arrived.
+     */
+    public function availableQuestionsFor(string $slug, array $deliveredCodes): int
+    {
+        $available = 0;
+
+        foreach ($this->interrogationStages($slug) as $stage) {
+            if (array_diff($stage['after'], $deliveredCodes) === []) {
+                $available += $stage['questions'];
+            }
+        }
+
+        return $available;
+    }
+
+    /**
+     * The people whose questions grow once THESE codes are delivered: used
+     * to tell the table "con esta evidencia se habilitan nuevas preguntas
+     * para…" on the event that brings them.
+     *
+     * A stage counts when this delivery completes it — all its codes are in
+     * $deliveredAfter and at least one of them was not in $deliveredBefore.
+     *
+     * @param  string[]  $deliveredBefore
+     * @param  string[]  $deliveredAfter
+     * @return array<int, array{slug: string, name: string, questions: int, confrontation: bool}>
+     */
+    public function stagesUnlockedBetween(array $deliveredBefore, array $deliveredAfter): array
+    {
+        $unlocked = [];
+
+        foreach ($this->interrogableSuspects() as $slug => $suspect) {
+            $questions = 0;
+            $confrontation = false;
+
+            foreach ($this->interrogationStages($slug) as $stage) {
+                if ($stage['after'] === []) {
+                    continue;
+                }
+
+                $completeNow = array_diff($stage['after'], $deliveredAfter) === [];
+                $completeBefore = array_diff($stage['after'], $deliveredBefore) === [];
+
+                if ($completeNow && ! $completeBefore) {
+                    $questions += $stage['questions'];
+                    $confrontation = $confrontation || $stage['confrontation'];
+                }
+            }
+
+            if ($questions > 0) {
+                $unlocked[] = [
+                    'slug' => $slug,
+                    'name' => $suspect['name'],
+                    'questions' => $questions,
+                    'confrontation' => $confrontation,
+                ];
+            }
+        }
+
+        return $unlocked;
     }
 
     /**
@@ -209,24 +384,31 @@ class CaseDefinition
      * into a player's page props — anything that is not listed here stays out
      * by default.
      *
+     * This is the interrogation board, so only people who can be questioned
+     * are on it (see interrogableSuspects()).
+     *
      * @return array<string, array<string, mixed>>
      */
     public function suspectsForPlayer(): array
     {
         return array_map(
             fn (array $suspect) => $this->playerView($suspect),
-            $this->suspects()
+            $this->interrogableSuspects()
         );
     }
 
     /**
+     * Null for anyone who is not on the interrogation board — unknown, or
+     * marked not interrogable — so the chat page and the ask endpoint 404 the
+     * same way for both.
+     *
      * @return array<string, mixed>|null
      */
     public function suspectForPlayer(string $slug): ?array
     {
         $suspect = $this->suspect($slug);
 
-        return $suspect ? $this->playerView($suspect) : null;
+        return $suspect && $suspect['interrogable'] ? $this->playerView($suspect) : null;
     }
 
     /**
@@ -310,6 +492,173 @@ class CaseDefinition
         }
 
         return $accusable;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | The accusation form and how it is graded
+    |--------------------------------------------------------------------------
+    |
+    | Optional `accusation` block in the manifest:
+    |
+    |   'accusation' => [
+    |       'culprit_points' => 30,
+    |       'weapon' => ['label' => '¿Con qué?', 'hint' => '…', 'points' => 15,
+    |                    'answer' => '…' (defaults to solution.method), 'guidance' => '…'],
+    |       'motive' => ['label' => '¿Por qué?', 'hint' => '…', 'points' => 20,
+    |                    'answer' => '…' (defaults to solution.motive), 'guidance' => '…'],
+    |       'questions' => [
+    |           ['key' => 'origen', 'label' => '¿Quién originó la avería?', 'hint' => '…',
+    |            'answer' => '…', 'points' => 15, 'guidance' => '…'],
+    |       ],
+    |   ],
+    |
+    | A case without the block still gets graded: method and motive against the
+    | authored solution, with default points.
+    |
+    */
+
+    private const DEFAULT_POINTS = ['culprit' => 40, 'weapon' => 30, 'motive' => 30];
+
+    private const DEFAULT_LABELS = [
+        'weapon' => ['¿Con qué?', 'El método o el arma: qué usó para hacerlo.'],
+        'motive' => ['¿Por qué?', 'Tu razonamiento. Lo leerán los demás cuando se revele la solución.'],
+    ];
+
+    /**
+     * What the PLAYER's form shows: labels, hints and what each part is worth,
+     * never the reference answers.
+     *
+     * The points are shown on purpose: they are what tells a player where the
+     * effort pays off, and they are the same for everyone. The method and the
+     * motive are required; the case's own extra questions are optional (an
+     * empty one simply scores zero).
+     *
+     * @return array{culprit_points: int, max: int, weapon: array{label: string, hint: string, points: int}, motive: array{label: string, hint: string, points: int}, questions: array<int, array{key: string, label: string, hint: ?string, points: int}>}
+     */
+    public function accusationForm(): array
+    {
+        $rubric = $this->accusationRubric();
+        $points = array_column($rubric['criteria'], 'points', 'key');
+
+        $field = fn (string $name) => $this->accusationFieldTexts($name) + [
+            'points' => (int) ($points[$name] ?? 0),
+        ];
+
+        return [
+            'culprit_points' => $rubric['culprit_points'],
+            'max' => $rubric['max'],
+            'weapon' => $field('weapon'),
+            'motive' => $field('motive'),
+            'questions' => array_map(fn (array $question) => [
+                'key' => $question['key'],
+                'label' => $question['label'],
+                'hint' => $question['hint'],
+                'points' => $question['points'],
+            ], $this->accusationQuestions()),
+        ];
+    }
+
+    /**
+     * Label and hint of the built-in `weapon` / `motive` fields. Kept apart
+     * from accusationForm() because accusationRubric() needs the labels too,
+     * and the form needs the rubric's points: each calling the other would
+     * never end.
+     *
+     * @return array{label: string, hint: string}
+     */
+    private function accusationFieldTexts(string $name): array
+    {
+        $block = (array) ($this->manifest['accusation'][$name] ?? []);
+
+        return [
+            'label' => $this->plainString($block['label'] ?? null) ?? self::DEFAULT_LABELS[$name][0],
+            'hint' => $this->plainString($block['hint'] ?? null) ?? self::DEFAULT_LABELS[$name][1],
+        ];
+    }
+
+    /**
+     * The case's extra questions, with their reference answers. Server-side
+     * only: this is graded material.
+     *
+     * A question without a key, a label or an answer is skipped rather than
+     * shown: asking something nobody can grade would only cost the table.
+     *
+     * @return array<int, array{key: string, label: string, hint: ?string, answer: string, points: int, guidance: ?string}>
+     */
+    public function accusationQuestions(): array
+    {
+        $questions = [];
+
+        foreach ((array) ($this->manifest['accusation']['questions'] ?? []) as $question) {
+            $key = $this->plainString($question['key'] ?? null);
+            $label = $this->plainString($question['label'] ?? null);
+            $answer = $this->plainString($question['answer'] ?? null);
+
+            if ($key === null || $label === null || $answer === null || ! preg_match('/^[a-z0-9_]+$/', $key)) {
+                continue;
+            }
+
+            $questions[] = [
+                'key' => $key,
+                'label' => $label,
+                'hint' => $this->plainString($question['hint'] ?? null),
+                'answer' => $answer,
+                'points' => max(0, (int) ($question['points'] ?? 10)),
+                'guidance' => $this->plainString($question['guidance'] ?? null),
+            ];
+        }
+
+        return $questions;
+    }
+
+    /**
+     * Everything the grader needs: the culprit's points (scored exactly, never
+     * by the model) and every free-text criterion with its reference answer.
+     *
+     * @return array{culprit_points: int, criteria: array<int, array{key: string, label: string, answer: string, points: int, guidance: ?string}>, max: int}
+     */
+    public function accusationRubric(): array
+    {
+        $block = (array) ($this->manifest['accusation'] ?? []);
+        $solution = (array) ($this->manifest['solution'] ?? []);
+
+        $criteria = [];
+
+        foreach (['weapon' => 'method', 'motive' => 'motive'] as $field => $solutionKey) {
+            $answer = $this->plainString($block[$field]['answer'] ?? null)
+                ?? $this->plainString($solution[$solutionKey] ?? null);
+
+            if ($answer === null) {
+                continue;
+            }
+
+            $criteria[] = [
+                'key' => $field,
+                'label' => $this->accusationFieldTexts($field)['label'],
+                'answer' => $answer,
+                'points' => max(0, (int) ($block[$field]['points'] ?? self::DEFAULT_POINTS[$field])),
+                'guidance' => $this->plainString($block[$field]['guidance'] ?? null),
+            ];
+        }
+
+        foreach ($this->accusationQuestions() as $question) {
+            $criteria[] = [
+                'key' => $question['key'],
+                'label' => $question['label'],
+                'answer' => $question['answer'],
+                'points' => $question['points'],
+                'guidance' => $question['guidance'],
+            ];
+        }
+
+        $culpritPoints = max(0, (int) ($block['culprit_points'] ?? self::DEFAULT_POINTS['culprit']));
+
+        return [
+            'culprit_points' => $culpritPoints,
+            'criteria' => $criteria,
+            'max' => $culpritPoints + array_sum(array_column($criteria, 'points')),
+        ];
     }
 
     /*
@@ -409,6 +758,20 @@ class CaseDefinition
         $text = $this->manifest['solution']['exonerations'][$slug] ?? null;
 
         return is_string($text) && $text !== '' ? $text : null;
+    }
+
+    /**
+     * Who writes the winners' epilogue when the culprit cannot: a culprit
+     * nobody can question has no voice to write in, so the case names someone
+     * else (`solution.epilogue_speaker`) to tell the table what happened.
+     * Null when the case does not name one, or names a person who cannot be
+     * questioned either.
+     */
+    public function epilogueSpeakerSlug(): ?string
+    {
+        $slug = $this->manifest['solution']['epilogue_speaker'] ?? null;
+
+        return is_string($slug) && $this->suspect($slug) && $this->isInterrogable($slug) ? $slug : null;
     }
 
     /**
@@ -628,16 +991,62 @@ class CaseDefinition
      * Render a timeline event's body: verbatim from its source file when it
      * cites one, otherwise its inline markdown.
      */
-    public function renderEventBody(?string $sourceFile, ?string $bodyMarkdown): string
+    public function renderEventBody(?string $sourceFile, ?string $bodyMarkdown, ?int $offset = null): string
     {
-        if ($sourceFile) {
-            return $this->content()->renderFileExcludingSections(
+        $html = $sourceFile
+            ? $this->content()->renderFileExcludingSections(
                 $sourceFile,
                 $this->excludedHeadingsFor($sourceFile)
-            );
+            )
+            : CaseContent::render((string) $bodyMarkdown);
+
+        // Derived from the manifest, so no case has to write it by hand and it
+        // can never drift from the stages it describes.
+        $notice = $offset !== null ? $this->questionsUnlockedNotice($offset) : null;
+
+        return $notice ? $html.CaseContent::render($notice) : $html;
+    }
+
+    /**
+     * "Con esta evidencia se habilitan nuevas preguntas para…", for the event
+     * at this offset, or null when it opens nobody's questions.
+     */
+    public function questionsUnlockedNotice(int $offset): ?string
+    {
+        $map = $this->evidenceCodeMap();
+
+        $before = [];
+        $after = [];
+
+        foreach ($map as $at => $codes) {
+            if ($at < $offset) {
+                $before = array_merge($before, $codes);
+            }
+
+            if ($at <= $offset) {
+                $after = array_merge($after, $codes);
+            }
         }
 
-        return CaseContent::render((string) $bodyMarkdown);
+        $unlocked = $this->stagesUnlockedBetween($before, $after);
+
+        if ($unlocked === []) {
+            return null;
+        }
+
+        $lines = array_map(function (array $person) {
+            $what = $person['confrontation']
+                ? "{$person['questions']} preguntas, para confrontarla con lo nuevo"
+                : ($person['questions'] === 1 ? '1 pregunta más' : "{$person['questions']} preguntas más");
+
+            return "- **{$person['name']}**: {$what}";
+        }, $unlocked);
+
+        return "---\n\n"
+            ."**Nuevas preguntas en el interrogatorio.** Con esta evidencia se habilitan más preguntas para:\n\n"
+            .implode("\n", $lines)."\n\n"
+            .'Si ya habías terminado de interrogar a alguna de estas personas, puedes volver con ella: '
+            .'sigue siendo tu interrogatorio. Cada persona habla con un solo investigador.';
     }
 
     private function photoUrl(?string $file): string

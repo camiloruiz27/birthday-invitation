@@ -37,6 +37,9 @@ class AccusationController extends Controller
                 ])
                 ->values(),
 
+            // Labels and hints only; the reference answers stay on the server.
+            'form' => $case->accusationForm(),
+
             'pending' => $game->pendingAccusationsCount(),
         ]);
     }
@@ -51,12 +54,32 @@ class AccusationController extends Controller
         $case = $game->caseDefinition();
         $roster = $case->accusableSuspects();
 
-        $data = $request->validate([
+        $questions = $case->accusationQuestions();
+
+        $rules = [
             // A slug, not typed text: it is what makes scoring exact.
             'suspect_slug' => ['required', 'string', Rule::in(array_keys($roster))],
             'motive' => ['required', 'string', 'max:2000'],
             'weapon' => ['required', 'string', 'max:255'],
-        ]);
+        ];
+
+        // The case's own extra questions are optional: the three basics (who,
+        // how, why) are what an accusation needs, and the rest is extra credit
+        // that breaks ties. An empty one is stored empty and scores zero.
+        foreach ($questions as $question) {
+            $rules['answers.'.$question['key']] = ['nullable', 'string', 'max:2000'];
+        }
+
+        $data = $request->validate($rules, [], collect($questions)
+            ->mapWithKeys(fn (array $question) => ['answers.'.$question['key'] => mb_strtolower($question['label'])])
+            ->all());
+
+        // Only the keys this case asks, in its order: anything else the
+        // browser sent is dropped, not stored.
+        $answers = collect($questions)
+            ->mapWithKeys(fn (array $question) => [$question['key'] => trim((string) data_get($data, 'answers.'.$question['key']))])
+            ->filter(fn (string $answer) => $answer !== '')
+            ->all();
 
         $player->accusation()->updateOrCreate(
             ['player_id' => $player->id],
@@ -68,6 +91,7 @@ class AccusationController extends Controller
                 'suspect_name' => $roster[$data['suspect_slug']]['name'],
                 'motive' => $data['motive'],
                 'weapon' => $data['weapon'],
+                'answers' => $answers ?: null,
                 'submitted_at' => Carbon::now(),
             ]
         );

@@ -30,7 +30,7 @@ class InboxController extends Controller
                     'event' => $event->only([
                         'id', 'type', 'title', 'sent_at', 'cta_interrogation',
                     ]),
-                    'body_html' => $case->renderEventBody($event->source_file, $event->body_markdown),
+                    'body_html' => $case->renderEventBody($event->source_file, $event->body_markdown, (int) $event->trigger_offset_minutes),
                     'gallery' => $case->galleryFor($event->source_file),
                 ];
             })->values(),

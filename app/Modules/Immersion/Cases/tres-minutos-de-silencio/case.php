@@ -46,6 +46,7 @@ return [
 
     'victim' => [
         'name' => 'Martina Robledo',
+        'label' => 'Víctima',
         'photo' => 'martina-robledo.png',
     ],
 
@@ -137,6 +138,11 @@ return [
             'name' => 'Rodrigo Alsina',
             'role' => 'sospechoso',
             'file' => 'suspects/rodrigo-alsina.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V7'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['V9-completo'], 'confrontation' => true],
+            ]],
             'photo' => 'rodrigo-alsina.png',
             'connection' => 'Director de operaciones, superior jerárquico de Martina',
             'motive' => 'El informe de auditoría de Martina documenta aforos excesivos y salidas de emergencia bloqueadas que él aprobó',
@@ -155,6 +161,10 @@ return [
             'name' => 'Ignacio Farías',
             'role' => 'sospechoso',
             'file' => 'suspects/ignacio-farias.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V10'], 'confrontation' => true],
+            ]],
             'photo' => 'ignacio-farias.png',
             'connection' => 'Jefe de mantenimiento del recinto',
             'motive' => 'Conectó equipo de iluminación adicional sin verificar la capacidad del circuito (falta real, sin relación con la muerte)',
@@ -173,6 +183,10 @@ return [
             'name' => 'Paola Irigoyen',
             'role' => 'sospechosa',
             'file' => 'suspects/paola-irigoyen.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8'], 'confrontation' => true],
+            ]],
             'photo' => 'paola-irigoyen.png',
             'connection' => 'Jefa de seguridad del recinto',
             'motive' => 'Desactivó sensores por un favor personal y editó después el registro (falta real, sin relación con la muerte)',
@@ -191,6 +205,10 @@ return [
             'name' => 'Camila Estévez',
             'role' => 'sospechosa',
             'file' => 'suspects/camila-estevez.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V10'], 'confrontation' => true],
+            ]],
             'photo' => 'camila-estevez.png',
             'connection' => 'Productora externa del evento',
             'motive' => 'Solicitó el equipo adicional que causó la sobrecarga (aparente); infla facturas de proveedores (real, sin relación)',
@@ -209,6 +227,10 @@ return [
             'name' => 'Bruno Castro',
             'role' => 'sospechoso',
             'file' => 'suspects/bruno-castro.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V8'], 'confrontation' => true],
+            ]],
             'photo' => 'bruno-castro.png',
             'connection' => 'Patrocinador principal, invitado VIP',
             'motive' => 'Usó una ruta discreta facilitada por Paola durante el apagón (aparente); encuentro extramatrimonial (real, sin relación)',
@@ -227,6 +249,10 @@ return [
             'name' => 'Lucía Font',
             'role' => 'sospechosa',
             'file' => 'suspects/lucia-font.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V14'], 'confrontation' => true],
+            ]],
             'photo' => 'lucia-font.png',
             'connection' => 'Asistente directa de Martina; encontró el cuerpo',
             'motive' => 'Acceso privilegiado a la agenda de Martina (aparente); distraída con una crisis familiar personal (real, sin relación)',
@@ -245,6 +271,10 @@ return [
             'name' => 'Elena Martí',
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/elena-marti.md',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+                ['questions' => 2, 'after' => ['V15']],
+            ]],
             'photo' => 'elena-marti.png',
             'connection' => 'Azafata de sala',
             'motive' => null,
@@ -369,6 +399,58 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The accusation and how it is graded
+    |--------------------------------------------------------------------------
+    |
+    | Points from the design doc's scoring (30/10/20/15/15/10). The design's
+    | "que_ocurrio_realmente" field had no score of its own: it carries the 10
+    | points for keeping the three chains apart without a conspiracy.
+    |
+    */
+
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Cómo la mataron y con qué?',
+            'hint' => 'Dónde ocurrió y el objeto que se usó.',
+            'points' => 10,
+            'guidance' => 'Lo esencial: un golpe con un trípode de iluminación de repuesto en la zona restringida de almacenamiento técnico.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué?',
+            'hint' => 'Qué quería impedir el culpable.',
+            'points' => 20,
+        ],
+        'questions' => [
+            [
+                'key' => 'origen_apagon',
+                'label' => '¿Quién provocó la emergencia de esa noche y cómo?',
+                'hint' => 'Nombra a la persona y qué causó el apagón.',
+                'answer' => 'Ignacio Farías: conectó equipo de iluminación adicional, pedido de última hora por Camila, sin verificar la capacidad del circuito, y la sobrecarga provocó el apagón. Fue negligencia técnica, sin relación con el asesinato.',
+                'points' => 15,
+                'guidance' => 'Basta con nombrar a Ignacio y la sobrecarga por el equipo extra. Restar si le atribuye intención de matar o de facilitar el crimen.',
+            ],
+            [
+                'key' => 'encubrimiento_registro',
+                'label' => '¿Quién alteró después un registro de esa noche y qué intentaba ocultar?',
+                'hint' => 'Nombra a la persona, qué alteró y qué quería ocultar.',
+                'answer' => 'Paola Irigoyen: había desactivado sensores de un corredor para dejar pasar discretamente a Bruno Castro, invitado VIP, y después editó el registro para que pareciera parte del apagón. Un encubrimiento propio, sin relación con el apagón ni con la muerte.',
+                'points' => 15,
+                'guidance' => 'Basta con nombrar a Paola y que editó el registro de los sensores para ocultar su favor. Restar si lo conecta con el asesinato.',
+            ],
+            [
+                'key' => 'que_ocurrio',
+                'label' => '¿Qué ocurrió realmente durante los tres minutos del apagón, y cómo se relacionan entre sí los hechos de esa noche?',
+                'hint' => 'Reconstruye la ventana del apagón y explica si los distintos hechos estaban o no coordinados.',
+                'answer' => 'Durante los tres minutos exactos del apagón, Rodrigo siguió a Martina hasta la zona restringida y la golpeó tras su negativa a detener la presentación del informe. El apagón (Ignacio), el encubrimiento del registro (Paola) y el asesinato (Rodrigo) son tres cadenas independientes: nadie coordinó nada con nadie.',
+                'points' => 10,
+                'guidance' => 'Cero si trata el apagón, el encubrimiento y el asesinato como una conspiración coordinada.',
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
     |
@@ -481,7 +563,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 90,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para separar las tres cadenas de esa noche: quién provocó el apagón, quién manipuló después un registro para ocultar un desliz propio, y quién aprovechó los tres minutos exactos para matar. Casi todos hicieron algo cuestionable — pero solo una persona decidió matar. Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó durante esos tres minutos. Casi todos hicieron algo cuestionable esa noche, pero solo una persona decidió matar. Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, les hará algunas preguntas sobre el caso.',
             'delivery_mode' => 'all',
         ],
     ],

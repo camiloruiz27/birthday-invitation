@@ -11,7 +11,7 @@ import SuspectCard, {
 } from '../../components/player/SuspectCard';
 import usePoll from '../../hooks/usePoll';
 
-const FILTERS = ['all', 'open', 'mine', 'closed', 'taken'];
+const FILTERS = ['all', 'open', 'mine', 'waiting', 'closed', 'taken'];
 
 const FILTER_LABELS = {
     all: 'Todas',
@@ -41,8 +41,16 @@ function interrogationTour(maxQuestions) {
             body: `Tienes ${maxQuestions} preguntas por persona, y cada una cuenta. Las respuestas las genera nuestro sistema que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
         },
         {
-            title: '3. Al terminar, su ficha',
-            body: 'Cuando se acaban las preguntas de una persona (o su interrogatorio ya cerró), ves su ficha. Compartan con el resto del equipo lo que averigüen.',
+            title: '3. Habrá nuevas preguntas más adelante',
+            body: 'Algunas personas tienen preguntas que se habilitan cuando llega nueva evidencia al expediente. Si usas las que tienes ahora, ese interrogatorio queda "en espera" y puedes volver: sigue siendo tuyo. Aviso: lo dirá el correo de la evidencia que las habilite.',
+        },
+        {
+            title: '4. Confrontar',
+            body: 'Una confrontación es volver con una persona y mostrarle la prueba que contradice lo que dijo: puede admitir lo que antes negaba. Tiene sus propias preguntas extra, que se habilitan con esa prueba. No es lo mismo que la acusación, que es tu respuesta final al caso, una por jugador.',
+        },
+        {
+            title: '5. Al terminar, su ficha',
+            body: 'Cuando se acaban las preguntas disponibles de una persona (o su interrogatorio ya cerró), ves su ficha. Compartan con el resto del equipo lo que averigüen.',
         },
     ];
 }
@@ -55,15 +63,21 @@ export default function InterrogationIndex({
     victim,
     sessions,
     maxQuestions,
+    availability,
 }) {
     // Suspects are claimed by whoever asks first, so a board that only
     // updates on reload actively misleads: two players walk into the same
     // interrogation because neither saw the other take it.
     // While it is locked the poll also refreshes `game`, so the page opens by
     // itself the moment the envelope that introduces these people arrives.
-    usePoll(locked ? ['game', 'locked', 'suspects', 'sessions'] : ['sessions'], {
-        interval: locked ? 10000 : 12000,
-    });
+    usePoll(
+        locked
+            ? ['game', 'locked', 'suspects', 'sessions', 'availability']
+            : ['sessions', 'availability'],
+        {
+            interval: locked ? 10000 : 12000,
+        }
+    );
 
     const [filter, setFilter] = useState('all');
 
@@ -71,7 +85,8 @@ export default function InterrogationIndex({
         slug,
         suspect,
         session: sessions[slug],
-        state: suspectState(sessions[slug], player.id),
+        state: suspectState(sessions[slug], player.id, availability?.[slug]),
+        availability: availability?.[slug],
     }));
 
     const counts = people.reduce(
@@ -122,7 +137,9 @@ export default function InterrogationIndex({
                     className="h-20 w-20 shrink-0 rounded-control border border-line object-cover grayscale"
                 />
                 <div className="min-w-0">
-                    <p className="case-stamp text-[10px] text-danger-strong">Víctima</p>
+                    <p className="case-stamp text-[10px] text-danger-strong">
+                        {victim.label || 'Víctima'}
+                    </p>
                     <p className="mt-1 truncate font-display text-xl font-semibold text-ink">
                         {victim.name}
                     </p>
@@ -130,9 +147,11 @@ export default function InterrogationIndex({
             </div>
 
             <Alert variant="info" className="mt-5">
-                Tienes <strong className="text-ink">{maxQuestions} preguntas</strong> por persona.
-                Cada persona habla con un solo investigador: el primero que le pregunte se queda
-                con ese interrogatorio, así que repártanse y compartan lo que averigüen.
+                Tienes <strong className="text-ink">{maxQuestions} preguntas</strong> por persona;
+                a algunas se les habilitan más cuando llega nueva evidencia, y entonces puedes
+                volver a interrogarlas. Cada persona habla con un solo investigador: el primero
+                que le pregunte se queda con ese interrogatorio, así que repártanse y compartan
+                lo que averigüen.
             </Alert>
 
             {/* Nine people is enough that "who is still free?" stops being
@@ -174,6 +193,7 @@ export default function InterrogationIndex({
                             suspect={person.suspect}
                             session={person.session}
                             currentPlayerId={player.id}
+                            availability={person.availability}
                         />
                     ))}
                 </div>

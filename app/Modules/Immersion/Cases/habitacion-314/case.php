@@ -42,6 +42,7 @@ return [
 
     'victim' => [
         'name' => 'Marina Costas',
+        'label' => 'Víctima',
         'photo' => 'marina-costas.png',
     ],
 
@@ -150,6 +151,11 @@ return [
                     'Marina iba a presentar al día siguiente un plan de reestructuración de la firma.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V6', 'V7'], 'confrontation' => true, 'note' => 'Con los registros completos'],
+                ['questions' => 1, 'after' => ['V5', 'V10'], 'confrontation' => true],
+            ]],
         ],
         'daniel-prieto' => [
             'name' => 'Daniel Prieto',
@@ -169,6 +175,10 @@ return [
                     'Asiste a la convención anual como parte de la dirección de Vantor.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V9'], 'confrontation' => true],
+            ]],
         ],
         'sofia-reguera' => [
             'name' => 'Sofía Reguera',
@@ -188,6 +198,10 @@ return [
                     'Asiste a la convención anual como directora de otra región.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 3, 'after' => ['V9'], 'confrontation' => true],
+            ]],
         ],
         'lucia-ferrer' => [
             'name' => 'Lucía Ferrer',
@@ -207,6 +221,11 @@ return [
                     'Su habitación estaba junto a la de Marina.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V10'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['V9', 'V12', 'V13'], 'confrontation' => true],
+            ]],
         ],
         'hugo-valle' => [
             'name' => 'Hugo Valle',
@@ -226,6 +245,11 @@ return [
                     'No trabaja en Vantor: asiste como invitado de un proveedor.',
                 ],
             ],
+            'interrogation' => ['stages' => [
+                ['questions' => 5],
+                ['questions' => 2, 'after' => ['V8'], 'confrontation' => true],
+                ['questions' => 1, 'after' => ['V13'], 'confrontation' => true],
+            ]],
         ],
         'carlos-mena' => [
             'name' => 'Carlos Mena',
@@ -356,6 +380,36 @@ return [
     ],
 
     /*
+     * Accusation form. Design doc scoring as-is: culpable 30, método 15,
+     * motivo 20, reconstrucción temporal 35 = 100.
+     */
+    'accusation' => [
+        'culprit_points' => 30,
+        'weapon' => [
+            'label' => '¿Cómo la mataron y con qué?',
+            'hint' => 'La forma de la muerte y el objeto usado.',
+            'points' => 15,
+            'guidance' => 'Lo esencial es el estrangulamiento con el cinturón del albornoz de la habitación. Una intoxicación por el marisco del pedido vale cero.',
+        ],
+        'motive' => [
+            'label' => '¿Por qué la mataron?',
+            'hint' => 'Qué tenía que perder el responsable si Marina seguía adelante.',
+            'points' => 20,
+            'guidance' => 'Debe apuntar a evitar que Marina lo expusiera por el fraude de comisiones encubiertas. No exigir que mencione el arrebato de pánico.',
+        ],
+        'questions' => [
+            [
+                'key' => 'reconstruccion_temporal',
+                'label' => '¿A qué hora murió Marina realmente y cómo se explica que pareciera seguir viva más tarde?',
+                'hint' => 'Reconstruye la cronología real con los registros que tienes y explica qué falló en la versión inicial.',
+                'answer' => 'Ramón entró a las 21:10 (la única entrada real registrada) y mató a Marina hacia las 21:25. Antes de irse a las 21:36 fabricó una prueba de vida: el pedido de servicio solicitado a las 21:32 con entrega a las 22:40 desde la tablet de la habitación, y el mensaje de las 21:34 desde el teléfono de Marina. El registro de la cerradura fue exacto todo el tiempo; lo falso era la ventana temporal asumida.',
+                'points' => 35,
+                'guidance' => 'Cero si sostiene que Marina seguía viva a las 22:40 o que la cerradura fue manipulada; sin puntuación parcial en ese caso. Puntos completos con la muerte hacia las 21:10–21:25 y al menos una de las dos pruebas de vida falsas explicada.',
+            ],
+        ],
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Default timeline
     |--------------------------------------------------------------------------
@@ -439,7 +493,7 @@ return [
             'type' => 'unlock',
             'trigger_offset_minutes' => 75,
             'title' => 'Fase de acusaciones habilitada',
-            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó en la 314 — y para entender por qué la pregunta correcta nunca fue "cómo entró", sino "por qué dimos por hecho que seguía viva a las 22:40". Queda habilitado el formulario de acusación final.',
+            'body_markdown' => 'El equipo ya tiene todo lo necesario para reconstruir lo que pasó en la 314 — y para entender por qué la pregunta correcta nunca fue "cómo entró", sino "por qué dimos por hecho que seguía viva a las 22:40". Queda habilitado el formulario de acusación final: además de quién, cómo y por qué, incluye una pregunta sobre lo que ocurrió esa noche.',
             'delivery_mode' => 'all',
         ],
     ],

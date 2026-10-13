@@ -99,6 +99,45 @@ class CaseRegistryTest extends TestCase
         $this->assertSame([], $problems, implode("\n", $problems));
     }
 
+    public function test_interrogation_stages_add_up_to_five_or_eight_and_wait_on_real_evidence(): void
+    {
+        $problems = [];
+
+        foreach ($this->registry()->all() as $case) {
+            $known = collect($case->evidenceCodeMap())->flatten()->unique()->all();
+
+            foreach ($case->interrogableSuspects() as $slug => $_) {
+                $stages = $case->interrogationStages($slug);
+                $base = array_sum(array_column(array_filter($stages, fn ($s) => ! $s['confrontation']), 'questions'));
+                $confrontation = array_sum(array_column(array_filter($stages, fn ($s) => $s['confrontation']), 'questions'));
+
+                if ($base !== $case->interrogationQuestions()) {
+                    $problems[] = "{$case->slug}/{$slug} → base stages add up to {$base}, not {$case->interrogationQuestions()}";
+                }
+
+                if ($confrontation !== 0 && $confrontation !== CaseDefinition::CONFRONTATION_QUESTIONS) {
+                    $problems[] = "{$case->slug}/{$slug} → confrontation stages add up to {$confrontation}, not ".CaseDefinition::CONFRONTATION_QUESTIONS;
+                }
+
+                // Questions have to be askable from the start: someone has to
+                // be able to open the interrogation before any evidence lands.
+                if ($stages[0]['after'] !== []) {
+                    $problems[] = "{$case->slug}/{$slug} → the first stage waits on evidence";
+                }
+
+                foreach ($stages as $stage) {
+                    foreach ($stage['after'] as $code) {
+                        if (! in_array($code, $known, true)) {
+                            $problems[] = "{$case->slug}/{$slug} → stage waits on \"{$code}\", which no timeline event delivers";
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $problems, implode("\n", $problems));
+    }
+
     public function test_steve_jacobs_has_a_revealable_ending(): void
     {
         $case = $this->registry()->get('steve-jacobs');

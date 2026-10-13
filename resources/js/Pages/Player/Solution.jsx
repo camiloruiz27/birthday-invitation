@@ -60,6 +60,63 @@ function Epilogue({ epilogue }) {
     );
 }
 
+/**
+ * How this player's accusation was graded, criterion by criterion. Grading
+ * runs on the queue right after the reveal, so it starts as a placeholder.
+ */
+function Grading({ row, maxScore }) {
+    if (row.grading_status === 'pending') {
+        return (
+            <p className="mt-4 border-t border-line pt-3 text-sm text-ink-subtle">
+                Calificando tu acusación…
+            </p>
+        );
+    }
+
+    if (row.score === null || row.score === undefined) {
+        return null;
+    }
+
+    return (
+        <div className="mt-4 border-t border-line pt-3">
+            <p className="flex items-baseline justify-between gap-3">
+                <span className="case-stamp text-[10px] text-ink-subtle">Tu puntaje</span>
+                <span className="tabular text-lg font-semibold text-ink">
+                    {row.score}
+                    <span className="text-sm font-normal text-ink-subtle"> / {maxScore}</span>
+                </span>
+            </p>
+
+            {row.grading?.length > 1 && (
+                <ul className="mt-3 space-y-2.5">
+                    {row.grading.map((item) => (
+                        <li key={item.key} className="text-sm">
+                            <span className="flex justify-between gap-3">
+                                <span className="text-ink">{item.label}</span>
+                                <span className="tabular shrink-0 text-ink-muted">
+                                    {item.points} / {item.max}
+                                </span>
+                            </span>
+                            {item.feedback && (
+                                <span className="mt-0.5 block text-xs text-ink-subtle">
+                                    {item.feedback}
+                                </span>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            {row.grading_status === 'failed' && (
+                <p className="mt-2 text-xs text-ink-subtle">
+                    No se pudo calificar el resto de tus respuestas; tu puntaje cuenta solo el
+                    culpable.
+                </p>
+            )}
+        </div>
+    );
+}
+
 function Culprit({ solution }) {
     return (
         <section className="overflow-hidden rounded-hero border border-accent-dim bg-accent-dim/30">
@@ -107,9 +164,15 @@ export default function Solution({
     correctCount,
     revealedBy,
     epilogue,
+    maxScore,
+    questions = [],
 }) {
     const you = scoreboard.find((row) => row.is_you);
     const total = scoreboard.length;
+    const grading = scoreboard.some((row) => row.grading_status === 'pending');
+
+    // The grading lands on the queue a moment after the reveal.
+    usePoll(['scoreboard'], { interval: 8000, enabled: grading });
 
     // Closing a photo remounts the page (see useSessionState); the tab the
     // reader was on has to survive that.
@@ -149,6 +212,21 @@ export default function Solution({
                             No llegaste a enviar tu acusación.
                         </p>
                     )}
+
+                    {questions.length > 0 && you.answers && (
+                        <dl className="mt-3 space-y-2">
+                            {questions.map((question) =>
+                                you.answers[question.key] ? (
+                                    <div key={question.key} className="text-sm">
+                                        <dt className="text-ink-subtle">{question.label}</dt>
+                                        <dd className="text-ink-muted">{you.answers[question.key]}</dd>
+                                    </div>
+                                ) : null
+                            )}
+                        </dl>
+                    )}
+
+                    {you.suspect_name && <Grading row={you} maxScore={maxScore} />}
                 </Card>
             )}
 
@@ -205,6 +283,7 @@ export default function Solution({
                                     row.is_you ? 'font-semibold text-ink' : 'text-ink-muted'
                                 }`}
                             >
+                                {row.rank && <span className="tabular text-ink-subtle">{row.rank}º · </span>}
                                 {row.player_name}
                                 {row.is_you && ' (tú)'}
                             </span>
@@ -214,10 +293,28 @@ export default function Solution({
                                 </span>
                             )}
                         </span>
-                        <Verdict correct={row.correct} />
+                        <span className="flex items-center gap-2.5">
+                            {row.grading_status === 'pending' ? (
+                                <span className="text-xs text-ink-subtle">Calificando…</span>
+                            ) : (
+                                row.score !== null &&
+                                row.score !== undefined && (
+                                    <span className="tabular text-sm text-ink-muted">
+                                        {row.score}
+                                        <span className="text-ink-subtle">/{maxScore}</span>
+                                    </span>
+                                )
+                            )}
+                            <Verdict correct={row.correct} />
+                        </span>
                     </li>
                 ))}
             </ul>
+
+            <p className="mt-4 border-t border-line pt-3 text-xs text-ink-subtle">
+                Primero quienes acertaron al culpable; entre ellos, decide el puntaje de sus
+                respuestas.
+            </p>
 
             {revealedBy === 'gm' && (
                 <p className="mt-4 border-t border-line pt-3 text-xs text-ink-subtle">

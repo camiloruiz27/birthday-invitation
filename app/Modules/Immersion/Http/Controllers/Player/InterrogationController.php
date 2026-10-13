@@ -48,6 +48,7 @@ class InterrogationController extends Controller
                 'victim' => $case->victim(),
                 'sessions' => (object) [],
                 'maxQuestions' => $case->interrogationQuestions(),
+                'availability' => (object) [],
             ]);
         }
 
@@ -66,7 +67,46 @@ class InterrogationController extends Controller
             'victim' => $case->victim(),
             'sessions' => $sessions,
             'maxQuestions' => $case->interrogationQuestions(),
+
+            // Per person: what is open now and what the case holds in total,
+            // so the board can say "hasta 8 preguntas, algunas más adelante".
+            'availability' => collect($case->suspectsForPlayer())
+                ->map(fn ($suspect, string $slug) => $this->availability(
+                    $case,
+                    $slug,
+                    $sessions->get($slug),
+                    $player->game->deliveredEvidenceCodes()
+                ))
+                ->all(),
         ]);
+    }
+
+    /**
+     * Where one person's questions stand for this table.
+     *
+     * `total` is the person's capacity (the session's own, once it exists, so
+     * a case edited mid-game never moves the goalposts). `open` is how many of
+     * them the case has opened so far, `later` how many are still to come, and
+     * `confrontation` says that some of what is still to come is the
+     * confrontation round.
+     *
+     * @param  string[]  $delivered
+     * @return array{total: int, open: int, later: int, confrontation_later: bool}
+     */
+    private function availability($case, string $slug, ?InterrogationSession $session, array $delivered): array
+    {
+        $total = $session?->max_questions ?? $case->totalQuestionsFor($slug);
+        $open = min($case->availableQuestionsFor($slug, $delivered), $total);
+
+        $confrontationLater = collect($case->interrogationStages($slug))
+            ->contains(fn (array $stage) => $stage['confrontation'] && array_diff($stage['after'], $delivered) !== []);
+
+        return [
+            'total' => $total,
+            'open' => $open,
+            'later' => max(0, $total - $open),
+            'confrontation_later' => $confrontationLater,
+        ];
     }
 
     public function show(Player $player, string $slug): Response
@@ -88,9 +128,15 @@ class InterrogationController extends Controller
             $lockedBy = $session->player->name;
         }
 
+        $delivered = $player->game->deliveredEvidenceCodes();
+        $availability = $this->availability($case, $slug, $session, $delivered);
+
         // The ficha is the reward for finishing an interrogation, for the
-        // player who ran it and for everyone else once it is over.
-        $revealTestimony = $session?->isClosed() ?? false;
+        // player who ran it and for everyone else once it is over — or once
+        // it is waiting for the next stage: the table should not have to sit
+        // on what it already learned until the case delivers more.
+        $revealTestimony = $session
+            && ($session->isClosed() || $session->isWaiting($availability['open']));
 
         return Inertia::render('Player/InterrogationChat', [
             'player' => $player->revealCredentials(),
@@ -101,10 +147,11 @@ class InterrogationController extends Controller
                 'id' => null,
                 'player_id' => null,
                 'questions_used' => 0,
-                'max_questions' => $case->interrogationQuestions(),
+                'max_questions' => $availability['total'],
                 'closed_at' => null,
                 'messages' => [],
             ],
+            'availability' => $availability,
             'lockedBy' => $lockedBy,
             'ficha' => $revealTestimony ? $case->ficha($slug) : null,
         ]);
@@ -116,13 +163,13 @@ class InterrogationController extends Controller
 
         $case = $player->game->caseDefinition();
         $suspect = $case->suspect($slug);
-        abort_if(! $suspect, 404);
+        abort_if(! $suspect || ! $suspect['interrogable'], 404);
 
         $data = $request->validate([
             'question' => ['required', 'string', 'max:600'],
         ]);
 
-        $session = $this->claimOrFindSession($player, $slug, $case->interrogationQuestions());
+        $session = $this->claimOrFindSession($player, $slug, $case->totalQuestionsFor($slug));
 
         if (! $session->isOwnedBy($player)) {
             return response()->json([
@@ -132,15 +179,36 @@ class InterrogationController extends Controller
             ], 403);
         }
 
+        // What the case has opened so far for this person. The rest comes
+        // with later evidence, so a spent stage is a pause, not the end.
+        $delivered = $player->game->deliveredEvidenceCodes();
+        $availability = $this->availability($case, $slug, $session, $delivered);
+
         // Reserve the question slot BEFORE spending an AI call. A single
         // conditional UPDATE is what actually enforces the budget: two
         // concurrent asks from the same player (double click, two tabs) would
         // otherwise both read the same questions_used and both write the same
         // increment, letting the player exceed the limit.
-        if (! $session->reserveQuestion()) {
+        if (! $session->reserveQuestion($availability['open'])) {
+            $session->refresh();
+
+            // Everything the person can ever be asked is used: closed.
+            if ($session->questionsRemaining() === 0) {
+                return response()->json([
+                    'message' => "Ya usaste tus {$session->max_questions} preguntas con esta persona.",
+                    'closed' => true,
+                ], 422);
+            }
+
+            // Out of what is open today, but more is coming.
             return response()->json([
-                'message' => "Ya usaste tus {$session->max_questions} preguntas con esta persona.",
-                'closed' => true,
+                'message' => 'Por ahora no te quedan preguntas con esta persona. Cuando llegue nueva evidencia al expediente se habilitarán '.$session->questionsRemaining().' más, y podrás volver a interrogarla.',
+                'waiting' => true,
+                'questions_used' => $session->questions_used,
+                'questions_remaining' => $session->questionsRemaining(),
+                'later' => $session->questionsRemaining(),
+                'max_questions' => $session->max_questions,
+                'ficha' => $case->ficha($slug),
             ], 422);
         }
 
@@ -229,11 +297,15 @@ class InterrogationController extends Controller
             throw $exception;
         }
 
+        // Closed only when the person's WHOLE budget is spent. Spending what is
+        // open today leaves it waiting, still the same player's to finish.
         if ($session->questionsRemaining() === 0 && ! $session->isClosed()) {
             $session->closed_at = Carbon::now();
             $session->transcript_revealed = true;
             $session->save();
         }
+
+        $waiting = $session->isWaiting($availability['open']);
 
         return response()->json([
             'player_message' => $playerMessage,
@@ -242,7 +314,9 @@ class InterrogationController extends Controller
             'questions_remaining' => $session->questionsRemaining(),
             'max_questions' => $session->max_questions,
             'closed' => $session->isClosed(),
-            'ficha' => $session->isClosed() ? $case->ficha($slug) : null,
+            'waiting' => $waiting,
+            'later' => $waiting ? $session->questionsRemaining() : 0,
+            'ficha' => $session->isClosed() || $waiting ? $case->ficha($slug) : null,
         ]);
     }
 

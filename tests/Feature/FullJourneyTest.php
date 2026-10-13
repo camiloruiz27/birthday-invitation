@@ -356,8 +356,10 @@ class FullJourneyTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->has('game.players', 2)
-                ->where('scoreboard.0.correct', false)
-                ->where('scoreboard.1.correct', true)
+                // In finishing order: whoever named the culprit comes first.
+                ->where('scoreboard.0.correct', true)
+                ->where('scoreboard.0.rank', 1)
+                ->where('scoreboard.1.correct', false)
                 ->where('solution.culprit_name', 'Rachel Miller')
             );
 

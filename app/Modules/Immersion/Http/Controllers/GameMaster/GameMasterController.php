@@ -591,7 +591,11 @@ class GameMasterController extends Controller
             // sibling relation left every row looking unanswered.
             'game' => fn () => tap($game)->load(['players.accusation']),
 
-            'scoreboard' => fn () => $scoreboard->for($game),
+            // In finishing order once revealed: culprit first, then the graded
+            // score as the tie-breaker.
+            'scoreboard' => fn () => $scoreboard->ranked($game),
+            'maxScore' => fn () => $case->accusationRubric()['max'],
+            'questions' => fn () => $case->accusationForm()['questions'],
 
             // The short version only. The Game Master comparing a table of
             // accusations does not need the whole essay here.

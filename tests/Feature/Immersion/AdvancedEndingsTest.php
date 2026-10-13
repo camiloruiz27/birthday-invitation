@@ -300,6 +300,10 @@ class AdvancedEndingsTest extends TestCase
             $this->assertSame('TEST 001', $body['case_code']);
             $this->assertSame('La victima', $body['victim_name']);
 
+            // Who ran the investigation is also the case's to say (police, a
+            // security desk, the guests themselves).
+            $this->assertSame('Departamento de Pruebas', $body['authority']);
+
             return true;
         });
     }

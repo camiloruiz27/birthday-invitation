@@ -19,6 +19,7 @@ return [
 
     'victim' => [
         'name' => 'Steve Jacobs',
+        'label' => 'Víctima',
         'photo' => 'steve-jacobs.jpg',
     ],
 

@@ -21,6 +21,12 @@ class Accusation extends Model
 
     public const EPILOGUE_FAILED = 'failed';
 
+    public const GRADING_PENDING = 'pending';
+
+    public const GRADING_READY = 'ready';
+
+    public const GRADING_FAILED = 'failed';
+
     protected $fillable = [
         'game_id',
         'player_id',
@@ -29,7 +35,11 @@ class Accusation extends Model
         'was_correct',
         'motive',
         'weapon',
+        'answers',
         'submitted_at',
+        'grading_status',
+        'score',
+        'grading',
         'epilogue_status',
         'epilogue_body',
         'epilogue_sent_at',
@@ -38,6 +48,9 @@ class Accusation extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
         'was_correct' => 'boolean',
+        'answers' => 'array',
+        'score' => 'integer',
+        'grading' => 'array',
         'epilogue_sent_at' => 'datetime',
     ];
 

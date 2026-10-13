@@ -13,10 +13,10 @@ use App\Modules\Immersion\Models\Player;
  * `culpritSlug()` — never `solution()` — so the reveal's prose is never in
  * memory here and cannot leak into a payload by accident.
  *
- * Only the culprit is scored. The weapon and the motive are free text; judging
- * them would need either AI or string matching, and string matching would mark
- * a correct answer wrong for using a synonym. They are shown so the table can
- * compare them by eye.
+ * The verdict is the culprit alone, compared exactly. The free-text answers
+ * (method, motive and the case's extra questions) are graded after the reveal
+ * by Jobs\GradeAccusations, and that score — stored on the accusation — only
+ * orders the board: see ranked().
  */
 class AccusationScoreboard
 {
@@ -24,7 +24,7 @@ class AccusationScoreboard
      * One row per player, in roster order. `correct` is null when the player
      * has not accused yet, or when the accusation predates suspect slugs.
      *
-     * @return array<int, array{player_id: int, player_name: string, is_owner: bool, suspect_slug: ?string, suspect_name: ?string, weapon: ?string, motive: ?string, correct: ?bool}>
+     * @return array<int, array{player_id: int, player_name: string, is_owner: bool, suspect_slug: ?string, suspect_name: ?string, weapon: ?string, motive: ?string, answers: array, correct: ?bool, score: ?int, grading_status: ?string, grading: array}>
      */
     public function for(Game $game): array
     {
@@ -47,10 +47,60 @@ class AccusationScoreboard
                     'suspect_name' => $accusation?->suspect_name,
                     'weapon' => $accusation?->weapon,
                     'motive' => $accusation?->motive,
+                    'answers' => $accusation?->answers ?? [],
                     'correct' => $this->verdict($accusation, $culprit),
+                    'score' => $accusation?->score,
+                    'grading_status' => $accusation?->grading_status,
+                    'grading' => $accusation?->grading ?? [],
                 ];
             })
             ->all();
+    }
+
+    /**
+     * The same rows, in finishing order, each with its `rank`.
+     *
+     * Naming the culprit comes first: it is the case. Among players with the
+     * same verdict, the graded score breaks the tie. Equal on both means an
+     * equal rank. Players who never accused go last, unranked.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function ranked(Game $game): array
+    {
+        $rows = collect($this->for($game))
+            ->sort(function (array $a, array $b) {
+                return [$this->verdictWeight($b), $b['score'] ?? -1, $a['player_id']]
+                    <=> [$this->verdictWeight($a), $a['score'] ?? -1, $b['player_id']];
+            })
+            ->values();
+
+        $rank = 0;
+        $previous = null;
+
+        return $rows->map(function (array $row, int $index) use (&$rank, &$previous) {
+            if ($row['suspect_slug'] === null) {
+                return $row + ['rank' => null];
+            }
+
+            $key = [$this->verdictWeight($row), $row['score']];
+
+            if ($key !== $previous) {
+                $rank = $index + 1;
+                $previous = $key;
+            }
+
+            return $row + ['rank' => $rank];
+        })->all();
+    }
+
+    private function verdictWeight(array $row): int
+    {
+        return match ($row['correct']) {
+            true => 2,
+            false => 1,
+            default => 0,
+        };
     }
 
     public function correctCount(Game $game): int

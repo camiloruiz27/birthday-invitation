@@ -13,7 +13,7 @@ import Badge from '../ui/Badge';
 
 /** The one place that decides what state a suspect is in, so the card, the
  *  filter row and the counters can never disagree about it. */
-export function suspectState(session, currentPlayerId) {
+export function suspectState(session, currentPlayerId, availability) {
     if (!session) {
         return 'open';
     }
@@ -22,12 +22,24 @@ export function suspectState(session, currentPlayerId) {
         return 'taken';
     }
 
-    return session.closed_at ? 'closed' : 'mine';
+    if (session.closed_at) {
+        return 'closed';
+    }
+
+    // Questions open in stages as the case delivers evidence: your questions
+    // with this person can be spent for now without the interrogation being
+    // over. It is yours to come back to.
+    if (availability && session.questions_used >= availability.open) {
+        return 'waiting';
+    }
+
+    return 'mine';
 }
 
 export const SUSPECT_STATE_LABELS = {
     open: 'Sin interrogar',
     mine: 'En curso',
+    waiting: 'En espera',
     closed: 'Cerrado',
     taken: 'De otro',
 };
@@ -35,12 +47,29 @@ export const SUSPECT_STATE_LABELS = {
 const STATE_TONES = {
     open: 'neutral',
     mine: 'accent',
+    waiting: 'warning',
     closed: 'success',
     taken: 'neutral',
 };
 
-export default function SuspectCard({ playerToken, slug, suspect, session, currentPlayerId }) {
-    const state = suspectState(session, currentPlayerId);
+/** "5 preguntas", or "5 ahora · 3 más adelante" when the case opens more later. */
+function questionsLabel(availability) {
+    if (!availability) return null;
+
+    return availability.later > 0
+        ? `${availability.open} ahora · ${availability.later} más adelante`
+        : `${availability.total} preguntas`;
+}
+
+export default function SuspectCard({
+    playerToken,
+    slug,
+    suspect,
+    session,
+    currentPlayerId,
+    availability,
+}) {
+    const state = suspectState(session, currentPlayerId, availability);
     const takenByOther = state === 'taken';
 
     return (
@@ -94,6 +123,16 @@ export default function SuspectCard({ playerToken, slug, suspect, session, curre
                                 {session.questions_used}/{session.max_questions}
                             </span>{' '}
                             preguntas
+                        </span>
+                    )}
+
+                    {!session && availability && (
+                        <span className="text-xs text-ink-subtle">{questionsLabel(availability)}</span>
+                    )}
+
+                    {state === 'waiting' && (
+                        <span className="text-xs text-warning-strong">
+                            Se habilitan {availability.later} más con nueva evidencia
                         </span>
                     )}
                 </div>

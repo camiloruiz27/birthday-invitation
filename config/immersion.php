@@ -90,6 +90,11 @@ return [
          */
         'epilogue_timeout' => (int) env('IMMERSION_AI_EPILOGUE_TIMEOUT', 240),
 
+        // Grading reads every player's accusation in one call, so it can take
+        // longer than an epilogue. Must stay under GradeAccusations::$timeout.
+        'grading_timeout' => (int) env('IMMERSION_AI_GRADING_TIMEOUT', 180),
+        'grading_enabled' => (bool) env('IMMERSION_AI_GRADING', true),
+
         // Each capability can be switched off on its own. Off means the null
         // provider: suspects deflect in character, and voice-note emails go
         // out without a recording. The case stays playable either way.
@@ -160,6 +165,11 @@ return [
              | so it is free and always affordable — which is what keeps a case
              | playable forever once the included credits are gone.
              */
+            // Grading the table's accusations once the ending is revealed: one
+            // model call per game, whatever the ending. Free by default; set a
+            // price here and it is reserved with the rest when the game starts.
+            'grading' => (int) env('IMMERSION_COST_GRADING', 0),
+
             'ending' => [
                 'classic' => 0,
                 'epilogue' => (int) env('IMMERSION_COST_EPILOGUE', 40),
