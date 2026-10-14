@@ -76,6 +76,8 @@ export default function InterrogationIndex({
             : ['sessions', 'availability'],
         {
             interval: locked ? 10000 : 12000,
+            // Who has taken which suspect, and what the case has opened.
+            channels: ['interrogation', 'timeline'],
         }
     );
 

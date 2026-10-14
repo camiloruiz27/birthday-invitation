@@ -113,10 +113,11 @@ function PlayerLink({ player, sending, onSendLink }) {
             </div>
 
             <div className="mt-2 flex justify-end">
-                {/* Sends from the same address the timeline already mails
-                    from — a second way to hand this over besides reading it
-                    off the screen, for a player who lost the link or joined
-                    after the invite went out some other way. */}
+                {/* A second way to hand this over besides reading it off the
+                    screen, for a player who lost the link or joined after the
+                    invite went out some other way. It is the one email a player
+                    needs to get in: from there the game reaches them inside the
+                    platform. */}
                 <Button
                     variant="ghost"
                     size="sm"
@@ -273,9 +274,10 @@ function StartGuide({ guide, ready, onStart }) {
                 </li>
                 {first && (
                     <li>
-                        <strong className="text-ink">3. El primer correo no llega al instante.</strong>{' '}
+                        <strong className="text-ink">3. El primer sobre no llega al instante.</strong>{' '}
                         Llega {first} después de iniciar. Hasta entonces las bandejas se ven vacías: es lo
-                        normal, avisa a tu mesa para que esperen.
+                        normal, avisa a tu mesa para que esperen con la página abierta; los sobres aparecen
+                        solos y la plataforma avisa cuando llega uno.
                     </li>
                 )}
                 {interrogation && (
@@ -303,6 +305,7 @@ export default function Game({
     ownerPlayerToken,
     ending,
     credits,
+    mail = null,
     startGuide = null,
 }) {
     // The advanced endings finish on the queue after the reveal, so the console
@@ -313,9 +316,12 @@ export default function Game({
 
     // The clock and the timeline advance on the server, so a running game
     // refreshes itself; a draft, paused or finished game has nothing to poll.
-    usePoll(['game', 'timelineSummary', 'ending'], {
+    usePoll(['game', 'timelineSummary', 'ending', 'mail'], {
         interval: 5000,
         enabled: game.status === 'running' || Boolean(endingIsWorking),
+        // The console shows the timeline and the ending; the interrogation
+        // transcripts have their own page.
+        channels: ['timeline', 'accusation'],
     });
 
     const [confirming, setConfirming] = useState(null);
@@ -401,6 +407,30 @@ export default function Game({
         >
             <Head title={game.name} />
 
+            {/* An email that gave up. The envelope itself is never lost: it is in
+                the player's inbox on the site, which is what the text says. */}
+            {mail?.failures?.length > 0 && (
+                <Alert variant="warning" title="Algunos correos no salieron" className="mb-6">
+                    <p className="mb-2">
+                        Estos jugadores pueden no haber recibido el aviso por correo, pero el sobre ya está en su
+                        bandeja de la investigación:
+                    </p>
+                    <ul className="mb-3 list-disc pl-5">
+                        {mail.failures.map((failure) => (
+                            <li key={`${failure.event_id}:${failure.player_id}`}>{failure.label}</li>
+                        ))}
+                    </ul>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={runningAction === 'immersion.gm.game.resend-mail'}
+                        onClick={() => post('immersion.gm.game.resend-mail')}
+                    >
+                        Reenviar correos
+                    </Button>
+                </Alert>
+            )}
+
             {game.status === 'draft' && (
                 <StartGuide
                     guide={startGuide}
@@ -421,7 +451,7 @@ export default function Game({
                             target: '[data-tour="gm-guide"]',
                             optional: true,
                             title: 'Léelo antes de iniciar',
-                            body: 'Este recuadro resume el orden: compartir enlaces, iniciar, y cuándo llega el primer correo y se abren los interrogatorios.',
+                            body: 'Este recuadro resume el orden: compartir enlaces, iniciar, y cuándo llega el primer sobre y se abren los interrogatorios.',
                         },
                         {
                             target: '[data-tour="gm-players"]',
@@ -433,7 +463,7 @@ export default function Game({
                             target: '[data-tour="gm-start"]',
                             optional: true,
                             title: 'El botón de inicio',
-                            body: 'Cuando todos estén listos, pulsa Iniciar caso. Arranca el reloj y empiezan a llegar los correos. No se puede reiniciar, pero puedes pausar.',
+                            body: 'Cuando todos estén listos, pulsa Iniciar caso. Arranca el reloj y los sobres empiezan a llegar a la bandeja de cada jugador. No se puede reiniciar, pero puedes pausar.',
                         },
                     ]}
                 />
@@ -554,13 +584,13 @@ export default function Game({
                         </div>
                     )}
 
-                    {/* Epilogues: one email per accusation, written after the
-                        reveal. */}
+                    {/* Epilogues: one message per accusation, written after the
+                        reveal and read on each player's Solution page. */}
                     {ending.revealed_at && ending.epilogues && (
                         <div className="mt-4 border-t border-line pt-4">
-                            <p className="text-sm font-medium text-ink">Epílogos por correo</p>
+                            <p className="text-sm font-medium text-ink">Epílogos</p>
                             <p className="mt-1 text-sm text-ink-muted">
-                                {ending.epilogues.sent} de {ending.epilogues.total} enviados.
+                                {ending.epilogues.sent} de {ending.epilogues.total} entregados.
                                 {ending.epilogues.sent < ending.epilogues.total &&
                                     ' Los demás se están escribiendo.'}
                             </p>
@@ -609,7 +639,7 @@ export default function Game({
                         <>
                             <Alert variant="warning" title="Esta partida no tiene línea de tiempo">
                                 Ocurre con partidas creadas antes de un arreglo anterior. Sin
-                                línea de tiempo no se enviará ningún correo.
+                                línea de tiempo no llegará ningún sobre a los jugadores.
                             </Alert>
                             <Button
                                 onClick={() => post('immersion.gm.game.load-default-timeline')}
@@ -743,9 +773,9 @@ export default function Game({
                 description={
                     (isAutomatic
                         ? 'Arranca el reloj y el sistema empieza a enviar el material solo. El reloj no se puede reiniciar después.'
-                        : 'Arranca el reloj y los correos empezarán a salir solos según la línea de tiempo. El reloj no se puede reiniciar después.') +
+                        : 'Arranca el reloj y los sobres llegarán solos a la bandeja de cada jugador según la línea de tiempo. El reloj no se puede reiniciar después.') +
                     (minutesLabel(startGuide?.first_event_minutes)
-                        ? ` El primer correo llega ${minutesLabel(startGuide.first_event_minutes)} después de iniciar.`
+                        ? ` El primer sobre llega ${minutesLabel(startGuide.first_event_minutes)} después de iniciar.`
                         : '')
                 }
                 confirmLabel="Iniciar"

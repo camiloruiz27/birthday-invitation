@@ -2,14 +2,12 @@
 
 namespace App\Modules\Immersion\Jobs;
 
-use App\Modules\Immersion\Mail\PlayerAccessLinkMail;
 use App\Modules\Immersion\Models\Player;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Emails one or more players their own access link, on demand from the
@@ -25,18 +23,20 @@ class SendPlayerAccessLinks implements ShouldQueue
 
     public int $timeout = 120;
 
-    /** @param array<int, int> $playerIds */
     public function __construct(public array $playerIds)
     {
+        $this->onQueue((string) config('immersion.queues.mail'));
     }
 
     public function handle(): void
     {
         $players = Player::whereIn('id', $this->playerIds)->get();
 
+        // One job per player, so each is spread out by the mail rate limiter
+        // and waits for the daily allowance on its own (SendPlayerAccessLink).
         foreach ($players as $player) {
             try {
-                Mail::to($player->email)->send(new PlayerAccessLinkMail($player));
+                SendPlayerAccessLink::dispatch($player->id);
             } catch (\Throwable $exception) {
                 report($exception);
             }

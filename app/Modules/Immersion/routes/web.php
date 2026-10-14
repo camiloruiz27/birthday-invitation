@@ -6,6 +6,7 @@ use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
 use App\Modules\Immersion\Http\Controllers\Player\PrivacyNoticeController;
 use App\Modules\Immersion\Http\Controllers\Player\SolutionController;
+use App\Modules\Immersion\Http\Controllers\PollStateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,6 +70,7 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         // Re-freezes AI capacity a game gave back without being paused, which
         // is the only way an abandoned-then-resumed case can interrogate again.
         Route::post('/{game}/reactivar-ia', [GameMasterController::class, 'rearmCredits'])->name('game.rearm-credits');
+        Route::post('/{game}/reenviar-correos', [GameMasterController::class, 'resendMail'])->name('game.resend-mail');
         Route::post('/{game}/load-default-timeline', [GameMasterController::class, 'loadDefaultTimeline'])->name('game.load-default-timeline');
         Route::post('/{game}/events/{event}/retry-audio', [GameMasterController::class, 'retryAudio'])->name('game.event.retry-audio');
     });
@@ -101,6 +103,26 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
         Route::get('/{game}/interrogatorios', [GameMasterController::class, 'interrogations'])->name('game.interrogations');
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Change polling
+|--------------------------------------------------------------------------
+|
+| Deliberately outside the `auth` group and without route model binding: both
+| run a database query, and these endpoints exist so that watching a screen
+| costs none. See PollStateController and GameRevision.
+|
+*/
+
+Route::get('/jugador/{token}/estado', [PollStateController::class, 'player'])
+    ->middleware('throttle:240,1')
+    ->name('immersion.poll.player');
+
+Route::get('/partidas/{game}/estado', [PollStateController::class, 'console'])
+    ->middleware('throttle:240,1')
+    ->whereNumber('game')
+    ->name('immersion.poll.console');
 
 /*
 |--------------------------------------------------------------------------

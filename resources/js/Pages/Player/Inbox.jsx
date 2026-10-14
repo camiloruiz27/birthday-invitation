@@ -4,6 +4,7 @@ import PlayerLayout from '../../Layouts/PlayerLayout';
 import EmptyState from '../../components/ui/EmptyState';
 import InboxItem, { EnvelopeRow } from '../../components/player/InboxItem';
 import usePoll from '../../hooks/usePoll';
+import { INBOX_READ_EVENT } from '../../hooks/usePlayerNotices';
 
 /** `#sobre-12` opens envelope 12; `#sobre-12-alguna-seccion` opens it too and
  *  lets CaseDocument scroll to the section inside. */
@@ -55,7 +56,9 @@ function readEnvelopes(gameId) {
 export default function Inbox({ player, game, items, case: mysteryCase }) {
     // New envelopes arrive on the server's clock, so the inbox refreshes
     // itself while the player is reading.
-    usePoll(['items', 'game'], { interval: 15000 });
+    // `notices` rides along: the layout's own poll stays off on this page, so
+    // this one keeps the tab badges and toasts current too.
+    usePoll(['items', 'game', 'notices'], { interval: 15000, channels: ['timeline'] });
 
     const openId = useOpenEnvelope();
     const selected = items.find((item) => item.event.id === openId) ?? null;
@@ -81,6 +84,9 @@ export default function Inbox({ player, game, items, case: mysteryCase }) {
                 } catch {
                     /* see readEnvelopes */
                 }
+
+                // The layout shows the unopened count on the tab; tell it.
+                window.dispatchEvent(new Event(INBOX_READ_EVENT));
 
                 return next;
             }),

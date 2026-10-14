@@ -353,6 +353,50 @@ class AdvancedEndingsTest extends TestCase
     }
 
     /**
+     * By default the epilogue is NOT emailed: it is written and read on the
+     * player's Solution page, and the platform delivers everything inside
+     * itself. What must not change is that it is stored, counted as delivered
+     * and — the part that used to hang off the email — that the ending is paid
+     * for.
+     */
+    public function test_with_the_epilogue_email_off_it_is_still_stored_delivered_and_charged(): void
+    {
+        config(['immersion.mail.epilogue' => false]);
+        Http::fake(['*' => Http::response(['message' => 'Acertaste. Fui yo.'], 200)]);
+
+        [$game] = $this->playedGame(Game::ENDING_EPILOGUE);
+        $accusation = $game->accusations()->where('suspect_slug', self::CULPRIT)->firstOrFail();
+
+        (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+
+        $accusation->refresh();
+
+        $this->assertSame(Accusation::EPILOGUE_READY, $accusation->epilogue_status);
+        $this->assertSame('Acertaste. Fui yo.', $accusation->epilogue_body);
+        $this->assertNotNull($accusation->epilogue_sent_at, 'The console counts delivered epilogues from this.');
+        $this->assertNotNull($game->fresh()->ending_charged_at, 'The ending is paid for when the epilogue exists.');
+
+        Mail::assertNotSent(CaseEpilogueMail::class);
+    }
+
+    public function test_with_the_epilogue_email_off_the_solution_page_still_shows_it(): void
+    {
+        config(['immersion.mail.epilogue' => false]);
+        Http::fake(['*' => Http::response(['message' => 'Acertaste. Fui yo.'], 200)]);
+
+        [$game, $players] = $this->playedGame(Game::ENDING_EPILOGUE);
+        $accusation = $game->accusations()->where('suspect_slug', self::CULPRIT)->firstOrFail();
+
+        (new SendEpilogue($accusation->id))->handle(app(EpilogueProvider::class));
+
+        $this->get(route('immersion.player.solution', $accusation->player->access_token))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('epilogue.status', Accusation::EPILOGUE_READY)
+                ->where('epilogue.body', 'Acertaste. Fui yo.'));
+    }
+
+    /**
      * The epilogue arrives "from" the accused suspect by name — matching what
      * the email already says inside ("La Culpable te escribió") — while the
      * address stays the one configured SMTP account regardless of who wrote

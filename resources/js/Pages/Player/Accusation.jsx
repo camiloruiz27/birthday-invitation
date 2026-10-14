@@ -230,7 +230,11 @@ export default function Accusation({
 
     // The ending can be published by someone else finishing their accusation,
     // so the page has to notice without a reload.
-    usePoll(['game'], { interval: 10000, enabled: alreadySent && !game.ending_revealed_at });
+    usePoll(['game'], {
+        interval: 10000,
+        enabled: alreadySent && !game.ending_revealed_at,
+        channels: ['accusation'],
+    });
 
     function submit(event) {
         event.preventDefault();

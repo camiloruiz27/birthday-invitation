@@ -3,11 +3,23 @@
 namespace App\Modules\Immersion\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use App\Modules\Immersion\Models\Concerns\BumpsGameRevision;
+use App\Modules\Immersion\Support\GameRevision;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TimelineEvent extends Model
 {
+    use BumpsGameRevision;
+
+    /**
+     * @return array<int, string>
+     */
+    public function revisionChannels(): array
+    {
+        return [GameRevision::TIMELINE, GameRevision::INTERROGATION];
+    }
+
     protected $table = 'immersion_timeline_events';
 
     /** Audio is being generated on the queue. */

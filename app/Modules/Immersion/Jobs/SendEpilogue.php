@@ -6,6 +6,9 @@ use App\Modules\Immersion\Ai\Contracts\EpilogueProvider;
 use App\Modules\Immersion\Mail\CaseEpilogueMail;
 use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Support\EndingBilling;
+use App\Modules\Immersion\Support\GameMailPolicy;
+use App\Modules\Immersion\Support\GameRevision;
+use App\Modules\Immersion\Support\MailBudget;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -30,10 +33,22 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /** The gateway being briefly down is worth exactly one retry. */
-    public int $tries = 2;
+    /**
+     * Unlimited attempts, bounded by retryUntil(): waiting for the mailbox's
+     * daily allowance is not a failure and must not use attempts up. The
+     * gateway being briefly down is worth exactly one retry, which is what
+     * maxExceptions counts.
+     */
+    public int $tries = 0;
+
+    public int $maxExceptions = 2;
 
     public int $backoff = 30;
+
+    public function retryUntil(): \DateTimeInterface
+    {
+        return now()->addHours(12);
+    }
 
     /**
      * Comfortably longer than the gateway's own epilogue timeout, so the job
@@ -43,6 +58,7 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public int $accusationId)
     {
+        $this->onQueue((string) config('immersion.queues.slow'));
     }
 
     public function uniqueId(): string
@@ -82,8 +98,23 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
             'epilogue_status' => Accusation::EPILOGUE_READY,
         ]);
 
-        Mail::to($accusation->player->email)->send(new CaseEpilogueMail($accusation->fresh()));
+        if (GameMailPolicy::epilogue()) {
+            // The body is stored, so waiting costs no second generation. An
+            // epilogue is a courtesy that can wait for tomorrow; the envelopes a
+            // live table is waiting on keep the room that is left.
+            if (! MailBudget::canSend(MailBudget::OPTIONAL)) {
+                $this->release(1800);
 
+                return;
+            }
+
+            Mail::to($accusation->player->email)->send(new CaseEpilogueMail($accusation->fresh()));
+        }
+
+        // "Delivered": by email when that is on, and in every case on the
+        // Solution page, which is where the player reads it. Without the email
+        // this is the moment it reaches them, and the Game Master's counter
+        // (written / total) needs it to close.
         $accusation->update(['epilogue_sent_at' => now()]);
 
         // The ending is paid for by the first epilogue that actually reaches
@@ -96,5 +127,7 @@ class SendEpilogue implements ShouldBeUnique, ShouldQueue
         Accusation::where('id', $this->accusationId)
             ->whereNull('epilogue_sent_at')
             ->update(['epilogue_status' => Accusation::EPILOGUE_FAILED]);
+
+        GameRevision::bump(Accusation::whereKey($this->accusationId)->value('game_id'), GameRevision::ACCUSATION);
     }
 }

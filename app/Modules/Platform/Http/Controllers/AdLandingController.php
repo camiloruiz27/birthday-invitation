@@ -12,6 +12,7 @@ use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use App\Modules\Platform\Support\Market;
 use App\Modules\Platform\Support\Mechanics;
+use App\Modules\Platform\Support\PublishedCases;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -46,10 +47,7 @@ class AdLandingController extends Controller
             'mode' => 'platform',
             'case' => null,
             'offer' => $offer,
-            'featured' => fn () => MysteryCase::published()
-                ->ordered()
-                ->limit(3)
-                ->get()
+            'featured' => fn () => PublishedCases::all(3)
                 // thumb_url: the web-sized cover. summary() carries the
                 // original 1.5-2 MB art, which three cards must not download.
                 ->map(fn (MysteryCase $case) => CaseCardData::summary($case) + [
@@ -90,7 +88,7 @@ class AdLandingController extends Controller
         // Same rule as the case's own page: route model binding would also
         // serve unpublished rows, and an ad must never lead to a case that
         // is not on sale.
-        $case = MysteryCase::published()->where('slug', $slug)->firstOrFail();
+        $case = PublishedCases::find($slug) ?? abort(404);
 
         $landing = CaseCardData::landing($case);
 

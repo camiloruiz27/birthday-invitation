@@ -25,6 +25,16 @@
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <!-- Mail guard, rate limiter and idle tick are production concerns with
+             their own tests; elsewhere they would only make results depend on the
+             clock and on how many messages earlier tests sent. -->
+        <env name="IMMERSION_MAIL_DAILY_LIMIT" value="0"/>
+        <!-- The product default emails only the accusations envelope; the older
+             tests are about what the full mode sends, and the policy has its own. -->
+        <env name="IMMERSION_MAIL_TIMELINE" value="all"/>
+        <env name="IMMERSION_MAIL_EPILOGUE" value="true"/>
+        <env name="IMMERSION_MAIL_PER_MINUTE" value="0"/>
+        <env name="IMMERSION_TICK_IDLE_SKIP" value="false"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <!-- The developer's .env holds real third-party keys (captcha, Bold,

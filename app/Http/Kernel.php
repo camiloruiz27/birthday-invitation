@@ -21,6 +21,9 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        // Terminable: after the response, rolls back a transaction a killed
+        // request left open on a persistent connection (DB_PERSISTENT).
+        \App\Http\Middleware\ResetDatabaseConnection::class,
     ];
 
     /**
@@ -33,6 +36,9 @@ class Kernel extends HttpKernel
             // First: it generates the CSP nonce, and the nonce has to exist
             // before any view renders a <script> that needs it.
             \App\Http\Middleware\SecurityHeaders::class,
+            // Cache-only counter that warns before the host's hourly database
+            // connection allowance runs out. See TrackConnectionBudget.
+            \App\Http\Middleware\TrackConnectionBudget::class,
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,

@@ -19,6 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Persistent connections
+    |--------------------------------------------------------------------------
+    |
+    | Mirrors DB_PERSISTENT so the code that has to behave differently when
+    | connections outlive the request (ResetDatabaseConnection) reads the same
+    | switch as the mysql connection below.
+    |
+    */
+
+    'persistent' => (bool) env('DB_PERSISTENT', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |
@@ -60,6 +73,28 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+
+                /*
+                 | Reuse the PHP worker's MySQL connection across requests
+                 | instead of opening a new one per request. Off by default.
+                 |
+                 | Why it exists: Hostinger caps the database user at 500 NEW
+                 | connections per hour (error 1226) and at 75 open at once.
+                 | The plan has 60 PHP workers, so one persistent connection
+                 | each (60) plus the cron processes stays under the 75, and
+                 | the hourly count drops to roughly the number of worker
+                 | restarts.
+                 |
+                 | Why it is off: PDO does not reset a reused connection, so a
+                 | request killed in the middle of a transaction (a timeout, a
+                 | fatal) leaves it open for the next request on that worker.
+                 | Turn it on in TEST first (DB_PERSISTENT=true) and check that
+                 | SELECT CONNECTION_ID() repeats between requests. Console
+                 | commands exit after one run, so it changes nothing there.
+                 */
+                PDO::ATTR_PERSISTENT => env('DB_PERSISTENT', false) ? true : null,
+                // ^ ResetDatabaseConnection (a global middleware) rolls back what a
+                //   killed request leaves open, which is what makes this safe.
             ]) : [],
         ],
 

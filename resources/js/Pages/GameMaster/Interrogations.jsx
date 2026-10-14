@@ -47,7 +47,11 @@ function Transcript({ messages }) {
 export default function Interrogations({ game, sessions }) {
     // Questions are being asked right now; a static page shows a GM the
     // state of the table when they opened it, not the state of the table.
-    usePoll(['sessions'], { interval: 12000, enabled: game.status === 'running' });
+    usePoll(['sessions'], {
+        interval: 12000,
+        enabled: game.status === 'running',
+        channels: ['interrogation'],
+    });
 
     return (
         // Reaching this page means the policy already allowed spoilers.

@@ -19,6 +19,14 @@ class CaseTimelineMail extends Mailable
     ) {
     }
 
+    /** Within `immersion.mail.attach_audio_max_kb` (0 means no limit). */
+    private function fitsInEmail(string $path): bool
+    {
+        $maxKb = (int) config('immersion.mail.attach_audio_max_kb');
+
+        return $maxKb <= 0 || (int) @filesize($path) <= $maxKb * 1024;
+    }
+
     public function build(): self
     {
         $case = $this->player->game->caseDefinition();
@@ -47,16 +55,29 @@ class CaseTimelineMail extends Mailable
 
         // Case audio ships with the case, generated audio lives in storage;
         // the event resolves whichever it is.
-        if ($path = $this->event->audioAbsolutePath()) {
-            $mime = $this->event->audioMimeType();
-            $extension = $mime === 'audio/mpeg' ? 'mp3' : 'wav';
+        //
+        // A recording over the limit is linked, not attached: a multi-megabyte
+        // attachment per player per envelope is what makes the mailbox slow and
+        // eats the message size allowance, and the recording plays from the
+        // player's inbox with one click. The view reads `audioLink` to say so.
+        $audioLink = null;
 
-            $mail->attachData(
-                (string) file_get_contents($path),
-                'audio-'.$this->event->id.'.'.$extension,
-                ['mime' => $mime]
-            );
+        if ($path = $this->event->audioAbsolutePath()) {
+            if ($this->fitsInEmail($path)) {
+                $mime = $this->event->audioMimeType();
+                $extension = $mime === 'audio/mpeg' ? 'mp3' : 'wav';
+
+                $mail->attachData(
+                    (string) file_get_contents($path),
+                    'audio-'.$this->event->id.'.'.$extension,
+                    ['mime' => $mime]
+                );
+            } else {
+                $audioLink = route('immersion.player.inbox', $this->player->access_token);
+            }
         }
+
+        $mail->with('audioLink', $audioLink);
 
         return $mail;
     }

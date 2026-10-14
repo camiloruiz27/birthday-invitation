@@ -47,7 +47,11 @@ export default function InterrogationChat({
     const readOnly = closed || Boolean(effectiveLockedBy) || outOfCredits || waiting;
 
     // While waiting, look for the evidence that opens the next stage.
-    usePoll(['availability', 'ficha'], { interval: 15000, enabled: waiting });
+    usePoll(['availability', 'ficha'], {
+        interval: 15000,
+        enabled: waiting,
+        channels: ['timeline', 'interrogation'],
+    });
 
     useEffect(() => {
         if (initialFicha) setFicha(initialFicha);

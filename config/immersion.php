@@ -218,6 +218,86 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Outgoing mail
+    |--------------------------------------------------------------------------
+    |
+    | Every envelope of a case is one email per player, and a table of three
+    | playing a case of ten envelopes is thirty-odd messages before counting
+    | access links, epilogues and the account mail (verification, receipts) that
+    | leaves through the same mailbox. Hostinger limits a mailbox per rolling 24
+    | hours (100 on the free one, 1,000 on Business Starter, 3,000 on Standard
+    | and Premium), so the engine counts what it sends and holds back instead of
+    | discovering the limit when a player's envelope bounces.
+    |
+    | Set daily_limit to what the mailbox actually allows (hPanel > Emails >
+    | the mailbox > view limits). 0 turns the guard off.
+    |
+    */
+
+    'mail' => [
+        // Which game emails leave (see GameMailPolicy). The game delivers
+        // everything inside the platform, so by default only the "accusations
+        // are open" envelope is emailed:
+        //   unlock  only that one (default)
+        //   all     every envelope, as the game used to
+        //   off     none
+        'timeline' => env('IMMERSION_MAIL_TIMELINE', 'unlock'),
+
+        // The epilogue (the message from the person a player accused) is
+        // written and shown on the Solution page either way; this only decides
+        // whether it is also emailed.
+        'epilogue' => (bool) env('IMMERSION_MAIL_EPILOGUE', false),
+
+        'daily_limit' => (int) env('IMMERSION_MAIL_DAILY_LIMIT', 100),
+
+        // Stay a little under the ceiling for what can wait: access links and
+        // epilogues go out only while less than this share of the day is used,
+        // so envelopes (which a live table is waiting on) always have room.
+        'reserve_share' => (float) env('IMMERSION_MAIL_RESERVE_SHARE', 0.8),
+
+        // A message a minute-by-minute limit would bounce is spread out
+        // instead. 0 turns the limiter off.
+        'per_minute' => (int) env('IMMERSION_MAIL_PER_MINUTE', 10),
+
+        // An audio larger than this is linked from the inbox instead of
+        // attached: a multi-megabyte attachment per player per envelope is what
+        // makes a mailbox slow, and the recording is one click away anyway.
+        'attach_audio_max_kb' => (int) env('IMMERSION_MAIL_ATTACH_AUDIO_MAX_KB', 3000),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduler tick
+    |--------------------------------------------------------------------------
+    |
+    | With nothing running and nothing queued, the once-a-minute tick leaves
+    | without opening a database connection (see TickActivity), and only looks
+    | every few minutes as a safety net. Off means it runs every minute, always.
+    |
+    */
+
+    'tick' => [
+        'idle_skip' => (bool) env('IMMERSION_TICK_IDLE_SKIP', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queues
+    |--------------------------------------------------------------------------
+    |
+    | One worker drains every queue in this order each minute, so a slow job
+    | (text-to-speech, grading, an AI epilogue: minutes) never sits in front of
+    | the mail a table is waiting for.
+    |
+    */
+
+    'queues' => [
+        'mail' => 'emails',
+        'slow' => 'slow',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Rate limits
     |--------------------------------------------------------------------------
     |

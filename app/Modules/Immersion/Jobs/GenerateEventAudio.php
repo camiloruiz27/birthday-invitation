@@ -3,8 +3,9 @@
 namespace App\Modules\Immersion\Jobs;
 
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
-use App\Modules\Immersion\Mail\CaseTimelineMail;
 use App\Modules\Immersion\Models\TimelineEvent;
+use App\Modules\Immersion\Support\GameMailPolicy;
+use App\Modules\Immersion\Support\GameRevision;
 use App\Modules\Immersion\Support\TimelineRecipients;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -12,7 +13,6 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Generates a timeline event's missing audio and resends its email.
@@ -38,6 +38,7 @@ class GenerateEventAudio implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public int $eventId)
     {
+        $this->onQueue((string) config('immersion.queues.slow'));
     }
 
     public function uniqueId(): string
@@ -76,11 +77,12 @@ class GenerateEventAudio implements ShouldBeUnique, ShouldQueue
         ]);
 
         // The email already went out without its attachment, so resend it now
-        // that there is one.
-        if ($event->isSent()) {
+        // that there is one — if this event is emailed at all (GameMailPolicy).
+        // Otherwise the recording is simply there in the inbox.
+        if ($event->isSent() && GameMailPolicy::timelineEvent($event)) {
             foreach (TimelineRecipients::resolve($event) as $recipient) {
                 try {
-                    Mail::to($recipient->email)->send(new CaseTimelineMail($event, $recipient));
+                    SendTimelineMail::dispatch($event->id, $recipient->id);
                 } catch (\Throwable $exception) {
                     // One bad address must not stop the rest.
                     report($exception);
@@ -93,5 +95,7 @@ class GenerateEventAudio implements ShouldBeUnique, ShouldQueue
     {
         TimelineEvent::where('id', $this->eventId)
             ->update(['audio_status' => TimelineEvent::AUDIO_FAILED]);
+
+        GameRevision::bump(TimelineEvent::whereKey($this->eventId)->value('game_id'), GameRevision::TIMELINE);
     }
 }

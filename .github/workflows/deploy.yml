@@ -66,6 +66,15 @@ jobs:
             # publication state set in the database are left untouched.
             php artisan platform:sync-cases
             php artisan optimize:clear
+            # Compiled views ready before the first visitor instead of on the
+            # first request that needs each one.
+            #
+            # Deliberately NOT config:cache: the .env is edited by hand from
+            # hPanel (there is no SSH from everywhere), and a cached config would
+            # ignore those edits until the next deploy — a limit or a switch
+            # changed in .env would appear to do nothing. No route:cache either:
+            # routes/api.php and routes/console.php hold closures.
+            php artisan view:cache
             # Workers hold the old code in memory; this tells the ones the
             # scheduler starts to pick up this release.
             php artisan queue:restart

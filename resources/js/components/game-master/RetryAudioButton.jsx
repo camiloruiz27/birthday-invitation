@@ -55,7 +55,7 @@ export default function RetryAudioButton({ game, event }) {
                 size="sm"
                 onClick={retry}
                 loading={loading}
-                title="El correo salió sin el audio adjunto: genera el audio y reenvía el correo"
+                title="El sobre salió sin audio: genera la grabación para que los jugadores puedan escucharla"
             >
                 Reintentar audio
             </Button>

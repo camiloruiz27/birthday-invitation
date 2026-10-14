@@ -5,6 +5,7 @@ namespace App\Modules\Immersion\Console\Commands;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\TimelineEvent;
+use App\Modules\Immersion\Support\TickActivity;
 use Illuminate\Console\Command;
 
 class ProcessImmersionTimeline extends Command
@@ -17,6 +18,11 @@ class ProcessImmersionTimeline extends Command
     {
         $runningGames = Game::query()->where('status', 'running')->get();
 
+        // A game in play keeps the tick awake: events are due to the minute.
+        if ($runningGames->isNotEmpty()) {
+            TickActivity::touch();
+        }
+
         $dispatched = 0;
 
         foreach ($runningGames as $game) {
@@ -28,7 +34,7 @@ class ProcessImmersionTimeline extends Command
                 ->get();
 
             foreach ($dueEvents as $event) {
-                DispatchTimelineEvent::dispatch($event->id);
+                DispatchTimelineEvent::enqueue($event);
                 $dispatched++;
             }
         }

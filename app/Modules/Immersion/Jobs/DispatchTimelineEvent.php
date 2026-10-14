@@ -3,8 +3,8 @@
 namespace App\Modules\Immersion\Jobs;
 
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
-use App\Modules\Immersion\Mail\CaseTimelineMail;
 use App\Modules\Immersion\Models\TimelineEvent;
+use App\Modules\Immersion\Support\GameMailPolicy;
 use App\Modules\Immersion\Support\TimelineRecipients;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -14,7 +14,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
 {
@@ -34,6 +33,18 @@ class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public int $eventId)
     {
+    }
+
+    /**
+     * Queues the event on the right line: one that still has to be voiced is
+     * text-to-speech, which takes minutes, so it goes to the slow queue and an
+     * ordinary envelope never waits behind it.
+     */
+    public static function enqueue(TimelineEvent $event): void
+    {
+        $slow = $event->isAudio() && $event->audio_script && ! $event->audio_path;
+
+        static::dispatch($event->id)->onQueue($slow ? (string) config('immersion.queues.slow') : 'default');
     }
 
     public function uniqueId(): string
@@ -84,14 +95,23 @@ class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
             $this->saveWithReconnect($event);
         }
 
-        foreach ($recipients as $recipient) {
-            try {
-                Mail::to($recipient->email)->send(new CaseTimelineMail($event, $recipient));
-            } catch (\Throwable $exception) {
-                // Un correo individual fallido (SMTP lento, etc.) no debe
-                // impedir que le llegue a los demas destinatarios; el evento
-                // ya quedo marcado como enviado, asi que no se reintentara solo.
-                report($exception);
+        // Un correo por destinatario, cada uno en su propio job: se reintenta
+        // solo, respeta el limite por minuto y el cupo diario del buzon, y si
+        // al final no sale se avisa al Game Master (ver SendTimelineMail). Antes
+        // este bucle los mandaba en serie y un fallo se perdia en silencio,
+        // porque el evento ya quedo marcado como enviado.
+        //
+        // Solo si la politica lo pide (GameMailPolicy): por defecto el sobre
+        // llega a la bandeja de cada jugador y solo el de "acusaciones
+        // habilitadas" ademas sale por correo.
+        if (GameMailPolicy::timelineEvent($event)) {
+            foreach ($recipients as $recipient) {
+                try {
+                    SendTimelineMail::dispatch($event->id, $recipient->id);
+                } catch (\Throwable $exception) {
+                    // Encolar uno no debe impedir encolar a los demas.
+                    report($exception);
+                }
             }
         }
     }

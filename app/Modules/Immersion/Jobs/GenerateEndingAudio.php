@@ -5,6 +5,7 @@ namespace App\Modules\Immersion\Jobs;
 use App\Modules\Immersion\Ai\Contracts\ConfessionProvider;
 use App\Modules\Immersion\Ai\Contracts\SpeechProvider;
 use App\Modules\Immersion\Models\Game;
+use App\Modules\Immersion\Support\GameRevision;
 use App\Modules\Immersion\Support\EndingBilling;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -41,6 +42,7 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public int $gameId)
     {
+        $this->onQueue((string) config('immersion.queues.slow'));
     }
 
     public function uniqueId(): string
@@ -105,5 +107,6 @@ class GenerateEndingAudio implements ShouldBeUnique, ShouldQueue
     public function failed(\Throwable $exception): void
     {
         Game::where('id', $this->gameId)->update(['ending_audio_status' => Game::AUDIO_FAILED]);
+        GameRevision::bump($this->gameId, GameRevision::ACCUSATION);
     }
 }

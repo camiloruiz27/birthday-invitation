@@ -4,7 +4,10 @@ import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
 import Container from '../components/ui/Container';
 import GuidedTour from '../components/ui/GuidedTour';
+import NoticeToasts from '../components/player/NoticeToasts';
 import PrivacyNotice from '../components/player/PrivacyNotice';
+import usePlayerNotices from '../hooks/usePlayerNotices';
+import usePoll from '../hooks/usePoll';
 import { startTour } from '../lib/tour';
 import { MECHANIC_ICON_PATHS } from '../lib/mechanicIcons';
 
@@ -101,7 +104,34 @@ function LockMark() {
     );
 }
 
-function SectionLink({ section, active, variant }) {
+/**
+ * Something new in this section: a count for the inbox (envelopes still
+ * unopened), a dot for the places to go. Read aloud as text, not as a number
+ * floating next to a label.
+ */
+function Badge({ count, dot = false }) {
+    if (!count) {
+        return null;
+    }
+
+    return (
+        <>
+            <span
+                aria-hidden="true"
+                className={
+                    dot
+                        ? 'h-2 w-2 shrink-0 rounded-full bg-accent-strong'
+                        : 'tabular inline-flex min-w-4 shrink-0 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-4 text-ink-inverse'
+                }
+            >
+                {dot ? null : count}
+            </span>
+            <span className="sr-only">{dot ? '(hay algo nuevo)' : `(${count} sin abrir)`}</span>
+        </>
+    );
+}
+
+function SectionLink({ section, active, variant, badge = 0 }) {
     const label = SECTION_LABELS[section.key];
 
     if (variant === 'bar') {
@@ -119,6 +149,7 @@ function SectionLink({ section, active, variant }) {
                     {label}
                     {section.locked && <LockMark />}
                     {section.locked && <span className="sr-only">(todavía bloqueado)</span>}
+                    <Badge count={badge} dot={section.key !== 'inbox'} />
                 </span>
             </Link>
         );
@@ -139,6 +170,7 @@ function SectionLink({ section, active, variant }) {
             {label}
             {section.locked && <LockMark />}
             {section.locked && <span className="sr-only">(todavía bloqueado)</span>}
+            <Badge count={badge} dot={section.key !== 'inbox'} />
             <span
                 aria-hidden="true"
                 className={`absolute inset-x-0 bottom-0 h-px origin-left bg-accent transition-transform duration-300 ${
@@ -258,6 +290,39 @@ function playerTourSteps(game) {
     ];
 }
 
+/**
+ * "(2) Bandeja de Ana": how many things are waiting, in the browser tab, so a
+ * player on another tab or app can see the game has something for them.
+ *
+ * <Head> rewrites the title on every navigation, so the prefix is reapplied
+ * whenever the title element changes instead of being set once.
+ */
+const TITLE_PREFIX = /^\(\d+\)\s/;
+
+function useTitleCount(count) {
+    useEffect(() => {
+        const apply = () => {
+            const base = document.title.replace(TITLE_PREFIX, '');
+            const wanted = count > 0 ? `(${count}) ${base}` : base;
+
+            if (document.title !== wanted) {
+                document.title = wanted;
+            }
+        };
+
+        apply();
+
+        const element = document.querySelector('title');
+        const observer = element ? new MutationObserver(apply) : null;
+        observer?.observe(element, { childList: true, characterData: true, subtree: true });
+
+        return () => {
+            observer?.disconnect();
+            document.title = document.title.replace(TITLE_PREFIX, '');
+        };
+    }, [count]);
+}
+
 export default function PlayerLayout({
     player,
     game,
@@ -269,9 +334,40 @@ export default function PlayerLayout({
     contentClassName = '',
     children,
 }) {
-    const { props } = usePage();
+    const { props, component } = usePage();
     const status = props.flash?.status;
     const sections = focused || !player ? [] : sectionsFor(player, game);
+
+    // What is new, on whatever screen the player is on: badges on the tabs, a
+    // toast when something arrives, a count in the tab title. The inbox is the
+    // only screen that already refreshed itself; every other one needs the poll
+    // below, or a player reading the suspects would never learn an envelope came.
+    const notified = !focused && Boolean(player);
+    const { badges, total, toasts, dismiss } = usePlayerNotices({
+        gameId: game?.id,
+        notices: props.notices,
+        section,
+        enabled: notified,
+    });
+
+    // The inbox polls on its own (and asks for `notices` too); a second poll
+    // there would only reload the same page twice.
+    usePoll(['notices', 'game'], {
+        interval: 12000,
+        channels: ['timeline', 'accusation'],
+        enabled: notified && component !== 'Player/Inbox',
+    });
+
+    useTitleCount(total);
+
+    // The Game Master who plays their own table (automatic mode) reaches their
+    // inbox from the console, and from here there was no way back. Only the
+    // owner, only when signed in: a guest player holds no account and never
+    // sees it.
+    const panelHref =
+        player?.is_owner && props.auth?.user && game?.id
+            ? route('immersion.gm.game.show', game.id)
+            : null;
 
     // The Game Master playing their own table already accepted the terms with
     // their account; an invited player has not, and this is where they do.
@@ -327,6 +423,32 @@ export default function PlayerLayout({
                         <div className="flex shrink-0 items-center gap-4">
                             <CaseClock game={game} />
 
+                            {panelHref && (
+                                <Link
+                                    href={panelHref}
+                                    data-tour="back-to-panel"
+                                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong px-4 text-sm text-ink-muted transition-colors hover:border-accent hover:text-ink"
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        aria-hidden="true"
+                                        className="h-4 w-4"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M4 5h7v6H4zM13 5h7v3h-7zM13 11h7v8h-7zM4 13h7v6H4z"
+                                        />
+                                    </svg>
+                                    {/* The icon carries it on a phone; the words
+                                        are what would push the title out. */}
+                                    <span className="sr-only sm:not-sr-only">Panel de la partida</span>
+                                </Link>
+                            )}
+
                             {back && (
                                 <Link
                                     href={back.href}
@@ -350,6 +472,7 @@ export default function PlayerLayout({
                                     section={item}
                                     active={item.key === section}
                                     variant="header"
+                                    badge={badges[item.key]}
                                 />
                             ))}
                         </nav>
@@ -425,12 +548,15 @@ export default function PlayerLayout({
                             section={item}
                             active={item.key === section}
                             variant="bar"
+                            badge={badges[item.key]}
                         />
                     ))}
                 </nav>
             )}
 
             {needsPrivacyNotice && <PrivacyNotice player={player} />}
+
+            {notified && <NoticeToasts toasts={toasts} token={player.access_token} onDismiss={dismiss} />}
 
             {/* After the privacy notice, never together with it. */}
             {player && !focused && (

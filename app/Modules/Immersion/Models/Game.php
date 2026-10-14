@@ -5,6 +5,8 @@ namespace App\Modules\Immersion\Models;
 use App\Models\User;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
+use App\Modules\Immersion\Support\TickActivity;
+use App\Modules\Immersion\Models\Concerns\BumpsGameRevision;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +15,8 @@ use Illuminate\Support\Carbon;
 
 class Game extends Model
 {
+    use BumpsGameRevision;
+
     protected $table = 'immersion_games';
 
     /** Someone directs the case and does not play. */
@@ -88,6 +92,12 @@ class Game extends Model
      */
     protected static function booted(): void
     {
+        static::saved(function (self $game) {
+            if ($game->status === 'running') {
+                TickActivity::touch();
+            }
+        });
+
         static::creating(function (self $game) {
             if (! $game->case_slug) {
                 $case = app(CaseRegistry::class)->default();
@@ -95,6 +105,14 @@ class Game extends Model
                 $game->case_version ??= $case->version();
             }
         });
+    }
+
+    /**
+     * A game's own stamp is keyed by its id, not by a game_id column.
+     */
+    public function revisionGameId(): ?int
+    {
+        return $this->getKey() ? (int) $this->getKey() : null;
     }
 
     public function getElapsedMinutesAttribute(): int

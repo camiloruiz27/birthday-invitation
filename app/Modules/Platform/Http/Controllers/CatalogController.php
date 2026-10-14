@@ -7,6 +7,7 @@ use App\Modules\Immersion\Support\GameQuota;
 use App\Modules\Platform\Http\Resources\CaseCardData;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Support\Mechanics;
+use App\Modules\Platform\Support\PublishedCases;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,9 +17,7 @@ class CatalogController extends Controller
     public function index(): Response
     {
         return Inertia::render('Public/Catalog', [
-            'cases' => fn () => MysteryCase::published()
-                ->ordered()
-                ->get()
+            'cases' => fn () => PublishedCases::all()
                 ->map(fn (MysteryCase $case) => CaseCardData::summary($case))
                 ->values(),
         ]);
@@ -28,7 +27,7 @@ class CatalogController extends Controller
     {
         // Route model binding would also serve unpublished rows; the catalog
         // must only ever show what is actually on sale.
-        $case = MysteryCase::published()->where('slug', $slug)->firstOrFail();
+        $case = PublishedCases::find($slug) ?? abort(404);
 
         return Inertia::render('Public/CaseDetail', [
             'case' => CaseCardData::detail($case),
@@ -57,9 +56,7 @@ class CatalogController extends Controller
     {
         return Inertia::render('Public/Pricing', [
             'gamesPerCase' => app(GameQuota::class)->limit(),
-            'cases' => fn () => MysteryCase::published()
-                ->ordered()
-                ->get()
+            'cases' => fn () => PublishedCases::all()
                 ->map(fn (MysteryCase $case) => CaseCardData::summary($case))
                 ->values(),
         ]);
