@@ -9,6 +9,7 @@ use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Actions\StartCheckout;
 use App\Modules\Platform\Exceptions\PromoCodeException;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -44,7 +45,14 @@ class CreditsController extends Controller
                 'endings' => $cost->endingPrices(),
             ],
 
-            'packages' => array_values((array) config('platform.credit_packages', [])),
+            // Listed in COP in config; shown in the visitor's own market.
+            'packages' => collect((array) config('platform.credit_packages', []))
+                ->map(fn (array $package) => array_merge(
+                    $package,
+                    QuoteBuilder::make()->display((int) $package['price_amount'], $request)
+                ))
+                ->values()
+                ->all(),
             'simulated' => (bool) config('platform.simulated_checkout'),
             'canPurchase' => (bool) config('platform.payments.enabled'),
 
@@ -114,10 +122,12 @@ class CreditsController extends Controller
         $discountAmount = null;
         $promoError = null;
         $promoRedirect = null;
+        $percentOff = null;
 
         if ($promoCode) {
             try {
                 $preview = $promos->preview($request->user(), $promoCode, (int) $package['price_amount']);
+                $percentOff = QuoteBuilder::percentOff($preview->promoCode);
                 $finalAmount = $preview->discountedAmount;
                 $discountAmount = (int) $package['price_amount'] - $finalAmount;
                 // The stored, normalized code — not whatever case the buyer
@@ -138,16 +148,20 @@ class CreditsController extends Controller
             }
         }
 
+        // The code was applied in COP above; this converts the result once, so
+        // the review shows the same figures StartCheckout will charge.
+        $quote = QuoteBuilder::make()->forRequest((int) $package['price_amount'], $finalAmount, $request, $percentOff);
+
         return Inertia::render('Payments/Review', [
             'type' => 'credit_package',
             'package_id' => $package['id'],
             'title' => $package['name'],
             'subtitle' => "{$package['credits']} créditos — {$package['summary']}",
-            'original_amount' => (int) $package['price_amount'],
-            'currency' => $package['currency'],
+            'original_amount' => $quote->list,
+            'currency' => $quote->currency,
             'promo_code' => $promoCode,
-            'discount_amount' => $discountAmount,
-            'final_amount' => $finalAmount,
+            'discount_amount' => $discountAmount === null ? null : $quote->discount,
+            'final_amount' => $quote->total,
             'promo_error' => $promoError,
             'promo_redirect' => $promoRedirect,
         ]);

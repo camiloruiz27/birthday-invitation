@@ -27,5 +27,22 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <!-- The developer's .env holds real third-party keys (captcha, Bold,
+             MaxMind). Tests must not inherit them: a real captcha secret makes
+             every test registration fail, and real Bold keys would make a test
+             talk to the live API. Each test sets the config it needs. -->
+        <env name="TURNSTILE_SITE_KEY" value=""/>
+        <env name="TURNSTILE_SECRET_KEY" value=""/>
+        <env name="BOLD_IDENTITY_KEY" value=""/>
+        <env name="BOLD_SECRET_KEY" value=""/>
+        <env name="MAXMIND_ACCOUNT_ID" value=""/>
+        <env name="MAXMIND_LICENSE_KEY" value=""/>
+        <env name="PLATFORM_INTERNATIONAL_ENABLED" value="false"/>
+        <env name="PLATFORM_PAYMENTS_ENABLED" value="false"/>
+        <!-- Version stamps of the legal texts the code ships with; a stale
+             value in a developer's .env must not decide what a test sees. -->
+        <env name="LEGAL_PRIVACY_VERSION" value="1.1"/>
+        <env name="LEGAL_TERMS_VERSION" value="1.0"/>
+        <env name="LEGAL_COOKIES_VERSION" value="1.1"/>
     </php>
 </phpunit>

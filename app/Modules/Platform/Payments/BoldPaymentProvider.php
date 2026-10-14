@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Payments;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Payments\Exceptions\PaymentProviderException;
+use App\Modules\Platform\Support\Money;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -23,8 +24,44 @@ use Illuminate\Support\Facades\Log;
  */
 class BoldPaymentProvider implements PaymentProvider
 {
+    /**
+     * The number Bold expects in `total_amount` for this order.
+     *
+     * COP is whole pesos, the same integer the order stores. USD is stored in
+     * cents (2800 = USD 28) but is ALWAYS whole dollars — the pricer only ever
+     * produces them — and goes to Bold as dollars: confirmed on its sandbox
+     * (28 comes back as total 28 / subtotal 28.00). Bold keeps the decimals of a
+     * fractional amount in `subtotal` but cuts `total` to an integer, so a cent
+     * is never sent: an amount that is not whole dollars is refused here
+     * instead of reaching a payment where it would be charged ambiguously.
+     */
+    private function providerAmount(Order $order): int|float
+    {
+        if (Money::exponent($order->currency) === 0) {
+            return $order->amount;
+        }
+
+        $unit = (string) config('platform.payments.usd_amount_unit');
+
+        if ($order->currency !== 'USD' || ! in_array($unit, ['dollars', 'cents'], true)) {
+            throw new PaymentProviderException(
+                "Unidad de {$order->currency} no valida en BOLD_USD_AMOUNT_UNIT (dollars|cents); la orden #{$order->id} no se envia."
+            );
+        }
+
+        if ($order->amount % 100 !== 0) {
+            throw new PaymentProviderException(
+                "La orden #{$order->id} tiene un monto en USD con centavos ({$order->amount}); solo se cobran dolares enteros."
+            );
+        }
+
+        return $unit === 'cents' ? $order->amount : intdiv($order->amount, 100);
+    }
+
     public function createCheckoutLink(Order $order, string $callbackUrl): PaymentCheckoutLink
     {
+        $total = $this->providerAmount($order);
+
         $response = Http::baseUrl($this->baseUrl())
             ->withHeaders(['Authorization' => "x-api-key {$this->identityKey()}"])
             ->timeout($this->timeout())
@@ -33,7 +70,7 @@ class BoldPaymentProvider implements PaymentProvider
                 'amount' => [
                     'currency' => $order->currency,
                     'tip_amount' => 0,
-                    'total_amount' => $order->amount,
+                    'total_amount' => $total,
                 ],
                 'reference' => $order->reference,
                 'description' => $this->descriptionFor($order),

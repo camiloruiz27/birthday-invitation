@@ -9,6 +9,7 @@ use App\Modules\Platform\Actions\StartCheckout;
 use App\Modules\Platform\Exceptions\PromoCodeException;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -67,6 +68,7 @@ class CheckoutController extends Controller
         $promoRedirect = null;
         $isGift = false;
         $giftCredits = null;
+        $percentOff = null;
 
         if ($promoCode) {
             try {
@@ -75,6 +77,7 @@ class CheckoutController extends Controller
                 $preview = $promos->preview($request->user(), $promoCode, $case->price_amount, $case);
                 $finalAmount = $preview->discountedAmount;
                 $discountAmount = $case->price_amount - $finalAmount;
+                $percentOff = QuoteBuilder::percentOff($preview->promoCode);
                 $isGift = $preview->promoCode->isGift();
                 $giftCredits = $isGift ? $preview->promoCode->grants_credits : null;
                 // The stored, normalized code — not whatever case the buyer
@@ -97,16 +100,20 @@ class CheckoutController extends Controller
             }
         }
 
+        // The code was applied in COP above; this converts the result once, so
+        // the review shows the same figures StartCheckout will charge.
+        $quote = QuoteBuilder::make()->forRequest($case->price_amount, $finalAmount, $request, $percentOff);
+
         return Inertia::render('Payments/Review', [
             'type' => 'case',
             'case_slug' => $case->slug,
             'title' => $case->name,
             'subtitle' => $case->tagline,
-            'original_amount' => $case->price_amount,
-            'currency' => $case->currency,
+            'original_amount' => $quote->list,
+            'currency' => $quote->currency,
             'promo_code' => $promoCode,
-            'discount_amount' => $discountAmount,
-            'final_amount' => $finalAmount,
+            'discount_amount' => $discountAmount === null ? null : $quote->discount,
+            'final_amount' => $quote->total,
             'is_gift' => $isGift,
             'gift_credits' => $giftCredits,
             'promo_error' => $promoError,

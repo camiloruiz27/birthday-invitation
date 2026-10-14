@@ -11,12 +11,18 @@ use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
 use App\Modules\Platform\Console\Commands\ListPromoCodes;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
+use App\Modules\Platform\Console\Commands\MarketCheck;
+use App\Modules\Platform\Console\Commands\ProbeBoldUsd;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SendCronDiagnosticMail;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
+use App\Modules\Platform\Console\Commands\UpdateGeoIpDatabase;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Pricing\QuoteBuilder;
+use App\Modules\Platform\Support\Geo\CountryLookup;
+use App\Modules\Platform\Support\Geo\MaxMindCountryLookup;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -97,6 +103,14 @@ class PlatformServiceProvider extends ServiceProvider
         // PaymentProvider's docblock). Whether a real checkout is offered at
         // all is decided in the controllers via platform.payments.enabled.
         $this->app->bind(PaymentProvider::class, BoldPaymentProvider::class);
+
+        // Not a singleton: the rate and markup are read from config each time
+        // it is built, so a changed config (or a test) is never stale.
+        $this->app->bind(QuoteBuilder::class, fn () => QuoteBuilder::make());
+
+        $this->app->singleton(CountryLookup::class, fn () => new MaxMindCountryLookup(
+            (string) config('platform.market.geoip.database')
+        ));
     }
 
     /**
@@ -183,6 +197,9 @@ class PlatformServiceProvider extends ServiceProvider
                 CreatePromoCode::class,
                 CreatePromoCodeBatch::class,
                 ListPromoCodes::class,
+                UpdateGeoIpDatabase::class,
+                ProbeBoldUsd::class,
+                MarketCheck::class,
             ]);
 
             $this->app->booted(function () {
@@ -222,6 +239,18 @@ class PlatformServiceProvider extends ServiceProvider
                 $schedule->command(ExpireStaleOrders::class)
                     ->daily()
                     ->withoutOverlapping();
+
+                // Keeps the country database current. Only when the
+                // international market is on and there are credentials, so a
+                // Colombia-only deploy never calls MaxMind.
+                if (config('platform.market.international_enabled') && config('platform.market.geoip.license_key')) {
+                    // Daily, but it only downloads once the file is 6 days
+                    // old (--max-age-days): robust to a missed cron minute,
+                    // and well inside MaxMind's 30-day freshness rule.
+                    $schedule->command(UpdateGeoIpDatabase::class, ['--max-age-days=6'])
+                        ->dailyAt('03:30')
+                        ->withoutOverlapping();
+                }
 
                 // Catches a buyer who paid and closed the tab before the
                 // confirmation page's own check (or Bold's webhook) resolved

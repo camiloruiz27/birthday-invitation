@@ -11,7 +11,9 @@ use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
+use App\Modules\Platform\Support\Market;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -35,6 +37,7 @@ class StartCheckout
         private AiCredits $credits,
         private AdEvents $ads,
         private Request $request,
+        private QuoteBuilder $quotes,
     ) {
     }
 
@@ -68,6 +71,11 @@ class StartCheckout
     {
         $redemption = null;
 
+        // Every price in the catalog is COP and every code is applied to it
+        // there; an international buyer's USD price is derived from the
+        // result, once, below. So $attributes['amount'] is COP until then.
+        $listCop = $attributes['amount'];
+
         // The price before any code, kept because `amount` is about to be
         // overwritten with what is actually charged.
         $attributes['list_amount'] = $attributes['amount'];
@@ -86,6 +94,32 @@ class StartCheckout
             $attributes['discount_amount'] = $attributes['list_amount'] - $discount->amount;
             $attributes['promo_code_id'] = $discount->redemption->promo_code_id;
             $redemption = $discount->redemption;
+        }
+
+        // The market is only ever read from the request here, never taken from
+        // input, so a buyer cannot pick a cheaper price list by posting a field.
+        $quote = $this->quotes->quote(
+            $listCop,
+            $attributes['amount'],
+            Market::fromRequest($this->request),
+            QuoteBuilder::percentOff($redemption?->promoCode),
+        );
+
+        if ($quote->market === Market::INTL) {
+            $attributes['amount'] = $quote->total;
+            $attributes['list_amount'] = $quote->list;
+            $attributes['currency'] = $quote->currency;
+
+            if ($promoCode) {
+                $attributes['discount_amount'] = $quote->discount;
+            }
+
+            $attributes += [
+                'market' => $quote->market,
+                'base_list_amount' => $quote->baseListCop,
+                'base_amount' => $quote->baseTotalCop,
+                'pricing_snapshot' => $quote->snapshot,
+            ];
         }
 
         // Where the buyer came from and whether they allowed advertising

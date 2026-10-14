@@ -230,6 +230,29 @@ class AdEventsTest extends TestCase
         $this->assertSame(['steve-jacobs'], $event['custom_data']['content_ids']);
     }
 
+    public function test_an_international_sale_is_reported_in_dollars_not_cents(): void
+    {
+        config([
+            'platform.market.international_enabled' => true,
+            'platform.market.force' => 'INTL',
+            'platform.payments.usd_amount_unit' => 'dollars',
+        ]);
+        $this->fakeEverything();
+        $order = $this->buy($this->userWithoutAccess(), ['mc_consent' => $this->consent()]);
+
+        $this->assertSame(2800, $order->amount); // stored in cents
+        $this->settle($order);
+
+        // The networks want 28 for USD 28, never the stored 2800.
+        $tiktok = $this->adRequests('business-api.tiktok.com')[0]['data'][0]['properties'];
+        $this->assertSame(28, $tiktok['value']);
+        $this->assertSame('USD', $tiktok['currency']);
+
+        $meta = $this->adRequests('graph.facebook.com')[0]['data'][0]['custom_data'];
+        $this->assertSame(28, $meta['value']);
+        $this->assertSame('USD', $meta['currency']);
+    }
+
     public function test_the_plain_email_is_never_put_on_the_wire(): void
     {
         $this->fakeEverything();

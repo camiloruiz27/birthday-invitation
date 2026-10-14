@@ -154,6 +154,18 @@ export default function Review({
                     </div>
                 </dl>
 
+                {/* Said BEFORE paying: Bold processes in pesos at the day's
+                    rate (unless the buyer's card offers to pay in their own
+                    currency), so its own receipt can show COP for a USD price. */}
+                {currency === 'USD' && final_amount > 0 && (
+                    <Alert variant="info" className="mt-4 mb-0">
+                        <strong className="font-semibold">Pagas {formatPrice(final_amount, currency)} (dólares).</strong>{' '}
+                        El cobro lo procesa Bold, que puede mostrarte el valor en pesos colombianos (COP) al
+                        tipo de cambio del día. Tu banco lo convierte a tu moneda, así que en tu extracto
+                        puede aparecer un valor un poco distinto por su tasa y comisiones.
+                    </Alert>
+                )}
+
                 {/* The code, applied via its own small GET request — no
                     payment happens until "Pagar con tarjeta" below. */}
                 <div className="mt-6 border-t border-line pt-6">

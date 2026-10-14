@@ -93,10 +93,61 @@ return [
         'secret_key' => env('BOLD_SECRET_KEY', ''),
         'timeout' => (int) env('BOLD_TIMEOUT', 15),
 
+        // What unit Bold wants in `total_amount` for a USD link. Confirmed on
+        // its sandbox: "dollars" (USD 28 is sent as 28). "cents" (2800) only
+        // exists as an escape hatch in case the live account behaves
+        // differently; an empty value means "dollars"; any other value refuses USD orders.
+        'usd_amount_unit' => env('BOLD_USD_AMOUNT_UNIT') ?: 'dollars',
+
         // An order left "pending" (checkout started, never finished) longer
         // than this is data to clean up, not a customer to chase — it never
         // granted anything, since only an approved webhook does that.
         'stale_order_hours' => (int) env('PLATFORM_STALE_ORDER_HOURS', 24),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | International market (USD)
+    |--------------------------------------------------------------------------
+    |
+    | COP stays the base price of everything sold. A visitor outside Colombia
+    | is quoted in USD from that base: discounts are applied in COP first, then
+    | the result is converted ONCE and rounded up to the next whole dollar.
+    |
+    |   usd = ceil( ((cop / fx_rate) + fee_usd) * markup_bps / 10000 )
+    |
+    | Computed with integers only (see InternationalPricer) so a boundary price
+    | never flips on float noise. Bold settles to the merchant in COP, so the
+    | fee and markup are the cushion against the rate moving: review fx_rate
+    | against the real TRM periodically.
+    |
+    | Off by default so the code can ship dark: with the flag off every
+    | visitor is in the Colombian market, exactly as before.
+    |
+    */
+
+    'market' => [
+        'international_enabled' => (bool) env('PLATFORM_INTERNATIONAL_ENABLED', false),
+
+        'fx_rate' => (int) env('PLATFORM_FX_RATE', 3500),
+        'fee_usd' => (int) env('PLATFORM_FX_FEE_USD', 1),
+        'markup_bps' => (int) env('PLATFORM_FX_MARKUP_BPS', 10500),
+
+        // A PERCENT code is applied to the USD price the buyer sees, in whole
+        // dollars and rounded DOWN (50% of USD 21 = USD 10), never below USD 1.
+        // Fixed-amount codes are COP: discounted in COP, then converted once.
+
+        // Non-production only: pin every request to a market ("CO" / "INTL").
+        'force' => env('MARKET_FORCE'),
+
+        // Country detection: a local MaxMind GeoLite2-Country file, fetched
+        // by `platform:geoip-update` (free account). Missing file = everyone
+        // is Colombian.
+        'geoip' => [
+            'database' => storage_path('app/geoip/GeoLite2-Country.mmdb'),
+            'account_id' => env('MAXMIND_ACCOUNT_ID', ''),
+            'license_key' => env('MAXMIND_LICENSE_KEY', ''),
+        ],
     ],
 
     /*

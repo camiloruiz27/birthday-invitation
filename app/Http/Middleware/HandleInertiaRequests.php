@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Modules\Platform\Support\Captcha;
 use App\Modules\Platform\Support\InAppBrowser;
+use App\Modules\Platform\Support\Market;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -60,6 +61,15 @@ class HandleInertiaRequests extends Middleware
             'contactEmail' => fn () => config('legal.email') ?: null,
 
             'captchaSiteKey' => fn () => app(Captcha::class)->siteKey(),
+
+            // Which price list this visitor is on. `selectable` is false while
+            // the international market is switched off, so the footer shows
+            // no selector for a market that does not exist yet.
+            'market' => fn () => [
+                'code' => Market::fromRequest($request),
+                'currency' => Market::currency(Market::fromRequest($request)),
+                'selectable' => (bool) config('platform.market.international_enabled'),
+            ],
 
             // Which app's browser this visit is inside (tiktok, instagram,
             // facebook, other) or null for an ordinary browser. Decided here,

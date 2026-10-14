@@ -65,8 +65,12 @@ class PromoCodeMetrics
             ->select(
                 'promo_code_id',
                 DB::raw('COUNT(*) as orders'),
-                DB::raw('COALESCE(SUM(discount_amount), 0) as discounted'),
-                DB::raw('COALESCE(SUM(amount), 0) as collected')
+                // Always in COP, the base price: an international order stores
+                // USD cents in amount/discount_amount, and summing those with
+                // pesos would be meaningless. base_* is only null on orders
+                // from before the international market, which were COP anyway.
+                DB::raw('COALESCE(SUM(COALESCE(base_list_amount - base_amount, discount_amount, 0)), 0) as discounted'),
+                DB::raw('COALESCE(SUM(COALESCE(base_amount, amount)), 0) as collected')
             )
             ->get()
             ->keyBy('promo_code_id');

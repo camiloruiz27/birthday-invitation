@@ -153,14 +153,14 @@ vertical. Dejar los nombres vacíos. **EVITAR:** iconografía de alerta, resalta
 Lagos. — Mesa 2: Rodrigo Paz · Sofía Mendoza. — Mesa 3: Andrés Rojas · Mateo Silva. — Mesa 4: Lucía
 Fonseca.* Más nombres de relleno coherentes en otras mesas.
 
-(`gallery/v3-foto-grupal-2040.png` — V3, foto grupal)
+(`gallery/v3-foto-grupal-2040.png` — V3, foto grupal)(solo esta foto)
 **PROMPT:** Fotografía diegética de evento social tipo foto de fotógrafo profesional: un grupo de
 invitados en la pista de baile de una boda al aire libre bajo una carpa, luces cálidas de fiesta,
 entre ellos un hombre de complexión media, cabello oscuro y traje gris oscuro (Rodrigo) en actitud
 relajada y normal, bailando o conversando, reconocible pero sin protagonismo. Buena calidad, luz cálida
 festiva. Formato horizontal. **EVITAR:** marcas de tiempo incrustadas, dramatización, resaltar a Rodrigo.
 
-(`gallery/v4-foto-candid-jardin.png` — V4, foto candid de las 21:05)
+(`gallery/v4-foto-candid-jardin.png` — V4, foto candid de las 21:05)(solo esta foto)
 **PROMPT:** Fotografía diegética informal tipo foto de móvil de un invitado, tomada de pasada: en
 primer plano, un grupo de invitados sin relación posando para la foto (ese grupo es el sujeto de la
 foto; Rodrigo NO lo es); en el fondo, un camino de jardín tenuemente iluminado por el que camina un
@@ -173,34 +173,34 @@ más tenue que la del salón. Formato 4:5. **EVITAR:** rostro borroso o de espal
 persona o Mateo, resaltar a Rodrigo con encuadre o luz artificial, marcas de tiempo, sangre, gesto de
 violencia.
 
-(`gallery/v5-mesa-postres-silla-vacia.png` — V5, mesa de postres a las 21:00)
+(`gallery/v5-mesa-postres-silla-vacia.png` — V5, mesa de postres a las 21:00)(solo esta foto)
 **PROMPT:** Fotografía diegética de evento social tipo foto de fotógrafo profesional: una mesa de
 postres de boda bien iluminada con varios invitados alrededor y, en una silla cercana, un bolso de
 mujer burdeos colgado del respaldo, la silla visiblemente vacía (Lucía), sin que ella esté en el
 encuadre. Luz cálida festiva, ausencia sin dramatizar. Formato horizontal. **EVITAR:** resaltar la silla
 vacía, marcas de tiempo, personas mirando hacia la silla.
 
-(`gallery/v6-invitado-estacionamiento.png` — V6, Andrés en el estacionamiento a las 20:52)
+(`gallery/v6-invitado-estacionamiento.png` — V6, Andrés en el estacionamiento a las 20:52)(solo esta foto)
 **PROMPT:** Fotografía diegética informal tipo foto de móvil: un hombre con traje azul claro (Andrés) de
 pie en el extremo de entrada de una zona de estacionamiento de finca, del lado del salón, revisando su
 teléfono con actitud relajada y sin urgencia; autos parcialmente visibles al fondo bajo farolas tenues y
 setos que tapan la vista del extremo opuesto. Luz nocturna fría y tenue. Formato 4:5. **EVITAR:**
 dramatización, marcas de tiempo, que se vea el cobertizo o el camino del jardín.
 
-(`gallery/v7-rincon-salon.png` — V7, conversación tensa a las 20:00)
+(`gallery/v7-rincon-salon.png` — V7, conversación tensa a las 20:00)(solo esta foto)
 **PROMPT:** Fotografía diegética de evento social tipo foto profesional de cobertura: una mujer con
 vestido verde oscuro (Camila) y un hombre con traje de novio azul marino y gemelos plateados
 (Sebastián) conversando en un rincón apartado del salón, brazos cruzados y expresiones serias, sin gente
 alrededor; tensión familiar contenida, sin violencia. Luz cálida de salón. Formato horizontal.
 **EVITAR:** gestos agresivos, lágrimas, dramatización, marcas de tiempo.
 
-(`gallery/v8-auto-antes.png` — V8, interior del auto antes de la ceremonia)
+(`gallery/v8-auto-antes.png` — V8, interior del auto antes de la ceremonia)(solo esta foto)
 **PROMPT:** Fotografía diegética de "preparativos" de boda tipo foto profesional de detalles: el interior
 limpio y ordenado de un auto de gama media (mismo auto que V9), asiento del conductor y trasero sin
 manchas ni objetos fuera de lugar, luz natural cálida de día. Parece una foto decorativa de detalle.
 Formato 4:5. **EVITAR:** manchas, daños, suciedad, marcas de tiempo.
 
-(`gallery/v9-auto-abandonado.png` — V9, el auto abandonado)
+(`gallery/v9-auto-abandonado.png` — V9, el auto abandonado)(solo esta foto)
 **PROMPT:** Fotografía diegética funcional tomada por quien lo encontró: el exterior del mismo auto de
 V8, de gama media, estacionado de forma irregular y apresurada en un tramo apartado de un camino
 secundario, de noche, con el interior parcialmente visible a través de la ventana mostrando una mancha
@@ -208,7 +208,7 @@ oscura discreta en el asiento del conductor, sin mostrarla de forma gráfica. Fo
 flash o linterna parcial, algo de grano, un punto de luz artificial. Formato horizontal. **EVITAR:**
 sangre abundante, gore, dramatización, personas.
 
-(`gallery/v10-conversacion-privada-1.png` — V10 parcial, entrega privada a T+24)
+(`gallery/v10-conversacion-privada-1.png` — V10 parcial, entrega privada a T+24)(solo esta foto)
 **PROMPT:** Captura de pantalla diegética de una conversación de mensajería, interfaz simple y
 genérica, tono profesional y discreto; cortada por arriba, mostrando solo el final del intercambio,
 **sin el nombre del contacto ni ninguna inicial** (cabecera genérica «Contacto», sin foto). Fondo neutro,
@@ -220,7 +220,7 @@ escándalos.* — Sebastián: *Llevo una parte en efectivo y el resto lo acordam
 contacto: *Está bien. Gracias por no esquivarlo.* (Sin fecha, sin cobertizo: el correo del fragmento
 no menciona ningún lugar.)
 
-(`gallery/v10-mensajes-lucia.png` — V10 completo, entrega a T+50)
+(`gallery/v10-mensajes-lucia.png` — V10 completo, entrega a T+50)(solo esta foto)
 **PROMPT:** La misma interfaz de mensajería que V10 parcial (mismo diseño de burbujas y mismo tono
 profesional), ahora la conversación completa, con el nombre completo del contacto visible. Formato
 vertical. **EVITAR:** cambiar el diseño respecto a V10 parcial, cifras exactas de dinero, iconografía de
@@ -233,7 +233,7 @@ nueve, cuando empiece el baile, nadie va a notar que salgo un rato.* — Lucía:
 Sin escándalos.* — Sebastián: *Llevo una parte en efectivo y el resto lo acordamos esa misma noche.* —
 Lucía: *Está bien. Gracias por no esquivarlo.*
 
-(`gallery/v11-recibo-retiro.png` — V11, comprobante de retiro de efectivo)
+(`gallery/v11-recibo-retiro.png` — V11, comprobante de retiro de efectivo)(solo esta foto)
 **PROMPT:** Documento diegético tipo recibo impreso de cajero automático, pequeño y vertical, de un
 retiro de efectivo, fotografiado sobre una superficie neutra (una mesa de madera clara), luz neutra.
 Formato vertical. Dejar vacías las líneas de fecha, hora y monto. **EVITAR:** iconografía de alarma,
@@ -241,7 +241,7 @@ logos de bancos reales, otros textos.
 **TEXTO A COMPONER:** *CAJERO AUTOMÁTICO — RETIRO DE EFECTIVO — Jue 19/06 16:22 — Monto: $3.000.000 —
 Operación aprobada.*
 
-(`gallery/v12-conversacion-privada-2.png` — V12 parcial, entrega privada a T+24)
+(`gallery/v12-conversacion-privada-2.png` — V12 parcial, entrega privada a T+24)(solo esta foto)
 **PROMPT:** Captura de pantalla diegética de una conversación de mensajería entre dos amigos cercanos,
 interfaz simple y genérica, tono informal y de confianza; cortada por arriba y por abajo, mostrando solo
 un tramo del intercambio, **sin el nombre del contacto ni ninguna inicial** (cabecera genérica
@@ -251,7 +251,7 @@ reales. El texto son DOS burbujas contiguas de V12 completo (la 2.ª y la 3.ª),
 **TEXTO A COMPONER:** cabecera *Contacto* — contacto: *¿Todo bien?* — Sebastián: *Todo bien. Si alguien
 pregunta por mí, cúbreme. Dices que ando saludando por las mesas.* (Sin fecha ni hora.)
 
-(`gallery/v12-mensajes-mateo.png` — V12 completo, entrega a T+50)
+(`gallery/v12-mensajes-mateo.png` — V12 completo, entrega a T+50)(solo esta foto)
 **PROMPT:** La misma interfaz de mensajería que V12 parcial (mismo diseño, mismo tono informal de
 amigos), ahora la conversación completa, con el nombre del contacto visible. Formato vertical.
 **EVITAR:** cambiar el diseño respecto a V12 parcial, iconografía de alarma, resaltados, que sea
@@ -262,7 +262,7 @@ alguien pregunta por mí, cúbreme. Dices que ando saludando por las mesas.* —
 quién?* — Sebastián: *Sí. Lo cierro esta noche y se acaba. No le digas a nadie.* — Mateo: *Tranquilo.
 Aquí te cubro.* — Sebastián: *Vuelvo antes del primer baile.*
 
-(`gallery/v13-registro-fotografo.png` — V13, registro de horarios del fotógrafo)
+(`gallery/v13-registro-fotografo.png` — V13, registro de horarios del fotógrafo)(solo esta foto)
 **PROMPT:** Documento diegético tipo hoja de registro simple de un fotógrafo profesional, con una tabla
 funcional de nombres de archivo, horas y origen de las fotos de una boda, formato de documento de
 trabajo sobrio, impreso o digital, luz neutra. Formato vertical. Dejar vacías las celdas de la tabla.
@@ -276,7 +276,7 @@ postres* — *ALB_044 · 21:05 · Álbum compartido (móvil de invitado) · Invi
 al fondo*. Pie: *Relojes de las cámaras y de los móviles del álbum verificados contra la hora de
 referencia: sincronizados.*
 
-(`gallery/v14-gemelo-camino.png` — V14, gemelo junto al camino)
+(`gallery/v14-gemelo-camino.png` — V14, gemelo junto al camino)(solo esta foto)
 **PROMPT:** Fotografía diegética funcional de un gemelo de camisa plateado distintivo (cuadrado, con un
 borde grabado, mismo que el de Sebastián en la biblia visual), tirado en el suelo junto al borde de
 piedra de un camino de jardín, cerca de la rueda de una carretilla de jardinería, fotografiado durante

@@ -4,6 +4,7 @@ import Container from '../components/ui/Container';
 import Button from '../components/ui/Button';
 import Alert from '../components/ui/Alert';
 import Brand from '../components/ui/Brand';
+import MarketSelector from '../components/public/MarketSelector';
 import { openCookieSettings } from '../lib/consent';
 
 const NAV = [
@@ -255,6 +256,7 @@ export default function PublicLayout({ current, bleed = false, children }) {
                             >
                                 Preferencias de cookies
                             </button>
+                            <MarketSelector />
                         </nav>
                     </div>
                 </Container>

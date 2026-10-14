@@ -50,6 +50,12 @@ class Order extends Model
         'client_user_agent',
         'marketing_consent',
         'currency',
+        // Market the sale was made in and the COP price it came from — see
+        // the add_market_to_orders migration.
+        'market',
+        'base_list_amount',
+        'base_amount',
+        'pricing_snapshot',
         'status',
         'reference',
         'provider_link_id',
@@ -65,6 +71,9 @@ class Order extends Model
         'amount' => 'integer',
         'list_amount' => 'integer',
         'discount_amount' => 'integer',
+        'base_list_amount' => 'integer',
+        'base_amount' => 'integer',
+        'pricing_snapshot' => 'array',
         'attribution' => 'array',
         'marketing_consent' => 'boolean',
         'raw_webhook' => 'array',

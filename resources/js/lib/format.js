@@ -18,7 +18,9 @@ export function formatPrice(amount, currency = 'COP') {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
             currency,
-            minimumFractionDigits: 0,
+            // Whole amounts stay "USD 20"; a price with cents shows both
+            // digits ("USD 10,50"), never "10,5".
+            minimumFractionDigits: hasCents && !Number.isInteger(value) ? 2 : 0,
             maximumFractionDigits: hasCents ? 2 : 0,
         }).format(value);
     } catch {

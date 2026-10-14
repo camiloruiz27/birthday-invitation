@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Ads;
 use App\Models\User;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Support\Attribution;
+use App\Modules\Platform\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -128,7 +129,9 @@ class AdEvents
                 fbp: $cookies['fbp'] ?? null,
                 fbc: $cookies['fbc'] ?? null,
                 ttp: $cookies['ttp'] ?? null,
-                value: (int) $order->amount,
+                // In the amount people read, not the stored unit: the networks
+                // want 20 for USD 20, and Order keeps it as 2000 cents.
+                value: Money::toMajor((int) $order->amount, $order->currency),
                 currency: $order->currency,
                 contents: [['id' => $contentId, 'quantity' => 1]],
             ));
