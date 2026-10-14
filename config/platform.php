@@ -93,10 +93,11 @@ return [
         'secret_key' => env('BOLD_SECRET_KEY', ''),
         'timeout' => (int) env('BOLD_TIMEOUT', 15),
 
-        // What unit Bold wants in `total_amount` for a USD link: "dollars"
-        // (28) or "cents" (2800). Its docs do not say; set this from what the
-        // sandbox accepts. Empty = USD orders are refused rather than guessed.
-        'usd_amount_unit' => env('BOLD_USD_AMOUNT_UNIT', ''),
+        // What unit Bold wants in `total_amount` for a USD link. Confirmed on
+        // its sandbox: "dollars" (USD 28 is sent as 28). "cents" (2800) only
+        // exists as an escape hatch in case the live account behaves
+        // differently; an empty value means "dollars"; any other value refuses USD orders.
+        'usd_amount_unit' => env('BOLD_USD_AMOUNT_UNIT') ?: 'dollars',
 
         // An order left "pending" (checkout started, never finished) longer
         // than this is data to clean up, not a customer to chase — it never
@@ -132,12 +133,9 @@ return [
         'fee_usd' => (int) env('PLATFORM_FX_FEE_USD', 1),
         'markup_bps' => (int) env('PLATFORM_FX_MARKUP_BPS', 10500),
 
-        // How a PERCENT code is applied to a USD price. "cents" (default): it
-        // takes exactly its percent off, so 50% of USD 21 is USD 10.50.
-        // "dollar_up": rounded up to the next whole dollar (USD 11), for if
-        // Bold turns out not to accept cents. Fixed-amount codes are COP and
-        // are unaffected: discounted in COP, then converted once.
-        'percent_rounding' => env('PLATFORM_PERCENT_ROUNDING', 'cents'),
+        // A PERCENT code is applied to the USD price the buyer sees, in whole
+        // dollars and rounded DOWN (50% of USD 21 = USD 10), never below USD 1.
+        // Fixed-amount codes are COP: discounted in COP, then converted once.
 
         // Non-production only: pin every request to a market ("CO" / "INTL").
         'force' => env('MARKET_FORCE'),

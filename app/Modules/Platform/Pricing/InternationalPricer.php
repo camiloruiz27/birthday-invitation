@@ -21,24 +21,13 @@ use InvalidArgumentException;
  */
 class InternationalPricer
 {
-    /** A percent code takes exactly its percent off, down to the cent. */
-    public const ROUND_CENTS = 'cents';
-
-    /** A percent code's result is rounded UP to the next whole dollar. */
-    public const ROUND_DOLLAR_UP = 'dollar_up';
-
     public function __construct(
         private int $fxRate,
         private int $feeUsd,
         private int $markupBps,
-        private string $percentRounding = self::ROUND_CENTS,
     ) {
         if ($fxRate < 1 || $feeUsd < 0 || $markupBps < 1) {
             throw new InvalidArgumentException('Invalid international pricing parameters.');
-        }
-
-        if (! in_array($percentRounding, [self::ROUND_CENTS, self::ROUND_DOLLAR_UP], true)) {
-            throw new InvalidArgumentException("Unknown percent rounding [{$percentRounding}].");
         }
     }
 
@@ -48,27 +37,33 @@ class InternationalPricer
             (int) config('platform.market.fx_rate'),
             (int) config('platform.market.fee_usd'),
             (int) config('platform.market.markup_bps'),
-            (string) config('platform.market.percent_rounding', self::ROUND_CENTS),
         );
     }
 
     /**
-     * A percentage code applied to a USD price (cents), so "50% off" is 50%
-     * off what the buyer sees: USD 28 -> 14, USD 21 -> 10.50.
+     * A percentage code applied to the USD price the buyer sees, kept in whole
+     * dollars and rounded DOWN: the discount is never smaller than promised,
+     * and no cent ever reaches the payment provider.
      *
-     * The list price is always whole dollars, so for an integer percent the
-     * result is already a whole number of cents and nothing is rounded. Only
-     * the dollar_up mode rounds (up), for when the payment provider cannot
-     * take cents.
+     *   50% of USD 28 -> 14     50% of USD 21 -> 10     50% of USD 5 -> 2
+     *
+     * A code under 100% never makes a purchase free: it stops at USD 1, because
+     * a price of 0 is what marks an order as a gift (no payment, delivered
+     * directly) and 95% off a USD 5 recharge rounds to exactly that.
      */
     public function applyPercentOff(int $usdCents, int $percent): int
     {
         $percent = max(0, min(100, $percent));
-        $cents = intdiv($usdCents * (100 - $percent), 100);
 
-        return $this->percentRounding === self::ROUND_DOLLAR_UP
-            ? intdiv($cents + 99, 100) * 100
-            : $cents;
+        if ($percent === 100 || $usdCents <= 0) {
+            return 0;
+        }
+
+        // usdCents is always whole dollars, so this division is exact; the
+        // second one is the floor to a whole dollar.
+        $wholeDollars = intdiv(intdiv($usdCents * (100 - $percent), 100), 100);
+
+        return max(1, $wholeDollars) * 100;
     }
 
     /** @return int USD in cents (always a multiple of 100). */
@@ -93,7 +88,7 @@ class InternationalPricer
             'fx_rate' => $this->fxRate,
             'fee_usd' => $this->feeUsd,
             'markup_bps' => $this->markupBps,
-            'percent_rounding' => $this->percentRounding,
+            'percent_rounding' => 'whole_dollar_down',
         ];
     }
 }

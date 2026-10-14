@@ -92,19 +92,31 @@ class InternationalPricerTest extends TestCase
             'USD 20, 25%' => [59900, 25, 1500],
             'USD 20, 50%' => [59900, 50, 1000],
             'USD 28, 50%' => [89000, 50, 1400],
-            'USD 21, 50% (cents)' => [64900, 50, 1050],
-            'USD 5, 50% (cents)' => [9900, 50, 250],
-            'USD 28, 20%' => [89000, 20, 2240],
+            'USD 21, 50% (10,50 -> 10)' => [64900, 50, 1000],
+            'USD 5, 50% (2,50 -> 2)' => [9900, 50, 200],
+            'USD 28, 20% (22,40 -> 22)' => [89000, 20, 2200],
+            'USD 17, 33% (11,39 -> 11)' => [49900, 33, 1100],
+            'USD 5, 95% stops at USD 1' => [9900, 95, 100],
+            'USD 28, 99% stops at USD 1' => [89000, 99, 100],
             '100% is free' => [59900, 100, 0],
         ];
     }
 
-    public function test_a_percent_code_can_be_rounded_up_to_whole_dollars_instead(): void
+    public function test_a_percent_code_never_yields_cents_or_a_smaller_discount_than_promised(): void
     {
-        $pricer = new InternationalPricer(3500, 1, 10500, InternationalPricer::ROUND_DOLLAR_UP);
+        $pricer = $this->pricer();
 
-        $this->assertSame(1100, $pricer->applyPercentOff(2100, 50)); // 10,50 -> 11
-        $this->assertSame(1000, $pricer->applyPercentOff(2000, 50)); // already whole
+        foreach ([5, 8, 17, 20, 21, 28] as $dollars) {
+            foreach ([1, 10, 15, 20, 25, 33, 40, 50, 66, 75, 90] as $percent) {
+                $total = $pricer->applyPercentOff($dollars * 100, $percent);
+
+                $this->assertSame(0, $total % 100, "{$percent}% of USD {$dollars} has cents");
+                $this->assertGreaterThanOrEqual(100, $total);
+                // The buyer pays no more than (100 - percent)% of the list price
+                // (or the USD 1 floor when that rounds below it).
+                $this->assertLessThanOrEqual(max(100, $dollars * 100 * (100 - $percent) / 100), $total);
+            }
+        }
     }
 
     public function test_a_fixed_code_is_still_discounted_in_cop_first(): void

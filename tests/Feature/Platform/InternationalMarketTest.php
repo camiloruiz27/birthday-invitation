@@ -3,6 +3,8 @@
 namespace Tests\Feature\Platform;
 
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Payments\Exceptions\PaymentProviderException;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Support\Geo\CountryLookup;
 use App\Modules\Platform\Support\PromoCodeMetrics;
@@ -176,30 +178,50 @@ class InternationalMarketTest extends TestCase
         $this->assertSame(1400, $order->discount_amount);
     }
 
-    public function test_a_percent_code_on_an_odd_dollar_price_gives_cents_and_bold_receives_them(): void
+    public function test_a_percent_code_on_an_odd_dollar_price_rounds_down_to_whole_dollars(): void
     {
         $this->fakeBold();
         $this->intl();
         PromoCode::create(['code' => 'MITAD', 'discount_type' => PromoCode::DISCOUNT_PERCENT, 'discount_value' => 50]);
         $user = $this->userWithoutAccess();
 
-        // starter pack: 9.900 COP -> USD 5; half is USD 2,50.
+        // starter pack: 9.900 COP -> USD 5; half is 2,50, which becomes USD 2 —
+        // the buyer never gets less than the 50% they were promised.
         $this->actingAs($user)
             ->post(route('credits.purchase'), ['package' => 'starter', 'promo_code' => 'MITAD'])
             ->assertRedirect('https://checkout.bold.co/LNK_USD');
 
-        $this->assertSame(250, Order::sole()->amount);
-        Http::assertSent(fn ($request) => $request['amount']['total_amount'] === 2.5);
+        $order = Order::sole();
+        $this->assertSame(200, $order->amount);
+        $this->assertSame(300, $order->discount_amount);
+        Http::assertSent(fn ($request) => $request['amount']['total_amount'] === 2);
     }
 
-    public function test_cents_reach_bold_in_either_unit(): void
+    public function test_a_percent_code_never_makes_a_cheap_purchase_free(): void
+    {
+        $this->fakeBold();
+        $this->intl();
+        PromoCode::create(['code' => 'CASITODO', 'discount_type' => PromoCode::DISCOUNT_PERCENT, 'discount_value' => 95]);
+        $user = $this->userWithoutAccess();
+
+        // 95% off USD 5 is 0,25: it would round to 0, which is what marks a gift
+        // delivered without payment. It stops at USD 1 and goes through Bold.
+        $this->actingAs($user)
+            ->post(route('credits.purchase'), ['package' => 'starter', 'promo_code' => 'CASITODO'])
+            ->assertRedirect('https://checkout.bold.co/LNK_USD');
+
+        $this->assertSame(100, Order::sole()->amount);
+        Http::assertSent(fn ($request) => $request['amount']['total_amount'] === 1);
+    }
+
+    public function test_whole_dollars_reach_bold_in_either_unit(): void
     {
         PromoCode::create(['code' => 'VEINTE', 'discount_type' => PromoCode::DISCOUNT_PERCENT, 'discount_value' => 20]);
         $this->intl();
         $this->catalogCase('steve-jacobs');
 
-        // 20% off USD 28 = USD 22,40: 2240 cents, 22.4 dollars.
-        foreach (['dollars' => 22.4, 'cents' => 2240] as $unit => $sent) {
+        // 20% off USD 28 = 22,40, which becomes USD 22: 2200 cents, 22 dollars.
+        foreach (['dollars' => 22, 'cents' => 2200] as $unit => $sent) {
             Order::query()->delete();
             config(['platform.payments.usd_amount_unit' => $unit]);
             $this->fakeBold();
@@ -207,22 +229,26 @@ class InternationalMarketTest extends TestCase
             $this->actingAs($this->userWithoutAccess())
                 ->post(route('cases.acquire', 'steve-jacobs'), ['promo_code' => 'VEINTE']);
 
-            $this->assertSame(2240, Order::sole()->amount);
+            $this->assertSame(2200, Order::sole()->amount);
             Http::assertSent(fn ($request) => $request['amount']['total_amount'] === $sent);
         }
     }
 
-    public function test_the_percent_rounding_can_be_switched_to_whole_dollars(): void
+    public function test_an_amount_with_cents_is_never_sent_to_bold(): void
     {
-        config(['platform.market.percent_rounding' => 'dollar_up']);
-        $this->fakeBold();
-        $this->intl();
-        PromoCode::create(['code' => 'MITAD', 'discount_type' => PromoCode::DISCOUNT_PERCENT, 'discount_value' => 50]);
-        $user = $this->userWithoutAccess();
+        Http::fake();
 
-        $this->actingAs($user)->post(route('credits.purchase'), ['package' => 'starter', 'promo_code' => 'MITAD']);
+        // Not reachable through the pricer, which only makes whole dollars; this
+        // is the last line of defence if something ever produced one.
+        $order = Order::make(['currency' => 'USD', 'amount' => 1050, 'reference' => 'X', 'type' => Order::TYPE_CASE]);
 
-        $this->assertSame(300, Order::sole()->amount); // USD 2,50 rounded up
+        $this->expectException(PaymentProviderException::class);
+
+        try {
+            app(PaymentProvider::class)->createCheckoutLink($order, 'https://example.test/back');
+        } finally {
+            Http::assertNothingSent();
+        }
     }
 
     public function test_a_fixed_code_is_a_cop_amount_even_for_an_international_buyer(): void
@@ -261,9 +287,9 @@ class InternationalMarketTest extends TestCase
         $this->assertSame(Order::STATUS_APPROVED, $order->status);
     }
 
-    public function test_a_usd_order_is_refused_until_the_bold_unit_is_confirmed(): void
+    public function test_a_usd_order_is_refused_when_the_bold_unit_is_not_valid(): void
     {
-        config(['platform.payments.usd_amount_unit' => '']);
+        config(['platform.payments.usd_amount_unit' => 'pesos']);
         $this->fakeBold();
         $this->intl();
         $user = $this->userWithoutAccess();

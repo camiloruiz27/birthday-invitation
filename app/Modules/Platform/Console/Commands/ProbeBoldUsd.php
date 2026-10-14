@@ -10,13 +10,12 @@ use Throwable;
 /**
  * Finds out, against Bold's own API, how it treats a USD payment link.
  *
- * Bold's documentation says `currency` may be USD and types `total_amount` as
- * a "number", but not whether a decimal such as 10.50 is accepted, what unit
- * it is in, or whether the payment-method limits (min 1000, max 5,000,000 for
- * a card) are numbers in the link's own currency — which would reject any USD
- * price under 1000. This creates a few UNPAID test links and reports what Bold
- * did with each, so BOLD_USD_AMOUNT_UNIT and the cents decision rest on an
- * answer instead of a guess.
+ * Bold's documentation says `currency` may be USD but not what unit
+ * `total_amount` is in, or whether the payment-method limits (min 1000 for a
+ * card) are numbers in the link's own currency — which would reject any USD
+ * price under 1000. This creates a few UNPAID whole-dollar test links and
+ * reports what Bold did with each, so BOLD_USD_AMOUNT_UNIT rests on an answer
+ * instead of a guess.
  *
  * Nothing is charged: a link only costs something if someone pays it. Use the
  * sandbox keys; it refuses to run in production without --force.
@@ -28,12 +27,11 @@ class ProbeBoldUsd extends Command
 
     protected $description = 'Create unpaid USD test links on Bold to learn if it accepts decimals and in what unit';
 
-    /** What to send, and what it is meant to reveal. */
+    /** What to send, and what it is meant to reveal. Whole dollars only: no cent is ever charged. */
     private const PROBES = [
-        ['label' => 'USD entero (28)', 'total' => 28],
-        ['label' => 'USD con centavos (10.5)', 'total' => 10.5],
-        ['label' => 'USD con centavos (2.5), menor que 1000 y que el minimo de tarjeta', 'total' => 2.5],
-        ['label' => 'USD 22.4 (20% de 28)', 'total' => 22.4],
+        ['label' => 'USD 28 (un caso)', 'total' => 28],
+        ['label' => 'USD 5 (la recarga corta; prueba el minimo)', 'total' => 5],
+        ['label' => 'USD 1 (lo minimo que deja un codigo en porcentaje)', 'total' => 1],
     ];
 
     public function handle(): int
@@ -66,13 +64,11 @@ class ProbeBoldUsd extends Command
 
         $this->newLine();
         $this->line('Que hacer ahora:');
-        $this->line(' 1. Abre cada URL de arriba en el navegador (NO pagues) y mira el monto que Bold muestra.');
-        $this->line('    - Si 10.5 se ve como USD 10,50  -> BOLD_USD_AMOUNT_UNIT=dollars (acepta centavos).');
-        $this->line('    - Si se ve como USD 0,11 o 0,10 -> la unidad son centavos: BOLD_USD_AMOUNT_UNIT=cents.');
-        $this->line(' 2. Si algun envio con decimales fue rechazado, o redondeado a entero, pon');
-        $this->line('    PLATFORM_PERCENT_ROUNDING=dollar_up para que los porcentajes den dolares enteros.');
-        $this->line(' 3. Si el de 2.5 fue rechazado por el minimo, Bold compara contra el limite de 1000 sin mirar la');
-        $this->line('    moneda y las recargas en USD (USD 5) no se podran vender: hablalo con Bold antes de encender.');
+        $this->line(' 1. Abre cada URL de arriba (NO pagues) y mira el monto: debe verse USD 28, USD 5 y USD 1.');
+        $this->line('    - Si ves USD 0,28 / 0,05 / 0,01 la unidad son centavos: BOLD_USD_AMOUNT_UNIT=cents.');
+        $this->line(' 2. En "Bold guardo", total y subtotal deben ser iguales (28 y 28.00).');
+        $this->line(' 3. Si alguno fue rechazado por el minimo, Bold compara contra el limite de 1000 sin mirar la');
+        $this->line('    moneda y las recargas en USD no se podran vender: hablalo con Bold antes de encender.');
 
         return $accepted === count(self::PROBES) ? self::SUCCESS : self::FAILURE;
     }

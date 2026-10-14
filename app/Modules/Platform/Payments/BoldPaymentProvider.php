@@ -27,14 +27,13 @@ class BoldPaymentProvider implements PaymentProvider
     /**
      * The number Bold expects in `total_amount` for this order.
      *
-     * COP is whole pesos, the same integer the order stores. USD is where the
-     * two can differ: orders keep USD in cents (2800 = USD 28, 1050 = USD
-     * 10.50). Bold's schema types `total_amount` as a "number" (not an
-     * integer), so a decimal like 10.5 is valid as far as the documentation
-     * goes, but it never states the unit or the allowed decimals. Guessing
-     * wrong would charge 100x or 1/100 of the price, so a USD order is refused
-     * until BOLD_USD_AMOUNT_UNIT has been set from what the sandbox showed —
-     * `php artisan platform:bold-probe-usd` does that check.
+     * COP is whole pesos, the same integer the order stores. USD is stored in
+     * cents (2800 = USD 28) but is ALWAYS whole dollars — the pricer only ever
+     * produces them — and goes to Bold as dollars: confirmed on its sandbox
+     * (28 comes back as total 28 / subtotal 28.00). Bold keeps the decimals of a
+     * fractional amount in `subtotal` but cuts `total` to an integer, so a cent
+     * is never sent: an amount that is not whole dollars is refused here
+     * instead of reaching a payment where it would be charged ambiguously.
      */
     private function providerAmount(Order $order): int|float
     {
@@ -46,17 +45,17 @@ class BoldPaymentProvider implements PaymentProvider
 
         if ($order->currency !== 'USD' || ! in_array($unit, ['dollars', 'cents'], true)) {
             throw new PaymentProviderException(
-                "Falta confirmar la unidad de {$order->currency} en Bold (BOLD_USD_AMOUNT_UNIT=dollars|cents); la orden #{$order->id} no se envia."
+                "Unidad de {$order->currency} no valida en BOLD_USD_AMOUNT_UNIT (dollars|cents); la orden #{$order->id} no se envia."
             );
         }
 
-        if ($unit === 'cents') {
-            return $order->amount;
+        if ($order->amount % 100 !== 0) {
+            throw new PaymentProviderException(
+                "La orden #{$order->id} tiene un monto en USD con centavos ({$order->amount}); solo se cobran dolares enteros."
+            );
         }
 
-        // Dollars: 2800 -> 28, 1050 -> 10.5, 250 -> 2.5. A whole amount goes
-        // as an integer, so a USD 28 link is byte-for-byte what a COP one looks like.
-        return Money::toMajor($order->amount, $order->currency);
+        return $unit === 'cents' ? $order->amount : intdiv($order->amount, 100);
     }
 
     public function createCheckoutLink(Order $order, string $callbackUrl): PaymentCheckoutLink

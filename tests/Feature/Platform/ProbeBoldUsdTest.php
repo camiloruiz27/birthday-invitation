@@ -27,7 +27,7 @@ class ProbeBoldUsdTest extends TestCase
             ->all();
     }
 
-    public function test_it_sends_whole_and_decimal_usd_amounts_and_reads_each_link_back(): void
+    public function test_it_sends_whole_dollar_usd_amounts_and_reads_each_link_back(): void
     {
         Http::fake([
             '*/online/link/v1/payment_methods' => Http::response(['payload' => ['payment_methods' => ['CREDIT_CARD' => ['min' => 1000, 'max' => 5000000]]]]),
@@ -39,13 +39,13 @@ class ProbeBoldUsdTest extends TestCase
             ->expectsOutputToContain('Aceptado')
             ->assertExitCode(0);
 
-        $this->assertSame([28, 10.5, 2.5, 22.4], $this->postedTotals());
+        $this->assertSame([28, 5, 1], $this->postedTotals());
 
         Http::assertSent(fn (Request $request) => $request->method() === 'POST'
             && $request['amount']['currency'] === 'USD');
     }
 
-    public function test_it_fails_and_says_so_when_bold_rejects_a_decimal_amount(): void
+    public function test_it_fails_and_says_so_when_bold_rejects_an_amount(): void
     {
         Http::fake([
             '*/online/link/v1/payment_methods' => Http::response([]),
