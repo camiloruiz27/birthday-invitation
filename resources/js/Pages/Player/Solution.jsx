@@ -33,7 +33,7 @@ function Epilogue({ epilogue }) {
                     {epilogue.suspect_name} te está escribiendo
                 </p>
                 <p className="mt-2 text-sm text-ink-muted">
-                    Su mensaje llegará a tu correo en un momento, y también aparecerá aquí.
+                    Su mensaje aparecerá aquí en un momento.
                 </p>
             </Card>
         );
@@ -172,7 +172,7 @@ export default function Solution({
     const grading = scoreboard.some((row) => row.grading_status === 'pending');
 
     // The grading lands on the queue a moment after the reveal.
-    usePoll(['scoreboard'], { interval: 8000, enabled: grading });
+    usePoll(['scoreboard'], { interval: 8000, enabled: grading, channels: ['accusation'] });
 
     // Closing a photo remounts the page (see useSessionState); the tab the
     // reader was on has to survive that.
@@ -183,6 +183,7 @@ export default function Solution({
     usePoll(['epilogue'], {
         interval: 8000,
         enabled: epilogue?.status === 'pending',
+        channels: ['accusation'],
     });
 
     const verdict = (

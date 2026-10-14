@@ -90,6 +90,7 @@ export default function Results({ game, scoreboard, solution, reveal, maxScore, 
     usePoll(['scoreboard'], {
         interval: 10000,
         enabled: (!game.ending_revealed_at && submitted.length < scoreboard.length) || grading,
+        channels: ['accusation'],
     });
     const correct = scoreboard.filter((row) => row.correct === true).length;
 

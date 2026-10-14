@@ -312,10 +312,15 @@ php artisan immersion:release-stale-holds --dry-run
 audio con TTS y enviar los correos — corre en la cola, no dentro del cron ni
 de la request del navegador.
 
-No hace falta un daemon: el propio scheduler lanza un worker corto cada
-minuto (`queue:work --stop-when-empty --max-time=50`), que vacia la cola y
-termina antes del siguiente tick. Ese worker **solo se programa si la cola no
-es `sync`**.
+No hace falta un daemon: el propio scheduler lanza cada minuto
+`immersion:tick`, un solo proceso que dispara los eventos de la linea de tiempo
+vencidos y luego corre un worker corto (`queue:work --stop-when-empty
+--max-time=50`) que vacia la cola y termina antes del siguiente tick. Ese
+worker **solo corre si la cola no es `sync`**.
+
+Es un solo proceso a proposito: el hosting limita al usuario MySQL a 500
+conexiones nuevas por hora y cada proceso del scheduler abre la suya. Antes
+eran dos procesos por minuto (120 conexiones/hora solo en cron).
 
 > El cron del scheduler (ver abajo) es ahora todavia mas importante: sin el no
 > corre ni la linea de tiempo ni el worker, y los correos no salen.

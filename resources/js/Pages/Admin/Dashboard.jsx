@@ -71,7 +71,7 @@ function Breakdown({ counts, labels }) {
     );
 }
 
-export default function AdminDashboard({ metrics }) {
+export default function AdminDashboard({ metrics, limits = null }) {
     const { people, catalog, usage, ai, health, topCases, recentGames } = metrics;
     const needsAttention =
         health.audio_failed + health.orphan_games + health.unplayable_cases;
@@ -106,6 +106,46 @@ export default function AdminDashboard({ metrics }) {
             )}
 
             <div className="space-y-8">
+                {limits && (
+                    <section>
+                        <SectionHeader title="Límites del hosting" />
+                        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                            <Metric
+                                label="Conexiones DB, esta hora"
+                                value={limits.connections.this_hour}
+                                hint={
+                                    limits.connections.limit > 0
+                                        ? `Tope ${limits.connections.limit} por hora`
+                                        : 'Sin tope configurado'
+                                }
+                            />
+                            <Metric
+                                label="Conexiones DB, hora anterior"
+                                value={limits.connections.last_hour}
+                                hint="Peticiones y comandos que abrieron conexión"
+                            />
+                            <Metric
+                                label="Correos, últimas 24 h"
+                                value={limits.mail.used}
+                                hint={
+                                    limits.mail.limit > 0
+                                        ? `Cupo ${limits.mail.limit} por día`
+                                        : 'Sin cupo configurado'
+                                }
+                            />
+                            <Metric
+                                label="Correos disponibles hoy"
+                                value={limits.mail.remaining ?? '—'}
+                                hint="Los sobres usan todo el cupo; enlaces y epílogos, el 80 %"
+                            />
+                        </div>
+                        <p className="mt-3 text-xs text-ink-subtle">
+                            Cifras estimadas desde la caché del servidor: se reinician si se limpia la caché
+                            (cada despliegue). El aviso al 80 % queda en el registro.
+                        </p>
+                    </section>
+                )}
+
                 <section>
                     <SectionHeader title="Personas" />
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

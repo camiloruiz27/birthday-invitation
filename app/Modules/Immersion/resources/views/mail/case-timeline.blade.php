@@ -75,7 +75,12 @@
                                 <table role="presentation" width="100%" style="background:#dcd2b4;border-left:3px solid #88924e;border-collapse:separate;">
                                     <tr>
                                         <td style="padding:11px 14px;font-family:'IBM Plex Mono',Consolas,monospace;font-size:12px;color:#5c5236;">
-                                            &#128266; Se adjunta una grabación de audio relacionada con este mensaje.
+                                            @if (! empty($audioLink))
+                                                &#128266; Este mensaje trae una grabación de audio. Escúchala en tu bandeja de la investigación:
+                                                <a href="{{ $audioLink }}" style="color:#5c5236;font-weight:bold;">abrir mi bandeja</a>.
+                                            @else
+                                                &#128266; Se adjunta una grabación de audio relacionada con este mensaje.
+                                            @endif
                                         </td>
                                     </tr>
                                 </table>

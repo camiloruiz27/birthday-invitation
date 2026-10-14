@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Models;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Models\Game;
+use App\Modules\Platform\Support\PublishedCases;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class MysteryCase extends Model
 {
+    protected static function booted(): void
+    {
+        static::saved(fn (self $case) => PublishedCases::forget($case->slug));
+        static::deleted(fn (self $case) => PublishedCases::forget($case->slug));
+    }
+
     protected $table = 'mystery_cases';
 
     protected $fillable = [

@@ -5,6 +5,7 @@ namespace Tests\Feature\Platform;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Platform\Models\MysteryCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
@@ -80,7 +81,10 @@ class AdLandingTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->has('featured', 1));
 
+        // The query builder announces nothing, so the cache is cleared by hand;
+        // changes through the model are covered by PublishedCasesTest.
         MysteryCase::where('slug', 'steve-jacobs')->update(['published_at' => null]);
+        Cache::flush();
 
         $this->get(route('ads.platform'))
             ->assertOk()

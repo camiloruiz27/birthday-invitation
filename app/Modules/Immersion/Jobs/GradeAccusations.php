@@ -41,6 +41,7 @@ class GradeAccusations implements ShouldBeUnique, ShouldQueue
 
     public function __construct(public int $gameId)
     {
+        $this->onQueue((string) config('immersion.queues.slow'));
     }
 
     public function uniqueId(): string

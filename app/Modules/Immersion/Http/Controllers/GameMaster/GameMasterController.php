@@ -8,6 +8,7 @@ use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Jobs\GenerateEventAudio;
 use App\Modules\Immersion\Jobs\SendPlayerAccessLinks;
+use App\Modules\Immersion\Jobs\SendTimelineMail;
 use App\Modules\Immersion\Models\Accusation;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\InterrogationSession;
@@ -18,6 +19,9 @@ use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Immersion\Support\GameEraser;
 use App\Modules\Immersion\Support\GameQuota;
+use App\Modules\Immersion\Support\GameRevision;
+use App\Modules\Immersion\Support\MailBudget;
+use App\Modules\Immersion\Support\MailFailures;
 use App\Modules\Immersion\Support\RevealEnding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -265,6 +269,28 @@ class GameMasterController extends Controller
         return back()->with('status', 'Enlaces enviados a todos los jugadores por correo.');
     }
 
+    /**
+     * Sends again the envelope emails that gave up. Each one goes back through
+     * the same job as the first time (rate limit, daily allowance, retries), so
+     * pressing the button cannot make the mailbox's problem worse.
+     */
+    public function resendMail(Game $game): RedirectResponse
+    {
+        $failures = MailFailures::all($game->id);
+
+        if ($failures === []) {
+            return back()->with('status', 'No hay correos pendientes de reenviar.');
+        }
+
+        foreach ($failures as $failure) {
+            SendTimelineMail::dispatch($failure['event_id'], $failure['player_id']);
+        }
+
+        MailFailures::clear($game->id);
+
+        return back()->with('status', count($failures).' correo(s) puestos en cola de nuevo.');
+    }
+
     public function loadDefaultTimeline(Game $game): RedirectResponse
     {
         if ($game->timelineEvents()->exists()) {
@@ -314,6 +340,14 @@ class GameMasterController extends Controller
                 'interrogation_minutes' => $game->timelineEvents()
                     ->where('cta_interrogation', true)
                     ->min('trigger_offset_minutes'),
+            ],
+
+            // Emails that did not leave, so the Game Master knows a player may
+            // not have been told about an envelope that IS waiting in their
+            // inbox on the site. Read from the cache: no query, no connection.
+            'mail' => fn () => [
+                'failures' => array_values(MailFailures::all($game->id)),
+                'budget' => MailBudget::summary(),
             ],
 
             'can' => [
@@ -409,6 +443,9 @@ class GameMasterController extends Controller
                 'started_at' => Carbon::now(),
                 'paused_seconds_total' => 0,
             ]);
+
+        // The atomic update above skips model events.
+        GameRevision::bump($game->getKey());
 
         if ($started === 0) {
             // Lost the race against a second click. The hold is unique per
@@ -545,7 +582,7 @@ class GameMasterController extends Controller
 
         // Queued, not dispatchSync: this event may carry text-to-speech and a
         // round of SMTP, which must not run inside the browser request.
-        DispatchTimelineEvent::dispatch($event->id);
+        DispatchTimelineEvent::enqueue($event);
 
         return back()->with('status', "Evento \"{$event->title}\" en camino. Puede tardar un momento en salir.");
     }

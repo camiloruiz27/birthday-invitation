@@ -20,9 +20,16 @@ use App\Modules\Immersion\Ai\NullSpeechProvider;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Console\Commands\ExportAudioScripts;
 use App\Modules\Immersion\Console\Commands\GrantCredits;
+use App\Modules\Immersion\Console\Commands\ImmersionTick;
 use App\Modules\Immersion\Console\Commands\ProcessImmersionTimeline;
 use App\Modules\Immersion\Console\Commands\ReleaseStaleCreditHolds;
+use App\Modules\Immersion\Support\MailBudget;
+use App\Modules\Immersion\Support\QueueTelemetry;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -108,6 +115,22 @@ class ImmersionServiceProvider extends ServiceProvider
             && ! str_starts_with($apiKey, 'CHANGE_ME');
     }
 
+    /**
+     * Mail goes through one mailbox with a daily allowance (see MailBudget):
+     * every message that leaves is counted, and the jobs that send game mail
+     * are spread out so the mailbox is never handed a burst.
+     */
+    private function registerMailGuard(): void
+    {
+        Event::listen(MessageSent::class, fn () => MailBudget::record());
+
+        RateLimiter::for('immersion-mail', function () {
+            $perMinute = (int) config('immersion.mail.per_minute');
+
+            return $perMinute > 0 ? Limit::perMinute($perMinute) : Limit::none();
+        });
+    }
+
     public function boot(): void
     {
         $moduleBasePath = __DIR__;
@@ -119,9 +142,13 @@ class ImmersionServiceProvider extends ServiceProvider
             $this->loadRoutesFrom($moduleBasePath.'/routes/web.php');
         });
 
+        $this->registerMailGuard();
+        QueueTelemetry::register();
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ProcessImmersionTimeline::class,
+                ImmersionTick::class,
                 GrantCredits::class,
                 ReleaseStaleCreditHolds::class,
                 ExportAudioScripts::class,
@@ -130,28 +157,21 @@ class ImmersionServiceProvider extends ServiceProvider
             $this->app->booted(function () {
                 $schedule = $this->app->make(Schedule::class);
 
-                // withoutOverlapping: the command only enqueues now, but a
-                // slow database must never let two ticks pile up on top of
-                // each other.
+                // One process per minute for the timeline AND the queue (see
+                // ImmersionTick): the scheduler runs every command as its own
+                // PHP process, and each one costs a MySQL connection out of the
+                // host's 500-per-hour allowance.
                 //
-                // The 10 is the lock's expiry in minutes, and it matters more
-                // than it looks: the default is 24 HOURS, so a tick killed
-                // mid-flight (a shared host cutting off a long process) would
-                // leave the lock behind and freeze every running game's
-                // timeline for a full day, silently. Ten minutes is far longer
-                // than a healthy tick and short enough to self-heal.
-                $schedule->command(ProcessImmersionTimeline::class)
-                    ->everyMinute()
-                    ->withoutOverlapping(10);
-
-                // Shared hosting has no daemon, so the worker is a scheduled
-                // short-lived process: it drains the queue and exits before
-                // the next minute's tick starts.
-                if (config('queue.default') !== 'sync') {
-                    $schedule->command('queue:work --stop-when-empty --max-time=50 --tries=2 --quiet')
-                        ->everyMinute()
-                        ->withoutOverlapping(10);
-                }
+                // No scheduler-level withoutOverlapping on purpose: it would
+                // skip the WHOLE tick, timeline included, for as long as one
+                // slow job (text-to-speech: minutes) kept the worker busy, and
+                // no game would receive an envelope in the meantime. The tick
+                // guards its two halves with their own self-expiring locks
+                // instead, so an overlapping tick still moves the timeline.
+                //
+                // With the sync queue (local, tests) the worker step simply
+                // finds nothing to do.
+                $schedule->command(ImmersionTick::class)->everyMinute();
 
                 // Credits frozen by games nobody closed come back on their own.
                 // Hourly rather than per minute: the window is measured in days

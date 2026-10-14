@@ -2,6 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\Immersion\Models\Game;
+use App\Modules\Immersion\Models\Player;
+use App\Modules\Immersion\Support\GameRevision;
+use App\Modules\Immersion\Support\PlayerNotices;
 use App\Modules\Platform\Support\Captcha;
 use App\Modules\Platform\Support\InAppBrowser;
 use App\Modules\Platform\Support\Market;
@@ -27,6 +31,36 @@ class HandleInertiaRequests extends Middleware
     public function version(Request $request): ?string
     {
         return parent::version($request);
+    }
+
+    /**
+     * @return array{url: string, rev: ?array<string, string>}|null
+     */
+    private function pollState(Request $request): ?array
+    {
+        $player = $request->route('player');
+
+        if ($player instanceof Player) {
+            return [
+                'url' => route('immersion.poll.player', $player->access_token, false),
+                'rev' => GameRevision::current((int) $player->game_id),
+            ];
+        }
+
+        $game = $request->route('game');
+
+        if ($game instanceof Game) {
+            // The route middleware already proved this user may see the game;
+            // the poll endpoint only needs to know it was this browser.
+            GameRevision::allowConsole($request, (int) $game->getKey());
+
+            return [
+                'url' => route('immersion.poll.console', $game->getKey(), false),
+                'rev' => GameRevision::current((int) $game->getKey()),
+            ];
+        }
+
+        return null;
     }
 
     /**
@@ -77,6 +111,21 @@ class HandleInertiaRequests extends Middleware
             // the pages can tell the visitor what to do when the anti-bot
             // check or the payment page misbehaves in there. See InAppBrowser.
             'inAppBrowser' => fn () => InAppBrowser::detect($request->userAgent()),
+
+            // Where a page that keeps itself current asks "has anything
+            // changed?" and the stamp it starts from. Built from the route
+            // parameter that is ALREADY resolved, so it adds no query. See
+            // GameRevision for why polling goes through this instead of
+            // reloading the page on a timer.
+            'pollState' => fn () => $this->pollState($request),
+
+            // What is new for a player, said on whatever screen they are
+            // looking at (see PlayerNotices). Only on a player's pages: the
+            // route parameter that is already resolved is the player, so there
+            // is nothing to look up for anyone else.
+            'notices' => fn () => ($player = $request->route('player')) instanceof Player
+                ? PlayerNotices::for($player)
+                : null,
         ]);
     }
 }

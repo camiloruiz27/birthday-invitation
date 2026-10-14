@@ -47,40 +47,34 @@ class ScheduleTest extends TestCase
      */
     public function test_the_case_timeline_runs_every_minute(): void
     {
-        $event = $this->find('immersion:process-timeline');
+        $event = $this->find('immersion:tick');
 
         $this->assertNotNull($event, 'The case timeline is not scheduled at all.');
         $this->assertSame('* * * * *', $event->expression);
     }
 
     /**
-     * A tick can outlast its minute — an event may carry text-to-speech and
-     * one email per player. The per-event row lock would still stop a double
-     * send, but overlapping ticks would pile up behind it.
+     * The scheduler runs every command as its own PHP process, and each one
+     * opens a MySQL connection out of the host's 500-per-hour allowance. The
+     * timeline and the queue worker share ONE process (immersion:tick); either
+     * coming back as its own entry would silently double that cost.
      */
-    public function test_the_timeline_cannot_overlap_itself(): void
+    public function test_the_timeline_and_the_worker_share_one_process(): void
     {
-        $this->assertTrue($this->find('immersion:process-timeline')->withoutOverlapping);
+        $this->assertNull($this->find('immersion:process-timeline'));
+        $this->assertNull($this->find('queue:work'));
     }
 
     /**
-     * Jobs are dispatched rather than run inline because they do slow things.
-     * On a host with no daemon the scheduler is what drains them — but
-     * `queue:work` rejects the sync driver, so it is registered only when
-     * there is a real queue to work.
+     * The scheduler's overlap guard skips the WHOLE tick while the previous one
+     * runs. One text-to-speech job keeps the worker busy for minutes, and with
+     * the guard no game would receive an envelope in the meantime. The tick
+     * guards its timeline and worker halves with their own locks instead
+     * (ImmersionTickTest), so an overlapping tick still moves the timeline.
      */
-    public function test_the_queue_worker_follows_the_queue_driver(): void
+    public function test_the_tick_is_not_guarded_by_the_scheduler_overlap_lock(): void
     {
-        $worker = $this->find('queue:work');
-
-        if (config('queue.default') === 'sync') {
-            $this->assertNull($worker, 'queue:work cannot run on the sync driver.');
-
-            return;
-        }
-
-        $this->assertNotNull($worker, 'Dispatched jobs would never be picked up.');
-        $this->assertStringContainsString('--stop-when-empty', $worker->command);
+        $this->assertFalse($this->find('immersion:tick')->withoutOverlapping);
     }
 
     /** Frozen credits come back on their own, wherever credits are in play. */

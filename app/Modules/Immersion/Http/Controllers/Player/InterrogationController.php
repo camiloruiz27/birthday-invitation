@@ -11,6 +11,7 @@ use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AiCredits;
 use App\Modules\Immersion\Support\GameCost;
+use App\Modules\Immersion\Support\GameRevision;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,6 +60,9 @@ class InterrogationController extends Controller
             ->get()
             ->keyBy('suspect_slug');
 
+        // Once, not once per suspect: it is a query, and the board has a dozen.
+        $delivered = $player->game->deliveredEvidenceCodes();
+
         return Inertia::render('Player/InterrogationIndex', [
             'player' => $player->revealCredentials(),
             'game' => $player->game->forPlayerView(),
@@ -75,7 +79,7 @@ class InterrogationController extends Controller
                     $case,
                     $slug,
                     $sessions->get($slug),
-                    $player->game->deliveredEvidenceCodes()
+                    $delivered
                 ))
                 ->all(),
         ]);
@@ -257,6 +261,14 @@ class InterrogationController extends Controller
             }
 
             return $this->evasion($session, $data['question']);
+        } catch (\Throwable $exception) {
+            // Anything else — a testimony file that is missing, a broken case
+            // manifest, a database hiccup, a PHP error — is not the player's
+            // doing either. Without this the slot stayed taken: the player got a
+            // 500 AND lost one of their questions, every time they tried again.
+            $session->releaseQuestion();
+
+            throw $exception;
         }
 
         $this->clearFailures($session);
@@ -296,6 +308,9 @@ class InterrogationController extends Controller
 
             throw $exception;
         }
+
+        // The transcript the Game Master reads changed with these two rows.
+        GameRevision::bump($player->game_id, GameRevision::INTERROGATION);
 
         // Closed only when the person's WHOLE budget is spent. Spending what is
         // open today leaves it waiting, still the same player's to finish.

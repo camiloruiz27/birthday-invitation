@@ -249,6 +249,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Database connection budget
+    |--------------------------------------------------------------------------
+    |
+    | The shared host limits the database user to this many NEW connections per
+    | hour (MySQL max_connections_per_hour; 500 on the current plan, error 1226
+    | when exceeded). Every web request that touches the database opens one, as
+    | does each scheduled command. Used only to warn in the log at 80% — see
+    | TrackConnectionBudget. 0 turns the warning off.
+    |
+    */
+
+    'connection_budget' => [
+        'per_hour' => (int) env('PLATFORM_DB_CONNECTIONS_PER_HOUR', 500),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cron diagnostic email
     |--------------------------------------------------------------------------
     |

@@ -102,5 +102,8 @@ jobs:
             php artisan migrate --force
             php artisan platform:sync-cases
             php artisan optimize:clear
+            # Same as production (see deploy.yml: no config:cache, so edits to
+            # .env take effect at once).
+            php artisan view:cache
             php artisan queue:restart
             ls -la public/build/manifest.json

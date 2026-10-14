@@ -79,7 +79,7 @@ const ENDINGS = [
         value: 'epilogue',
         title: 'Epílogo personalizado',
         description:
-            'La experiencia completa: además del cierre clásico, cada jugador recibe por correo un mensaje escrito para él, de la persona que acusó. Si acertó, confiesa; si no, se defiende y le reprocha.',
+            'La experiencia completa: además del cierre clásico, cada jugador recibe un mensaje escrito para él, de la persona que acusó, en su pantalla de Solución. Si acertó, confiesa; si no, se defiende y le reprocha.',
     },
 ];
 
