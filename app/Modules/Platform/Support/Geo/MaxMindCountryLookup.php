@@ -2,6 +2,8 @@
 
 namespace App\Modules\Platform\Support\Geo;
 
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use MaxMind\Db\Reader;
 use Throwable;
 
@@ -44,10 +46,31 @@ class MaxMindCountryLookup implements CountryLookup
 
     private function reader(): ?Reader
     {
-        if ($this->reader === null && is_file($this->databasePath)) {
+        if ($this->reader === null) {
+            if (! is_file($this->databasePath)) {
+                $this->warnMissingOnce();
+
+                return null;
+            }
+
             $this->reader = new Reader($this->databasePath);
         }
 
         return $this->reader;
+    }
+
+    /**
+     * Without the file every visitor silently becomes Colombian, which looks
+     * exactly like "the international market does not work". Said in the log,
+     * at most once an hour so a busy site does not flood it.
+     */
+    private function warnMissingOnce(): void
+    {
+        if (Cache::add('platform:geoip-missing-warned', true, 3600)) {
+            Log::warning('platform_geoip_database_missing', [
+                'path' => $this->databasePath,
+                'hint' => 'run: php artisan platform:geoip-update (or upload GeoLite2-Country.mmdb there)',
+            ]);
+        }
     }
 }
