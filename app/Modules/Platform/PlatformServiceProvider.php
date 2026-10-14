@@ -11,6 +11,7 @@ use App\Modules\Platform\Console\Commands\ExpireStaleOrders;
 use App\Modules\Platform\Console\Commands\GrantCaseAccessCommand;
 use App\Modules\Platform\Console\Commands\ListPromoCodes;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
+use App\Modules\Platform\Console\Commands\MarketCheck;
 use App\Modules\Platform\Console\Commands\ProbeBoldUsd;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
@@ -198,6 +199,7 @@ class PlatformServiceProvider extends ServiceProvider
                 ListPromoCodes::class,
                 UpdateGeoIpDatabase::class,
                 ProbeBoldUsd::class,
+                MarketCheck::class,
             ]);
 
             $this->app->booted(function () {
@@ -242,8 +244,11 @@ class PlatformServiceProvider extends ServiceProvider
                 // international market is on and there are credentials, so a
                 // Colombia-only deploy never calls MaxMind.
                 if (config('platform.market.international_enabled') && config('platform.market.geoip.license_key')) {
-                    $schedule->command(UpdateGeoIpDatabase::class)
-                        ->weekly()
+                    // Daily, but it only downloads once the file is 6 days
+                    // old (--max-age-days): robust to a missed cron minute,
+                    // and well inside MaxMind's 30-day freshness rule.
+                    $schedule->command(UpdateGeoIpDatabase::class, ['--max-age-days=6'])
+                        ->dailyAt('03:30')
                         ->withoutOverlapping();
                 }
 

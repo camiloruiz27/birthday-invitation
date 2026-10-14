@@ -19,7 +19,8 @@ use Throwable;
  */
 class UpdateGeoIpDatabase extends Command
 {
-    protected $signature = 'platform:geoip-update';
+    protected $signature = 'platform:geoip-update
+                            {--max-age-days= : Skip the download if the current file is newer than this many days}';
 
     protected $description = 'Download the MaxMind GeoLite2-Country database used to detect the visitor market';
 
@@ -35,6 +36,17 @@ class UpdateGeoIpDatabase extends Command
             $this->error('Faltan MAXMIND_ACCOUNT_ID y MAXMIND_LICENSE_KEY.');
 
             return self::FAILURE;
+        }
+
+        // The scheduler checks daily but only downloads when the file is a few
+        // days old: a missed minute of cron costs a day, not a whole week, and
+        // MaxMind's 30-downloads-a-day limit is never in play.
+        $maxAge = $this->option('max-age-days');
+
+        if ($maxAge !== null && is_file($target) && filemtime($target) > now()->subDays((int) $maxAge)->getTimestamp()) {
+            $this->info("La base tiene menos de {$maxAge} dias; no se descarga.");
+
+            return self::SUCCESS;
         }
 
         $work = storage_path('app/geoip/tmp-'.bin2hex(random_bytes(4)));
