@@ -54,22 +54,31 @@ class ConnectionBudget
 
             self::countLabel($hour, $label);
 
-            // Exactly equal, so each warning fires once per hour and not on every
-            // request after it.
-            if ($limit > 0 && $count === (int) ceil($limit * 0.8)) {
+            // With persistent connections most requests reuse one and cost the
+            // allowance nothing, so the raw count would cry wolf (a 200-player test
+            // counted 1,075 against a cap of 500 and nothing failed). Once the reuse
+            // probe has enough samples the warnings go by the estimate of NEW
+            // connections instead; until then, by the raw count (the safe side).
+            $effective = self::estimateNew($count, $hour);
+
+            // Once per hour per connection: the estimate can sit on the same number
+            // for several requests, so "exactly equal" is not enough.
+            if ($limit > 0 && $effective >= (int) ceil($limit * 0.8) && self::firstTime($hour, $connection, 'high')) {
                 Log::warning('db_connection_budget_high', [
                     'connection' => $connection,
                     'connections_this_hour' => $count,
+                    'estimated_new_connections' => $effective,
                     'allowance_per_hour' => $limit,
                     'heaviest' => self::top(5),
                     'hint' => 'The host limits the database user per hour; past it every page returns 503 until the hour turns over.',
                 ]);
             }
 
-            if ($limit > 0 && $count === $limit) {
+            if ($limit > 0 && $effective >= $limit && self::firstTime($hour, $connection, 'spent')) {
                 Log::error('db_connection_budget_spent', [
                     'connection' => $connection,
                     'connections_this_hour' => $count,
+                    'estimated_new_connections' => $effective,
                     'allowance_per_hour' => $limit,
                     'heaviest' => self::top(5),
                 ]);
@@ -114,15 +123,23 @@ class ConnectionBudget
      * how this hour's connections split over the users in play (one entry
      * unless extra users are configured).
      *
-     * @return array{this_hour: int, last_hour: int, limit: int, by_connection: array<string, int>, top_this_hour: array<string, int>, top_last_hour: array<string, int>}
+     * `estimated_new_this_hour` is what the cap really counts when persistent
+     * connections are on: this hour's requests that ran a query, times the share
+     * the reuse probe saw open a new connection. Null when it cannot be told.
+     *
+     * @return array{this_hour: int, last_hour: int, limit: int, estimated_new_this_hour: int|null, by_connection: array<string, int>, top_this_hour: array<string, int>, top_last_hour: array<string, int>}
      */
     public static function summary(): array
     {
         try {
+            $thisHour = (int) Ops::store()->get(self::key(now()), 0);
+            $share = ConnectionReuseProbe::freshShare(now());
+
             return [
-                'this_hour' => (int) Ops::store()->get(self::key(now()), 0),
+                'this_hour' => $thisHour,
                 'last_hour' => (int) Ops::store()->get(self::key(now()->subHour()), 0),
                 'limit' => self::limit(),
+                'estimated_new_this_hour' => $share === null ? null : (int) ceil($thisHour * $share),
                 'by_connection' => self::byConnection(now()),
                 'top_this_hour' => self::top(8),
                 'top_last_hour' => self::top(8, now()->subHour()),
@@ -132,6 +149,7 @@ class ConnectionBudget
                 'this_hour' => 0,
                 'last_hour' => 0,
                 'limit' => self::limit(),
+                'estimated_new_this_hour' => null,
                 'by_connection' => [],
                 'top_this_hour' => [],
                 'top_last_hour' => [],
@@ -155,6 +173,24 @@ class ConnectionBudget
         arsort($counts);
 
         return $counts;
+    }
+
+    /** What the count means for the cap: the raw count, or the estimate of new connections. */
+    private static function estimateNew(int $count, \DateTimeInterface $hour): int
+    {
+        $share = ConnectionReuseProbe::freshShare($hour);
+
+        return $share === null ? $count : (int) ceil($count * $share);
+    }
+
+    /** True only the first time a given warning is asked for in an hour, per connection. */
+    private static function firstTime(\DateTimeInterface $hour, string $connection, string $kind): bool
+    {
+        return (bool) Ops::store()->add(
+            'platform:db-connections:'.$hour->format('YmdH').":warned:{$kind}:{$connection}",
+            true,
+            now()->addHours(3)
+        );
     }
 
     /** Counts one connection against its own user and returns that user's total this hour. */

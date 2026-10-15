@@ -178,11 +178,25 @@ El workflow `deploy.yml` corre `git reset`, `composer install`, `migrate`, `plat
 
 ## 7. Techo medido
 
-> Rellena esto con la prueba de carga ([`tests/Load/README.md`](../tests/Load/README.md)). Hasta entonces, no hay cifra: solo las estimaciones de §4.1.
+> Medido con la prueba de carga ([`tests/Load/README.md`](../tests/Load/README.md)) en el sitio de **test** (la prueba corre desde una sola IP, con partidas de 4, y las preguntas llaman a la IA real).
 
-| Fecha | Configuración (`SNAPSHOTS` / `PERSISTENT`) | Jugadores | Partidas | Conexiones nuevas/h | p95 página | Errores | Notas |
-|---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| Fecha | `SNAPSHOTS` / `PERSISTENT` | Jugadores | Partidas | Conexiones nuevas | p95 página | p95 sondeo | Errores | CPU / RAM (hPanel) |
+|---|---|---|---|---|---|---|---|---|
+| 2026-10-14 | probable sí / sí | 25 | 7 | n/d | 303 ms | 209 ms | 0 | n/d |
+| 2026-10-14 | probable sí / sí | 50 | 13 | n/d | 284 ms | 187 ms | 0 | n/d |
+| 2026-10-14 | probable sí / sí | 100 | 25 | n/d | 284 ms | 200 ms | 0 | n/d |
+| 2026-10-14 | probable sí / sí | 200 | 50 | n/d | 402 ms | 273 ms | 0 | n/d |
+| 2026-10-15 | probable sí / sí (92 % de reutilización) | 25, 50, 100 y 200 seguidos (27 min, 12.818 peticiones, 551 preguntas) | 50 | ~85 en los 27 min (estimado: 1.075 peticiones con consulta × 8 % nuevas) | 290–322 ms | 186–215 ms | 0 en 503; 0,3–0,8 % son 403 por regla del juego | CPU media 6 %, picos ~20 %; RAM ~190 MB de 3 GB |
+
+**Qué dicen estas cifras**
+
+- **200 jugadores en 50 partidas, a la vez, aguantan en test** con `DB_PERSISTENT` activo y las páginas servidas de caché: sin un solo 503, con páginas en ~300 ms y el hosting casi vacío (CPU ≤ 20 %, RAM < 200 MB). Las preguntas (la IA tarda ~1,1 s, p95 2 s) ocupan menos de un PHP worker de los 60.
+- **Lo que lo permite es la reutilización de conexiones.** El contador de `/admin` marcó 1.075 peticiones que abrieron conexión en esa hora, con un tope de 500, y no falló nada: con 92 % de reutilización solo unas 85 eran conexiones nuevas de verdad. En la hora de las 200 pruebas, de 13 a 62 conexiones distintas vistas por escalón (muestra a 2 por segundo).
+- **Sin persistencia no habría llegado:** 1.075 conexiones en 27 minutos, a ese ritmo (200 jugadores seguidos ≈ 5.000 por hora), superan 10 veces el tope. Con 25 jugadores ya serían ~700 por hora. La persistencia es la condición, no un extra.
+- **Cuánto margen queda:** a 200 jugadores sostenidos, las conexiones nuevas se estiman entre 130 y 420 por hora (dos métodos independientes: conexiones distintas vistas y proporción de la sonda). Está bajo 500, pero el extremo alto deja poco margen y producción añade el Game Master, los pagos y el cron.
+- **Qué no mide:** que las 200 personas salgan de una IP (en producción son direcciones distintas), ráfagas con todas las mesas empezando el mismo minuto, el cron enviando eventos a 50 partidas a la vez, pagos ni correos. Y es test: producción comparte los 60 PHP workers y las 2 CPU con él.
+
+**Cómo leer el contador de `/admin` con persistencia activa.** Cuenta las peticiones que ejecutaron una consulta, no las conexiones nuevas. Cuando la sonda tiene al menos 40 muestras en la hora, `/admin` agrega "≈ N nuevas de verdad" (peticiones × proporción nueva) y los avisos del 80 % y del tope del registro se evalúan con ese estimado. Antes de las 40 muestras, o sin persistencia, se usa el conteo directo.
 
 ---
 

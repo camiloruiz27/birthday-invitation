@@ -202,9 +202,12 @@ export default function AdminDashboard({ metrics, limits = null }) {
                                 label="Conexiones DB, esta hora"
                                 value={limits.connections.this_hour}
                                 hint={
-                                    limits.connections.limit > 0
-                                        ? `Tope ${limits.connections.limit} por hora`
-                                        : 'Sin tope configurado'
+                                    limits.connections.estimated_new_this_hour !== null &&
+                                    limits.connections.estimated_new_this_hour !== undefined
+                                        ? `≈ ${limits.connections.estimated_new_this_hour} nuevas de verdad (el resto reutilizó conexión); tope ${limits.connections.limit} por hora`
+                                        : limits.connections.limit > 0
+                                          ? `Tope ${limits.connections.limit} por hora`
+                                          : 'Sin tope configurado'
                                 }
                             />
                             <Metric

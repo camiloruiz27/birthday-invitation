@@ -93,6 +93,23 @@ class ConnectionReuseProbe
     }
 
     /**
+     * The share of this hour's requests that opened a NEW connection (0-1), or
+     * null when it cannot be told: persistence is off (then every request that
+     * ran a query did open one) or too few samples have been taken yet.
+     */
+    public static function freshShare(?\DateTimeInterface $hour = null): ?float
+    {
+        $summary = self::summary($hour);
+        $total = $summary['reused'] + $summary['fresh'];
+
+        if (! $summary['enabled'] || $total < self::MIN_SAMPLES) {
+            return null;
+        }
+
+        return $summary['fresh'] / $total;
+    }
+
+    /**
      * MySQL's own id for the connection. Any other database has no such thing,
      * so the identity of the PDO object stands in (it only changes when a new
      * connection is made) — which is also what the tests, running on SQLite, see.
