@@ -2,7 +2,7 @@
 
 namespace App\Modules\Immersion\Support;
 
-use Illuminate\Support\Facades\Cache;
+use App\Modules\Platform\Support\Ops;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -36,8 +36,8 @@ class MailBudget
         try {
             $key = self::bucket(now());
 
-            Cache::add($key, 0, now()->addHours(self::BUCKET_TTL_HOURS));
-            Cache::increment($key);
+            Ops::store()->add($key, 0, now()->addHours(self::BUCKET_TTL_HOURS));
+            Ops::store()->increment($key);
 
             self::warnWhenLow(self::used());
         } catch (Throwable) {
@@ -52,7 +52,7 @@ class MailBudget
             $total = 0;
 
             for ($hour = 0; $hour < 24; $hour++) {
-                $total += (int) Cache::get(self::bucket(now()->subHours($hour)), 0);
+                $total += (int) Ops::store()->get(self::bucket(now()->subHours($hour)), 0);
             }
 
             return $total;
@@ -110,7 +110,7 @@ class MailBudget
             return;
         }
 
-        if (Cache::add('immersion:mail:low-warned:'.now()->format('YmdH'), true, now()->addHours(2))) {
+        if (Ops::store()->add('immersion:mail:low-warned:'.now()->format('YmdH'), true, now()->addHours(2))) {
             Log::warning('mail_daily_budget_low', [
                 'sent_last_24h' => $used,
                 'daily_limit' => $limit,

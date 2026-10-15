@@ -164,7 +164,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 60,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 6,
 
         'price_amount' => 49900,

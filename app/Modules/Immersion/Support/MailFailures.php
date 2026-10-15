@@ -2,7 +2,7 @@
 
 namespace App\Modules\Immersion\Support;
 
-use Illuminate\Support\Facades\Cache;
+use App\Modules\Platform\Support\Ops;
 use Throwable;
 
 /**
@@ -28,7 +28,7 @@ class MailFailures
             $all = self::all($gameId);
             $all["{$eventId}:{$playerId}"] = ['event_id' => $eventId, 'player_id' => $playerId, 'label' => $label];
 
-            Cache::put(self::key($gameId), $all, now()->addDays(self::TTL_DAYS));
+            Ops::store()->put(self::key($gameId), $all, now()->addDays(self::TTL_DAYS));
         } catch (Throwable) {
             // A notice that cannot be stored must not hide the failure itself,
             // which is logged by the caller.
@@ -40,7 +40,7 @@ class MailFailures
     {
         try {
             if ($eventId === null) {
-                Cache::forget(self::key($gameId));
+                Ops::store()->forget(self::key($gameId));
 
                 return;
             }
@@ -49,8 +49,8 @@ class MailFailures
             unset($all["{$eventId}:{$playerId}"]);
 
             $all === []
-                ? Cache::forget(self::key($gameId))
-                : Cache::put(self::key($gameId), $all, now()->addDays(self::TTL_DAYS));
+                ? Ops::store()->forget(self::key($gameId))
+                : Ops::store()->put(self::key($gameId), $all, now()->addDays(self::TTL_DAYS));
         } catch (Throwable) {
             // Same as add(): a notice, never a reason to fail.
         }
@@ -60,7 +60,7 @@ class MailFailures
     public static function all(int $gameId): array
     {
         try {
-            return (array) Cache::get(self::key($gameId), []);
+            return (array) Ops::store()->get(self::key($gameId), []);
         } catch (Throwable) {
             return [];
         }

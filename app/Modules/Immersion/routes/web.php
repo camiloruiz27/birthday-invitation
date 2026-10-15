@@ -115,12 +115,15 @@ Route::prefix('partidas')->name('immersion.gm.')->middleware('auth')->group(func
 |
 */
 
+// Every numeric `throttle:N,M` shares ONE counter per IP (or per user) unless it
+// is given a prefix, whatever the route: polling used to spend the budget of the
+// question route and of the login form. Each limit below has its own prefix.
 Route::get('/jugador/{token}/estado', [PollStateController::class, 'player'])
-    ->middleware('throttle:240,1')
+    ->middleware('throttle:'.config('immersion.rate_limits.poll', '240,1').',poll-player')
     ->name('immersion.poll.player');
 
 Route::get('/partidas/{game}/estado', [PollStateController::class, 'console'])
-    ->middleware('throttle:240,1')
+    ->middleware('throttle:'.config('immersion.rate_limits.poll', '240,1').',poll-console')
     ->whereNumber('game')
     ->name('immersion.poll.console');
 
@@ -149,9 +152,11 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     Route::get('/interrogatorio', [InterrogationController::class, 'index'])->name('interrogation.index');
     Route::get('/interrogatorio/{slug}', [InterrogationController::class, 'show'])->name('interrogation.show');
 
-    // Every question is a billable AI call, so cap how fast one token can
-    // spend them regardless of the per-session budget.
+    // Every question is a billable AI call, so cap how fast one player can spend
+    // them regardless of the per-session budget. Counted per PLAYER, not per IP:
+    // a table sharing one connection (a living room, an office, a mobile carrier)
+    // must not spend a single allowance between all of them. See ImmersionServiceProvider.
     Route::post('/interrogatorio/{slug}/preguntar', [InterrogationController::class, 'ask'])
-        ->middleware('throttle:'.config('immersion.rate_limits.interrogation_ask'))
+        ->middleware('throttle:immersion-ask')
         ->name('interrogation.ask');
 });

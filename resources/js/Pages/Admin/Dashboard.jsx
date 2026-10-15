@@ -71,6 +71,94 @@ function Breakdown({ counts, labels }) {
     );
 }
 
+/**
+ * Whether persistent connections are doing anything: the share of sampled
+ * requests that reused a connection a PHP process already held. Shown only when
+ * DB_PERSISTENT is on.
+ */
+function ConnectionReuse({ reuse }) {
+    if (!reuse?.enabled) {
+        return null;
+    }
+
+    const percent = reuse.ratio === null ? null : Math.round(reuse.ratio * 100);
+
+    return (
+        <Alert variant={percent !== null && percent < 50 ? 'warning' : 'status'} className="mt-4">
+            Conexiones persistentes:{' '}
+            {percent === null
+                ? 'todavía sin muestras esta hora.'
+                : `${percent} % de las peticiones muestreadas reutilizó una conexión (${reuse.reused} reutilizadas, ${reuse.fresh} nuevas).`}
+            {percent !== null && percent < 50 && (
+                <> Si se mantiene así, el servidor no está conservando los procesos PHP y apagarlas no cambia nada.</>
+            )}
+        </Alert>
+    );
+}
+
+/**
+ * How this hour's connections split over the MySQL users in play. Only shown
+ * when extra users are configured (DB_POOL_*): each user has its own hourly
+ * allowance, so what matters is the busiest one, not the sum.
+ */
+function ConnectionsByUser({ connections }) {
+    const rows = Object.entries(connections.by_connection ?? {});
+
+    if (rows.length < 2) {
+        return null;
+    }
+
+    return (
+        <Alert variant="status" className="mt-4">
+            Por usuario de MySQL esta hora:{' '}
+            {rows.map(([name, count], index) => (
+                <span key={name}>
+                    {index > 0 && ' · '}
+                    <span className="font-mono text-xs">{name}</span>{' '}
+                    <strong className="tabular text-ink">
+                        {count}
+                        {connections.limit > 0 ? ` de ${connections.limit}` : ''}
+                    </strong>
+                </span>
+            ))}
+        </Alert>
+    );
+}
+
+/** Which routes and commands opened the connections, this hour and the last. */
+function ConnectionOffenders({ connections }) {
+    const columns = [
+        ['Esta hora', Object.entries(connections.top_this_hour ?? {})],
+        ['Hora anterior', Object.entries(connections.top_last_hour ?? {})],
+    ];
+
+    if (columns.every(([, rows]) => rows.length === 0)) {
+        return null;
+    }
+
+    return (
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {columns.map(([title, rows]) => (
+                <Card as="article" key={title}>
+                    <CardHeader title={`Quién abrió las conexiones — ${title.toLowerCase()}`} />
+                    {rows.length === 0 ? (
+                        <p className="text-sm text-ink-muted">Sin datos todavía.</p>
+                    ) : (
+                        <ul className="space-y-1 text-sm">
+                            {rows.map(([label, count]) => (
+                                <li key={label} className="flex justify-between gap-3">
+                                    <span className="truncate font-mono text-xs text-ink-muted">{label}</span>
+                                    <span className="tabular text-ink">{count}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Card>
+            ))}
+        </div>
+    );
+}
+
 export default function AdminDashboard({ metrics, limits = null }) {
     const { people, catalog, usage, ai, health, topCases, recentGames } = metrics;
     const needsAttention =
@@ -114,9 +202,12 @@ export default function AdminDashboard({ metrics, limits = null }) {
                                 label="Conexiones DB, esta hora"
                                 value={limits.connections.this_hour}
                                 hint={
-                                    limits.connections.limit > 0
-                                        ? `Tope ${limits.connections.limit} por hora`
-                                        : 'Sin tope configurado'
+                                    limits.connections.estimated_new_this_hour !== null &&
+                                    limits.connections.estimated_new_this_hour !== undefined
+                                        ? `≈ ${limits.connections.estimated_new_this_hour} nuevas de verdad (el resto reutilizó conexión); tope ${limits.connections.limit} por hora`
+                                        : limits.connections.limit > 0
+                                          ? `Tope ${limits.connections.limit} por hora`
+                                          : 'Sin tope configurado'
                                 }
                             />
                             <Metric
@@ -139,9 +230,13 @@ export default function AdminDashboard({ metrics, limits = null }) {
                                 hint="Los sobres usan todo el cupo; enlaces y epílogos, el 80 %"
                             />
                         </div>
+                        <ConnectionsByUser connections={limits.connections} />
+                        <ConnectionReuse reuse={limits.connections.reuse?.this_hour} />
+                        <ConnectionOffenders connections={limits.connections} />
                         <p className="mt-3 text-xs text-ink-subtle">
-                            Cifras estimadas desde la caché del servidor: se reinician si se limpia la caché
-                            (cada despliegue). El aviso al 80 % queda en el registro.
+                            Cifras estimadas: cuentan las peticiones y comandos que abrieron una conexión
+                            (las que se responden desde la caché no). Sobreviven a los despliegues. El
+                            aviso al 80 % queda en el registro, con las rutas que más gastaron.
                         </p>
                     </section>
                 )}

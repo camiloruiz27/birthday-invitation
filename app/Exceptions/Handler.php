@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Modules\Platform\Support\ConnectionBudget;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Cache;
@@ -62,6 +63,9 @@ class Handler extends ExceptionHandler
                 if (Cache::add('platform:db-unavailable-logged', true, 600)) {
                     Log::critical('db_connection_limit_reached', [
                         'message' => $e->getMessage(),
+                        // Who spent the hour: the routes and commands that opened
+                        // the most connections (see ConnectionBudget).
+                        'heaviest' => ConnectionBudget::top(5),
                         'note' => 'Repeats are not logged for 10 minutes.',
                     ]);
                 }

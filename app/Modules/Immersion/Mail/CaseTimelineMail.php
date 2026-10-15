@@ -46,7 +46,7 @@ class CaseTimelineMail extends Mailable
                 'player' => $this->player,
                 'caseCode' => $code,
                 'caseAuthority' => $case->authority(),
-                'interrogationQuestions' => $case->interrogationQuestions(),
+                'questionsLabel' => $case->questionsPerPersonLabel(),
                 'bodyHtml' => $case->renderEventBody($this->event->source_file, $this->event->body_markdown, (int) $this->event->trigger_offset_minutes),
                 'gallery' => $case->galleryFor($this->event->source_file),
                 'assetPath' => fn (string $url) => $case->assetPath($url),

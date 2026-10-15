@@ -174,15 +174,56 @@ class MailPipelineTest extends TestCase
                 ->where('mail.failures.0.label', 'Ana: Sobre 1')
                 ->has('mail.budget.used'));
 
-        Bus::fake([SendTimelineMail::class]);
+        Mail::fake();
 
+        // Sent again in the same request once the response has gone out: no
+        // queue and no worker.
         $this->actingAs($user)
             ->post(route('immersion.gm.game.resend-mail', $game))
             ->assertRedirect();
 
-        Bus::assertDispatched(SendTimelineMail::class, fn (SendTimelineMail $job) => $job->eventId === $event->id
-            && $job->playerId === $player->id);
+        Mail::assertSent(CaseTimelineMail::class, fn ($mail) => $mail->hasTo($player->email));
         $this->assertSame([], MailFailures::all($game->id));
+    }
+
+    public function test_a_resend_that_fails_again_leaves_the_notice_for_the_next_look(): void
+    {
+        [$game, $event, $player] = $this->makeTable();
+        MailFailures::add($game->id, $event->id, $player->id, 'Ana: Sobre 1');
+        config(['immersion.mail.daily_limit' => 1]);
+        MailBudget::record();
+
+        $user = $this->gameMaster(self::CASE_SLUG);
+        $game->update(['user_id' => $user->id]);
+        Mail::fake();
+
+        $this->actingAs($user)->post(route('immersion.gm.game.resend-mail', $game))->assertRedirect();
+
+        Mail::assertNothingSent();
+        $this->assertCount(1, MailFailures::all($game->id), 'The allowance is spent: the Game Master is told again.');
+    }
+
+    public function test_run_in_place_a_spent_allowance_tells_the_game_master_instead_of_vanishing(): void
+    {
+        Mail::fake();
+        config(['immersion.mail.daily_limit' => 1]);
+        MailBudget::record();
+        [$game, $event, $player] = $this->makeTable();
+
+        SendTimelineMail::sendNow($event->id, $player->id);
+
+        Mail::assertNothingSent();
+        $this->assertStringContainsString('sin cupo', array_values(MailFailures::all($game->id))[0]['label']);
+    }
+
+    public function test_run_in_place_a_failing_send_is_recorded_for_the_game_master(): void
+    {
+        [$game, $event, $player] = $this->makeTable();
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('smtp down'));
+
+        SendTimelineMail::sendNow($event->id, $player->id);
+
+        $this->assertCount(1, MailFailures::all($game->id));
     }
 
     public function test_a_delivered_resend_clears_the_notice(): void
@@ -224,14 +265,44 @@ class MailPipelineTest extends TestCase
         $this->assertCount(1, $job->middleware());
     }
 
-    public function test_access_links_fan_out_to_one_job_per_player(): void
+    public function test_access_links_go_out_one_after_another_in_the_same_process_with_no_queue(): void
     {
         Bus::fake([SendPlayerAccessLink::class]);
+        Mail::fake();
         [$game] = $this->makeTable();
 
         (new SendPlayerAccessLinks($game->players()->pluck('id')->all()))->handle();
 
-        Bus::assertDispatchedTimes(SendPlayerAccessLink::class, 2);
+        Mail::assertSent(PlayerAccessLinkMail::class, 2);
+        Bus::assertNotDispatched(SendPlayerAccessLink::class);
+    }
+
+    public function test_the_button_sends_them_after_the_response_with_no_queue(): void
+    {
+        Mail::fake();
+        $user = $this->gameMaster(self::CASE_SLUG);
+        [$game] = $this->makeTable(['user_id' => $user->id]);
+
+        $this->actingAs($user)
+            ->post(route('immersion.gm.game.send-all-links', $game))
+            ->assertRedirect();
+
+        Mail::assertSent(PlayerAccessLinkMail::class, 2);
+    }
+
+    public function test_an_access_link_that_cannot_go_out_for_lack_of_allowance_says_so(): void
+    {
+        Mail::fake();
+        config(['immersion.mail.daily_limit' => 10]);
+        foreach (range(1, 9) as $i) {
+            MailBudget::record();
+        }
+        [$game, , $player] = $this->makeTable();
+
+        SendPlayerAccessLink::sendNow($player->id);
+
+        Mail::assertNothingSent();
+        $this->assertStringContainsString('cupo', array_values(MailFailures::all($game->id))[0]['label']);
     }
 
     public function test_an_access_link_is_sent_while_there_is_room_and_waits_when_there_is_not(): void

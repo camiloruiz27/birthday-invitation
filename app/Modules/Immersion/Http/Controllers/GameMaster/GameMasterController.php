@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Jobs\DispatchTimelineEvent;
 use App\Modules\Immersion\Jobs\GenerateEventAudio;
+use App\Modules\Immersion\Jobs\SendPlayerAccessLink;
 use App\Modules\Immersion\Jobs\SendPlayerAccessLinks;
 use App\Modules\Immersion\Jobs\SendTimelineMail;
 use App\Modules\Immersion\Models\Accusation;
@@ -87,6 +88,13 @@ class GameMasterController extends Controller
         return Inertia::render('GameMaster/CreateGame', [
             'initialCase' => $library->pluck('slug')->contains($requested) ? $requested : null,
 
+            // The form opens with a few empty slots and stops offering more at
+            // the ceiling; the server enforces the same number in store().
+            'playerLimits' => [
+                'max' => $this->maxPlayers(),
+                'initial_rows' => (int) config('immersion.players.initial_rows', 3),
+            ],
+
             // Each case carries its own quota, so the form can react as the
             // Game Master switches between them.
             'library' => $library->map(function ($case) use ($quotas, $cases, $cost) {
@@ -120,8 +128,21 @@ class GameMasterController extends Controller
         ]);
     }
 
+    /**
+     * The most players a table can have, the Game Master included when they
+     * play (automatic mode).
+     */
+    private function maxPlayers(): int
+    {
+        return max(1, (int) config('immersion.players.max', 12));
+    }
+
     public function store(Request $request, CaseRegistry $cases, GameQuota $quota): RedirectResponse
     {
+        // The form lists the OTHER players; in automatic mode the owner joins
+        // them on their own, so they take one of the seats.
+        $maxOthers = $this->maxPlayers() - ($request->input('mode') === Game::MODE_AUTOMATIC ? 1 : 0);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'case_slug' => ['nullable', 'string', Rule::in($cases->slugs())],
@@ -138,9 +159,12 @@ class GameMasterController extends Controller
             ])],
             'interrogation_enabled' => ['nullable', 'boolean'],
 
-            'players' => ['required', 'array', 'min:1'],
+            'players' => ['required', 'array', 'min:1', 'max:'.$maxOthers],
             'players.*.name' => ['required', 'string', 'max:255'],
             'players.*.email' => ['required', 'email'],
+        ], [
+            'players.max' => 'Una partida admite como máximo '.$this->maxPlayers().' jugadores'
+                .($maxOthers < $this->maxPlayers() ? ' contándote a ti (juegas en modo automático)' : '').'.',
         ]);
 
         $case = $cases->get($data['case_slug'] ?? (string) config('immersion.default_case'));
@@ -248,7 +272,9 @@ class GameMasterController extends Controller
     {
         abort_if((int) $player->game_id !== (int) $game->id, 404);
 
-        SendPlayerAccessLinks::dispatch([$player->id]);
+        // After the response, in this same request: no queue, no worker, no extra
+        // connection. See SendPlayerAccessLinks.
+        SendPlayerAccessLinks::dispatchAfterResponse([$player->id]);
 
         return back()->with('status', "Enlace enviado a {$player->name} por correo.");
     }
@@ -264,7 +290,7 @@ class GameMasterController extends Controller
             return back()->with('status', 'Esta partida no tiene jugadores.');
         }
 
-        SendPlayerAccessLinks::dispatch($ids);
+        SendPlayerAccessLinks::dispatchAfterResponse($ids);
 
         return back()->with('status', 'Enlaces enviados a todos los jugadores por correo.');
     }
@@ -282,13 +308,19 @@ class GameMasterController extends Controller
             return back()->with('status', 'No hay correos pendientes de reenviar.');
         }
 
-        foreach ($failures as $failure) {
-            SendTimelineMail::dispatch($failure['event_id'], $failure['player_id']);
-        }
-
         MailFailures::clear($game->id);
 
-        return back()->with('status', count($failures).' correo(s) puestos en cola de nuevo.');
+        // After the response, in this same request, one after another: no queue
+        // and no worker. A failure is recorded again for the next look.
+        dispatch(function () use ($failures) {
+            foreach ($failures as $failure) {
+                $failure['event_id'] === 0
+                    ? SendPlayerAccessLink::sendNow($failure['player_id'])
+                    : SendTimelineMail::sendNow($failure['event_id'], $failure['player_id']);
+            }
+        })->afterResponse();
+
+        return back()->with('status', count($failures).' correo(s) se estan reenviando.');
     }
 
     public function loadDefaultTimeline(Game $game): RedirectResponse
@@ -580,9 +612,10 @@ class GameMasterController extends Controller
             return back()->with('status', 'No hay mas eventos pendientes.');
         }
 
-        // Queued, not dispatchSync: this event may carry text-to-speech and a
-        // round of SMTP, which must not run inside the browser request.
-        DispatchTimelineEvent::enqueue($event);
+        // After the response (or the slow queue, when it still has to be voiced):
+        // the event may carry a round of SMTP or text-to-speech, which must not
+        // hold the browser, and neither needs a worker started to pick it up.
+        DispatchTimelineEvent::run($event, afterResponse: true);
 
         return back()->with('status', "Evento \"{$event->title}\" en camino. Puede tardar un momento en salir.");
     }

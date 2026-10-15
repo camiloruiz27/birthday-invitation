@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Models;
 
 use App\Models\User;
+use App\Modules\Platform\Support\PendingOrders;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -17,6 +18,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Order extends Model
 {
+    /**
+     * A checkout waiting on Bold is what the scheduler's reconciliation exists
+     * for; remembering that one exists is what lets it stay quiet the rest of the
+     * time (see PendingOrders).
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (self $order) {
+            if ($order->status === self::STATUS_PENDING && $order->provider_link_id) {
+                PendingOrders::mark();
+            }
+        });
+    }
+
     public const TYPE_CASE = 'case';
 
     public const TYPE_CREDIT_PACKAGE = 'credit_package';

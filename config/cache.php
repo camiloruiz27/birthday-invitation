@@ -19,6 +19,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Operational store
+    |--------------------------------------------------------------------------
+    |
+    | Which store holds what must SURVIVE a deploy: the change stamps that tell
+    | open pages to reload, the connection and mail counters, the plan of the
+    | next timeline event. Every deploy runs `optimize:clear`, which empties the
+    | default store — and a wiped stamp makes every open tab reload at once and a
+    | wiped counter forgets how close the hour was to the host's limit. See
+    | App\Modules\Platform\Support\Ops. Tests point it at the default store.
+    |
+    */
+
+    'ops_store' => env('OPS_CACHE_STORE', 'ops'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------
     |
@@ -52,6 +68,12 @@ return [
         'file' => [
             'driver' => 'file',
             'path' => storage_path('framework/cache/data'),
+        ],
+
+        // Same driver as `file`, a directory `cache:clear` does not touch.
+        'ops' => [
+            'driver' => 'file',
+            'path' => storage_path('app/ops-cache'),
         ],
 
         'memcached' => [

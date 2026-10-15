@@ -4,6 +4,7 @@ namespace App\Modules\Immersion\Console\Commands;
 
 use App\Modules\Immersion\Models\CreditHold;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Platform\Support\ConnectionBudget;
 use Illuminate\Console\Command;
 
 /**
@@ -31,6 +32,8 @@ class ReleaseStaleCreditHolds extends Command
 
     public function handle(AiCredits $credits): int
     {
+        ConnectionBudget::hit('cmd:release-stale-holds');
+
         $hours = (int) ($this->option('hours') ?: config('immersion.credits.stale_hold_hours', 48));
 
         if ($hours < 1) {

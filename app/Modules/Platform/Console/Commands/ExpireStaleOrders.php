@@ -4,6 +4,7 @@ namespace App\Modules\Platform\Console\Commands;
 
 use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Support\ConnectionBudget;
 use Illuminate\Console\Command;
 
 /**
@@ -25,6 +26,8 @@ class ExpireStaleOrders extends Command
 
     public function handle(RedeemPromoCode $promos): int
     {
+        ConnectionBudget::hit('cmd:expire-stale-orders');
+
         $hours = (int) ($this->option('hours') ?: config('platform.payments.stale_order_hours', 24));
 
         if ($hours < 1) {

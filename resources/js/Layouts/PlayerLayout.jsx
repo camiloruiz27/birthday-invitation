@@ -334,7 +334,7 @@ export default function PlayerLayout({
     contentClassName = '',
     children,
 }) {
-    const { props, component } = usePage();
+    const { props } = usePage();
     const status = props.flash?.status;
     const sections = focused || !player ? [] : sectionsFor(player, game);
 
@@ -350,12 +350,12 @@ export default function PlayerLayout({
         enabled: notified,
     });
 
-    // The inbox polls on its own (and asks for `notices` too); a second poll
-    // there would only reload the same page twice.
+    // Shares one poller with the page's own (see usePoll): when both ask for
+    // the same stamps, a change reloads the screen once, not once each.
     usePoll(['notices', 'game'], {
         interval: 12000,
         channels: ['timeline', 'accusation'],
-        enabled: notified && component !== 'Player/Inbox',
+        enabled: notified,
     });
 
     useTitleCount(total);

@@ -2,63 +2,84 @@
 
 namespace App\Modules\Immersion\Support;
 
+use App\Modules\Platform\Support\Ops;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
- * "Is there anything for the minute-by-minute tick to do?", answered without the
+ * "Is there a queued job waiting for the worker?", answered without the
  * database.
  *
- * The scheduler runs the tick as its own PHP process every minute, and each run
- * that touches the database costs a connection out of the host's 500-per-hour
- * allowance — 60 of them an hour, around the clock, to find out that nobody is
- * playing. A hint in the cache says when somebody is: a game is running, a job
- * was queued, a job is waiting to be retried. While the hint is fresh the tick
- * runs every minute (timeline events are due to the minute); when it is not, it
- * only runs every few minutes as a safety net, which is also what notices a
- * game or a job the hint somehow missed.
+ * The queue is a table, and asking it costs a connection. The worker runs inside
+ * the minute-by-minute tick, so asking every minute would cost sixty an hour even
+ * though jobs are rare now: the slow AI work after a case's reveal, an audio to
+ * synthesise, the occasional retry. Instead, whoever queues a job leaves a note
+ * here (see QueueTelemetry), and the tick only starts the worker when the note
+ * says a job is waiting — or, as a safety net, every few minutes in case a note
+ * was lost.
  *
- * The hint can only ever make the tick run LESS than it would, never skip work
- * for good: the safety net bounds any miss to a few minutes.
+ * (When the next timeline EVENT is due is a different question, answered by
+ * TickPlanner.)
  */
 class TickActivity
 {
-    private const KEY = 'immersion:tick:active-until';
+    private const KEY = 'immersion:tick:queue-wake';
 
-    /** How often an idle tick still looks, as a safety net. */
-    public const IDLE_EVERY_MINUTES = 5;
-
-    public static function touch(int $minutes = 15): void
+    /**
+     * Something is waiting for the worker from `$epoch` on (now by default). The
+     * EARLIEST such moment is kept: a job waiting now must not be pushed back by
+     * a retry that is due later.
+     */
+    public static function touch(?int $epoch = null): void
     {
         try {
-            $until = now()->addMinutes($minutes)->getTimestamp();
+            $epoch ??= now()->getTimestamp();
+            $current = Ops::store()->get(self::KEY);
 
-            // Never shorten a longer window that is already set.
-            if ((int) Cache::get(self::KEY, 0) < $until) {
-                Cache::put(self::KEY, $until, now()->addMinutes($minutes + 5));
+            if (! is_numeric($current) || (int) $current > $epoch) {
+                Ops::store()->put(self::KEY, $epoch, now()->addDays(2));
             }
         } catch (Throwable) {
-            // Without the hint the tick simply runs every time, as before.
+            // Without the note the worker still runs at the safety minutes.
         }
+
+        TickPlanner::publish();
     }
 
-    public static function isActive(): bool
+    /** The moment a queued job becomes available to work on, or null for none. */
+    public static function wakeAt(): ?int
     {
         try {
-            return (int) Cache::get(self::KEY, 0) > now()->getTimestamp();
+            $value = Ops::store()->get(self::KEY);
+
+            return is_numeric($value) ? (int) $value : null;
         } catch (Throwable) {
-            return true;
+            return null;
         }
     }
 
-    /** Should this minute's tick do anything at all? */
-    public static function shouldRun(CarbonInterface $now): bool
+    /** Called as the worker starts: anything queued from now on leaves a new note. */
+    public static function clear(): void
+    {
+        try {
+            Ops::store()->forget(self::KEY);
+        } catch (Throwable) {
+        }
+    }
+
+    /** Should this minute's tick start the worker? */
+    public static function workerDue(CarbonInterface $now): bool
     {
         if (! config('immersion.tick.idle_skip')) {
             return true;
         }
 
-        return self::isActive() || $now->minute % self::IDLE_EVERY_MINUTES === 0;
+        if ($now->minute % TickPlanner::SAFETY_EVERY_MINUTES === 0) {
+            return true;
+        }
+
+        $wake = self::wakeAt();
+
+        return $wake !== null && $wake <= $now->getTimestamp();
     }
 }

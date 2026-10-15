@@ -106,7 +106,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 65,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 7,
 
         // PLACEHOLDER: precio sugerido, pendiente de confirmar con el usuario.
@@ -245,6 +245,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/pablo-soria.md',
             'photo' => 'pablo-soria.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Regidor de escena',
             'motive' => null,
             'alibi' => null,
@@ -263,6 +266,9 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/noelia-bravo.md',
             'photo' => 'noelia-bravo.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Asistente de camerinos',
             'motive' => null,
             'alibi' => null,
@@ -283,6 +289,9 @@ return [
             // Not a person, but CaseAssetsTest expects a portrait for every
             // roster entry (same precedent as kilometro-186's "sistema-tren").
             'photo' => 'registro-tecnico-funcion.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Cues y llamadas técnicas registradas exclusivamente para la función de esta noche',
             'motive' => null,
             'alibi' => null,

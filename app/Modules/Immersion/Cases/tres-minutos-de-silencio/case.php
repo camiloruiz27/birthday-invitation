@@ -113,7 +113,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 90,
-        'min_players' => 5,
+        'min_players' => 4,
         'max_players' => 8,
 
         'price_amount' => 65900,
@@ -272,8 +272,8 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/elena-marti.md',
             'interrogation' => ['stages' => [
-                ['questions' => 3],
-                ['questions' => 2, 'after' => ['V15']],
+                ['questions' => 2],
+                ['questions' => 1, 'after' => ['V15']],
             ]],
             'photo' => 'elena-marti.png',
             'connection' => 'Azafata de sala',
@@ -294,6 +294,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/tomas-quiroga.md',
             'photo' => 'tomas-quiroga.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Técnico de sonido',
             'motive' => null,
             'alibi' => null,
@@ -314,6 +317,9 @@ return [
             // Not a person, but CaseAssetsTest expects a portrait for every
             // roster entry (same precedent as kilometro-186's "sistema-tren").
             'photo' => 'sistema-seguridad.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Registros objetivos del recinto (energía, puertas, sensores)',
             'motive' => null,
             'alibi' => null,

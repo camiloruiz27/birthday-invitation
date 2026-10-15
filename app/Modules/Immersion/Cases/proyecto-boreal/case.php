@@ -98,7 +98,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 95,
-        'min_players' => 5,
+        'min_players' => 4,
         'max_players' => 8,
 
         'price_amount' => 64900,
@@ -264,6 +264,9 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/sofia-reyes.md',
             'photo' => 'sofia-reyes.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Cocinera, logística interna',
             'motive' => 'Ninguno',
             'alibi' => null,
@@ -281,6 +284,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/jonas-weber.md',
             'photo' => 'jonas-weber.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Meteorólogo, técnico ambiental',
             'motive' => 'Ninguno',
             'alibi' => null,
@@ -301,6 +307,9 @@ return [
             // roster entry (same precedent as El Brindis's "paramedico") — a
             // shot of the terminal/panel works as its "portrait".
             'photo' => 'sistema-estacion.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Registros objetivos de la estación',
             'motive' => null,
             'alibi' => null,

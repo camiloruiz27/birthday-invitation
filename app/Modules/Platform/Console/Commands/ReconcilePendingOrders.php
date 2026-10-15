@@ -5,6 +5,8 @@ namespace App\Modules\Platform\Console\Commands;
 use App\Modules\Platform\Actions\SettleOrder;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
+use App\Modules\Platform\Support\ConnectionBudget;
+use App\Modules\Platform\Support\PendingOrders;
 use Illuminate\Console\Command;
 
 /**
@@ -26,6 +28,8 @@ class ReconcilePendingOrders extends Command
 
     public function handle(PaymentProvider $payments, SettleOrder $settle): int
     {
+        ConnectionBudget::hit('cmd:reconcile-pending-orders');
+
         $minutes = (int) $this->option('minutes');
 
         $pending = Order::query()
@@ -36,6 +40,17 @@ class ReconcilePendingOrders extends Command
 
         if ($pending->isEmpty()) {
             $this->info('No hay ordenes pendientes que revisar.');
+
+            // Nothing waiting: the scheduler stops calling this until an order
+            // is created (see PendingOrders). "Nothing old enough" is not
+            // nothing: an order younger than --minutes still has to be looked at
+            // on a later run.
+            $youngOnes = Order::query()
+                ->where('status', Order::STATUS_PENDING)
+                ->whereNotNull('provider_link_id')
+                ->exists();
+
+            $youngOnes ? PendingOrders::mark() : PendingOrders::none();
 
             return self::SUCCESS;
         }

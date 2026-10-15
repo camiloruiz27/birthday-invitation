@@ -80,7 +80,7 @@ Para que sea el caso por defecto de las partidas nuevas:
 | `authority` | Quién "envía" el material: pie del correo y también el nombre del remitente (`From`) del sobre de la línea de tiempo. La dirección de correo nunca cambia, solo este nombre |
 | `victim` | Nombre, foto y `label` (sello en el tablero; por defecto "Víctima", usa "Desaparecida/o" si sigue con vida o el caso lo oculta). El `label` también decide cómo hablan los prompts de la IA: si dice «desaparec…» hablan de «la desaparición de X»; si no, de «la muerte de X». Se puede forzar con `victim.incident` («el secuestro de», o una frase con `{name}`) |
 | `mechanics` | Qué mecánicas existen en este caso |
-| `limits.interrogation_questions` | Presupuesto de preguntas por sospechoso |
+| `limits.interrogation_questions` | Tope de preguntas normales por persona (5) y lo que hereda quien no declara `stages`. Cada persona puede tener menos: entre 3 y este tope |
 | `suspects` | Roster interrogable (ficha corta + foto + archivo de testimonio). `'accusable' => false` lo saca de la acusación (testigos, sistemas); `'interrogable' => false` lo saca del tablero de interrogatorios pero se puede acusar (un culpable al que nadie localizó) |
 | `accusation` | Opcional. Preguntas extra del formulario de acusación con su respuesta oficial y puntos, más los puntos del culpable, del método y del motivo. Ver "La acusación y su calificación" |
 | `timeline` | Eventos que se adjuntan a toda partida nueva del caso |
@@ -191,9 +191,17 @@ acertó al culpable y, entre ellos, por puntaje: ese es el desempate.
 
 ## Preguntas del interrogatorio por etapas
 
-Cada persona interrogable tiene **5 preguntas** (sospechosos, testigos y
-sistemas por igual) y **3 más si su caso trae confrontaciones para ella**: 8.
-La partida reserva los créditos de las 8 desde el inicio.
+Cada persona interrogable tiene entre **3 y 5 preguntas** normales, según
+cuánto tenga que decir, y **3 más si su caso trae confrontaciones para ella**
+(hasta 8). La partida reserva los créditos del total desde el inicio.
+
+Cómo se decide el número de una persona (testigos y sistemas, sobre todo): se
+cuentan los hechos distintos que su `.md` le deja confirmar, cada uno es una
+pregunta que vale la pena hacer, y se da `clamp(hechos, 3, 5)`. Un testigo con
+dos hechos tiene 3; uno con cuatro, 4; uno con cinco o más, 5. Menos de 3 no:
+la tercera pregunta absorbe la que se gasta en un saludo. Los sospechosos con
+historia completa (el culpable y los principales) se quedan en 5. Cada pregunta
+cuesta una conexión a la base, así que no sobran preguntas que no llevan a nada.
 
 Las preguntas no tienen por qué abrirse todas a la vez. Si la persona podría
 admitir algo que solo se sabe más adelante en el cronograma, se reparten en
@@ -210,10 +218,21 @@ dentro de su entrada de `suspects`):
 
 - `after`: códigos de `evidence_codes` de eventos del cronograma; la etapa se
   abre cuando **todos** se han entregado en esa partida.
-- La suma de las etapas normales es 5; las de `confrontation => true` suman
-  exactamente 3. `CaseRegistryTest` lo valida, y que el primer bloque no
-  espere a nadie y que todo código de `after` exista en el cronograma.
-- Sin bloque `stages`: una sola etapa de 5, abierta desde el inicio.
+- La suma de las etapas normales va de 3 a `limits.interrogation_questions`
+  (5); las de `confrontation => true` suman exactamente 3. `CaseRegistryTest`
+  lo valida, y que el primer bloque no espere a nadie y que todo código de
+  `after` exista en el cronograma.
+- Una etapa posterior que guarda una revelación clave se conserva al recortar
+  (por ejemplo `2, 1@V15` y no `3`): si el jugador gasta todas las preguntas
+  antes de que llegue la evidencia, la que la abre tiene que seguir existiendo.
+- Sin bloque `stages`: una sola etapa de 5 (el tope del caso), abierta desde el
+  inicio. Para dar menos, declara el bloque con una etapa de 3 o 4.
+- `CaseDefinition::baseQuestionRange()` da el mínimo y el máximo de preguntas
+  normales entre las personas del caso, y `questionsPerPersonLabel()` el texto
+  que se le muestra al jugador («5 preguntas» / «entre 3 y 5 preguntas»).
+- Cambiar los números de un caso publicado: las partidas aún sin reclamar usan
+  los nuevos; una sesión ya abierta conserva su `max_questions`. Hazlo cuando no
+  haya partidas en curso.
 - Una etapa gastada deja la sesión **en espera**, no cerrada: el jugador que
   empezó el interrogatorio vuelve cuando se abre la siguiente (nadie más puede
   tomarlo). El correo/bandeja del evento que abre preguntas lo anuncia solo.

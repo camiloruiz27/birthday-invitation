@@ -51,6 +51,18 @@ class GameMailPolicy
         };
     }
 
+    /**
+     * Do the timeline emails go out inside the process that sends the event?
+     *
+     * In the default mode there is a single email per game (accusations open),
+     * so a queue and a worker for it cost more than the mail. In `all` mode a
+     * case sends dozens of messages and the queue is what spreads them out.
+     */
+    public static function sendTimelineInline(): bool
+    {
+        return strtolower((string) config('immersion.mail.timeline')) !== self::ALL;
+    }
+
     /** Should a player's epilogue (the message from the person they accused) be emailed? */
     public static function epilogue(): bool
     {

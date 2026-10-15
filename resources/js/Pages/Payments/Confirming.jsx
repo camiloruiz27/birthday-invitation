@@ -21,7 +21,10 @@ export default function Confirming({ order }) {
     const [waitedLong, setWaitedLong] = useState(false);
     const tracked = useRef(false);
 
-    usePoll(['order'], { interval: 3000, enabled: order.status === 'pending' });
+    // Each poll is a full request AND a call to Bold, and a payment can take a
+    // minute to settle: start quick, then ease off (4 s, growing to 10 s) rather
+    // than asking every 3 seconds for as long as it takes.
+    usePoll(['order'], { interval: 4000, maxInterval: 10000, enabled: order.status === 'pending' });
 
     useEffect(() => {
         if (order.status !== 'approved' || tracked.current) return;

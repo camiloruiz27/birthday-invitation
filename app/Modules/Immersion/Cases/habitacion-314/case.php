@@ -108,7 +108,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 75,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 7,
 
         'price_amount' => 64900,
@@ -256,6 +256,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/carlos-mena.md',
             'photo' => 'carlos-mena.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Conserje de turno nocturno del Hotel Alcázar',
             'motive' => null,
             'alibi' => null,
@@ -274,6 +277,9 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/paola-diaz.md',
             'photo' => 'paola-diaz.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Camarera de servicio a la habitación',
             'motive' => null,
             'alibi' => null,
@@ -296,6 +302,9 @@ return [
             // "sistema-estacion") — a shot of the keycard terminal/reception
             // panel works as its "portrait".
             'photo' => 'sistema-hotel.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Registros objetivos del hotel (cerradura, ascensores, pedidos)',
             'motive' => null,
             'alibi' => null,

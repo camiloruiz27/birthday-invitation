@@ -149,7 +149,9 @@ export default function InboxItem({ item, playerToken, game }) {
 
             {isAudio && (
                 <AudioPlayer
-                    src={route('immersion.player.audio', [playerToken, event.id])}
+                    // A case's own recording is a static file: the web server
+                    // serves it, no PHP and no database in between.
+                    src={item.audio_url ?? route('immersion.player.audio', [playerToken, event.id])}
                     className="mt-5"
                 />
             )}

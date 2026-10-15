@@ -99,7 +99,7 @@ class CaseRegistryTest extends TestCase
         $this->assertSame([], $problems, implode("\n", $problems));
     }
 
-    public function test_interrogation_stages_add_up_to_five_or_eight_and_wait_on_real_evidence(): void
+    public function test_interrogation_stages_stay_between_three_and_five_and_wait_on_real_evidence(): void
     {
         $problems = [];
 
@@ -111,8 +111,11 @@ class CaseRegistryTest extends TestCase
                 $base = array_sum(array_column(array_filter($stages, fn ($s) => ! $s['confrontation']), 'questions'));
                 $confrontation = array_sum(array_column(array_filter($stages, fn ($s) => $s['confrontation']), 'questions'));
 
-                if ($base !== $case->interrogationQuestions()) {
-                    $problems[] = "{$case->slug}/{$slug} → base stages add up to {$base}, not {$case->interrogationQuestions()}";
+                // A person gets as many ordinary questions as they have things to
+                // say: never fewer than three (below that a question is wasted on
+                // a pleasantry) and never more than the case's own budget.
+                if ($base < 3 || $base > $case->interrogationQuestions()) {
+                    $problems[] = "{$case->slug}/{$slug} → base stages add up to {$base}, outside 3–{$case->interrogationQuestions()}";
                 }
 
                 if ($confrontation !== 0 && $confrontation !== CaseDefinition::CONFRONTATION_QUESTIONS) {

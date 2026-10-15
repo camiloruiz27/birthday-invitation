@@ -31,8 +31,10 @@ class QueueTelemetry
         Event::listen(JobQueued::class, fn () => TickActivity::touch());
 
         // A job put back for a retry sits in the table until its delay is up
-        // (a retry can be fifteen minutes away); keep ticking for it.
-        Event::listen(JobReleasedAfterException::class, fn () => TickActivity::touch(30));
+        // (from half a minute to a quarter of an hour). The delay is not in the
+        // event, so look again in a minute; the worker simply finds nothing yet
+        // if it is early, and the safety minutes catch the rest.
+        Event::listen(JobReleasedAfterException::class, fn () => TickActivity::touch(now()->addMinute()->getTimestamp()));
 
         Event::listen(JobProcessing::class, function (JobProcessing $event) {
             self::$started[self::key($event)] = microtime(true);

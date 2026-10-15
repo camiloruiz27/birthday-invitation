@@ -121,7 +121,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 85,
-        'min_players' => 5,
+        'min_players' => 4,
         'max_players' => 8,
 
         'price_amount' => 69900,
@@ -303,6 +303,9 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/rosa-navarro.md',
             'photo' => 'rosa-navarro.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Encargada de intendencia',
             'motive' => null,
             'alibi' => null,

@@ -161,7 +161,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 70,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 7,
 
         'price_amount' => 59900,
@@ -345,6 +345,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/horacio-vega.md',
             'photo' => 'horacio-vega.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Jardinero y encargado de la finca',
             'motive' => null,
             'alibi' => null,

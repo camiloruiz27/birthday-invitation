@@ -21,6 +21,7 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
+        <env name="OPS_CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="MAIL_MAILER" value="array"/>
@@ -35,6 +36,8 @@
         <env name="IMMERSION_MAIL_EPILOGUE" value="true"/>
         <env name="IMMERSION_MAIL_PER_MINUTE" value="0"/>
         <env name="IMMERSION_TICK_IDLE_SKIP" value="false"/>
+        <env name="IMMERSION_SNAPSHOTS" value="false"/>
+        <env name="IMMERSION_TICK_NEXT_RUN_FILE" value="null"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <!-- The developer's .env holds real third-party keys (captcha, Bold,

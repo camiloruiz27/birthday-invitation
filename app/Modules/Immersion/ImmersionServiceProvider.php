@@ -21,11 +21,13 @@ use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Immersion\Console\Commands\ExportAudioScripts;
 use App\Modules\Immersion\Console\Commands\GrantCredits;
 use App\Modules\Immersion\Console\Commands\ImmersionTick;
+use App\Modules\Immersion\Console\Commands\LoadTestSeed;
 use App\Modules\Immersion\Console\Commands\ProcessImmersionTimeline;
 use App\Modules\Immersion\Console\Commands\ReleaseStaleCreditHolds;
 use App\Modules\Immersion\Support\MailBudget;
 use App\Modules\Immersion\Support\QueueTelemetry;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Support\Facades\Event;
@@ -124,6 +126,25 @@ class ImmersionServiceProvider extends ServiceProvider
     {
         Event::listen(MessageSent::class, fn () => MailBudget::record());
 
+        // Questions to suspects, per player. `immersion.rate_limits.interrogation_ask`
+        // is "attempts,minutes"; a malformed value falls back to 20,1 rather than
+        // removing the limit.
+        RateLimiter::for('immersion-ask', function (Request $request) {
+            $pair = explode(',', (string) config('immersion.rate_limits.interrogation_ask', '20,1'));
+            $attempts = (int) ($pair[0] ?? 0);
+            $minutes = (int) ($pair[1] ?? 0);
+
+            if ($attempts < 1 || $minutes < 1) {
+                [$attempts, $minutes] = [20, 1];
+            }
+
+            $player = $request->route('player');
+
+            return Limit::perMinutes($minutes, $attempts)->by(
+                'ask:'.(is_object($player) ? $player->getKey() : sha1((string) $player))
+            );
+        });
+
         RateLimiter::for('immersion-mail', function () {
             $perMinute = (int) config('immersion.mail.per_minute');
 
@@ -149,6 +170,7 @@ class ImmersionServiceProvider extends ServiceProvider
             $this->commands([
                 ProcessImmersionTimeline::class,
                 ImmersionTick::class,
+                LoadTestSeed::class,
                 GrantCredits::class,
                 ReleaseStaleCreditHolds::class,
                 ExportAudioScripts::class,
@@ -174,11 +196,12 @@ class ImmersionServiceProvider extends ServiceProvider
                 $schedule->command(ImmersionTick::class)->everyMinute();
 
                 // Credits frozen by games nobody closed come back on their own.
-                // Hourly rather than per minute: the window is measured in days
-                // and this walks every open reservation.
+                // Once a day: the window is measured in days (a week by default)
+                // and this walks every open reservation, at the cost of a
+                // connection each time it runs.
                 if (config('immersion.credits.enabled')) {
                     $schedule->command(ReleaseStaleCreditHolds::class)
-                        ->hourly()
+                        ->dailyAt('04:10')
                         ->withoutOverlapping();
                 }
             });

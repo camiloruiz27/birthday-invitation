@@ -8,6 +8,7 @@ use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Support\GameRevision;
 use App\Modules\Immersion\Support\MailBudget;
 use App\Modules\Immersion\Support\MailFailures;
+use App\Modules\Immersion\Support\TickActivity;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -70,6 +71,22 @@ class SendTimelineMail implements ShouldQueue
         return [new RateLimited('immersion-mail')];
     }
 
+    /**
+     * Sends it in the current process, with no queue, and records a failure for
+     * the Game Master instead of retrying. For the cron's tick and for the
+     * Game Master's own clicks, where a worker would cost a connection to start.
+     */
+    public static function sendNow(int $eventId, int $playerId): void
+    {
+        $job = new static($eventId, $playerId);
+
+        try {
+            $job->handle();
+        } catch (Throwable $exception) {
+            $job->failed($exception);
+        }
+    }
+
     public function handle(): void
     {
         $event = TimelineEvent::find($this->eventId);
@@ -82,6 +99,17 @@ class SendTimelineMail implements ShouldQueue
         // The day's allowance is spent: wait for it to come back instead of
         // sending into a refusal. Envelopes may use all of it.
         if (! MailBudget::canSend(MailBudget::ENVELOPE)) {
+            // Run from a worker, it goes back to the queue and the tick looks
+            // again when it is due. Run in place (no worker, nothing to retry
+            // it) it is the Game Master who is told.
+            if ($this->job === null) {
+                MailFailures::add((int) $event->game_id, $event->id, $player->id, "{$player->name}: {$event->title} (sin cupo de correo hoy)");
+                GameRevision::bump((int) $event->game_id, GameRevision::TIMELINE);
+
+                return;
+            }
+
+            TickActivity::touch(now()->addSeconds(900)->getTimestamp());
             $this->release(900);
 
             return;
