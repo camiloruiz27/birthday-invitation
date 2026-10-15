@@ -56,9 +56,7 @@ function readEnvelopes(gameId) {
 export default function Inbox({ player, game, items, case: mysteryCase }) {
     // New envelopes arrive on the server's clock, so the inbox refreshes
     // itself while the player is reading.
-    // `notices` rides along: the layout's own poll stays off on this page, so
-    // this one keeps the tab badges and toasts current too.
-    usePoll(['items', 'game', 'notices'], { interval: 15000, channels: ['timeline'] });
+    usePoll(['items', 'game'], { interval: 15000, channels: ['timeline'] });
 
     const openId = useOpenEnvelope();
     const selected = items.find((item) => item.event.id === openId) ?? null;

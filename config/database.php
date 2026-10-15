@@ -30,6 +30,11 @@ return [
 
     'persistent' => (bool) env('DB_PERSISTENT', false),
 
+    // With persistent connections on, one request in this many asks MySQL for its
+    // connection id to tell whether the connection was reused (see
+    // ConnectionReuseProbe). 1 samples every request.
+    'reuse_probe_every' => (int) env('DB_REUSE_PROBE_EVERY', 20),
+
     /*
     |--------------------------------------------------------------------------
     | Database Connections

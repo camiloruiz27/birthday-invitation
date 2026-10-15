@@ -25,7 +25,7 @@ use Illuminate\Console\Command;
 class CronStatus extends Command
 {
     protected $signature = 'platform:cron-status
-                            {--tolerance=3 : Minutes without a heartbeat before the cron counts as down}';
+                            {--tolerance=8 : Minutes without a heartbeat before the cron counts as down}';
 
     protected $description = 'Report whether the scheduler is running and whether anything is stuck';
 
@@ -66,8 +66,10 @@ class CronStatus extends Command
     }
 
     /**
-     * The cause. Written by a one-line scheduled closure every minute, so if
-     * this is stale the cron itself is not running the scheduler at all.
+     * The cause. Written by a one-line scheduled closure each time the
+     * scheduler runs — at least every five minutes, since the cron script only
+     * starts PHP sooner when an event or a queued job is due — so if this is
+     * stale the cron itself is not running the scheduler at all.
      */
     private function reportHeartbeat(array $diagnostics): void
     {
@@ -92,8 +94,8 @@ class CronStatus extends Command
         );
 
         if (! $alive) {
-            $this->problems[] = "El scheduler lleva {$ago} minutos sin correr. Debería hacerlo cada "
-                .'minuto. O la tarea cron se detuvo, o está fallando en silencio: si la mandaste a '
+            $this->problems[] = "El scheduler lleva {$ago} minutos sin correr. Debería hacerlo al menos cada "
+                .'5 minutos (el script del cron solo arranca PHP cuando hace falta). O la tarea cron se detuvo, o está fallando en silencio: si la mandaste a '
                 .'/dev/null, cámbiala para que escriba en un log y vuelve a mirar.';
         }
     }

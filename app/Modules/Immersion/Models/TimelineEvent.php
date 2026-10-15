@@ -5,12 +5,27 @@ namespace App\Modules\Immersion\Models;
 use Illuminate\Database\Eloquent\Builder;
 use App\Modules\Immersion\Models\Concerns\BumpsGameRevision;
 use App\Modules\Immersion\Support\GameRevision;
+use App\Modules\Immersion\Support\TickPlanner;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TimelineEvent extends Model
 {
     use BumpsGameRevision;
+
+    protected static function booted(): void
+    {
+        // An event created, removed, sent or moved changes when the next one is
+        // due (see TickPlanner). The tick's own saves land here too, and the plan
+        // it rebuilds at the end of its run replaces what this throws away.
+        static::saved(function (self $event) {
+            if ($event->wasRecentlyCreated || $event->wasChanged(['sent_at', 'trigger_offset_minutes'])) {
+                TickPlanner::invalidate();
+            }
+        });
+
+        static::deleted(fn () => TickPlanner::invalidate());
+    }
 
     /**
      * @return array<int, string>

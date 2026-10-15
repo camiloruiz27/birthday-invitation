@@ -95,6 +95,12 @@ return [
         'grading_timeout' => (int) env('IMMERSION_AI_GRADING_TIMEOUT', 180),
         'grading_enabled' => (bool) env('IMMERSION_AI_GRADING', true),
 
+        // How many questions to suspects may be waiting on the gateway at once
+        // (see AiGate). Each holds one of the hosting plan's 60 PHP workers for
+        // as long as the gateway takes; past this a question is turned away,
+        // unspent, with a "try again in a few seconds". 0 = no limit.
+        'max_concurrent' => (int) env('IMMERSION_AI_MAX_CONCURRENT', 20),
+
         // Each capability can be switched off on its own. Off means the null
         // provider: suspects deflect in character, and voice-note emails go
         // out without a recording. The case stays playable either way.
@@ -276,8 +282,21 @@ return [
     |
     */
 
+    'snapshots' => [
+        // What a table of players reads (the envelopes already sent, who has
+        // claimed which suspect) is kept ready in the cache and rebuilt by
+        // whoever changes it, so reading it opens no database connection (see
+        // GameSnapshot). Off means every page reads the database, as before.
+        'enabled' => (bool) env('IMMERSION_SNAPSHOTS', false),
+    ],
+
     'tick' => [
         'idle_skip' => (bool) env('IMMERSION_TICK_IDLE_SKIP', true),
+
+        // One line with the moment (epoch seconds) the cron should next start
+        // PHP, read by cron-scheduler.sh before it boots anything. null turns it
+        // off (the script then runs the tick every minute, as before).
+        'next_run_file' => env('IMMERSION_TICK_NEXT_RUN_FILE', storage_path('framework/next-run')),
     ],
 
     /*

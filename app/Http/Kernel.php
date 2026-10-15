@@ -24,6 +24,9 @@ class Kernel extends HttpKernel
         // Terminable: after the response, rolls back a transaction a killed
         // request left open on a persistent connection (DB_PERSISTENT).
         \App\Http\Middleware\ResetDatabaseConnection::class,
+        // Terminable: with DB_PERSISTENT on, samples whether connections are being
+        // reused. Does nothing otherwise.
+        \App\Http\Middleware\SampleConnectionReuse::class,
     ];
 
     /**

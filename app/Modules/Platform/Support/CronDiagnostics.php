@@ -6,7 +6,6 @@ use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Platform\PlatformServiceProvider;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -21,7 +20,7 @@ class CronDiagnostics
 {
     public static function gather(): array
     {
-        $heartbeat = Cache::get(PlatformServiceProvider::HEARTBEAT_KEY);
+        $heartbeat = Ops::store()->get(PlatformServiceProvider::HEARTBEAT_KEY);
         $heartbeatAt = $heartbeat ? CarbonImmutable::parse($heartbeat) : null;
 
         [$overdueEvents, $overdueGames] = self::overdueTimeline();

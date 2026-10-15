@@ -32,14 +32,13 @@ class SendPlayerAccessLinks implements ShouldQueue
     {
         $players = Player::whereIn('id', $this->playerIds)->get();
 
-        // One job per player, so each is spread out by the mail rate limiter
-        // and waits for the daily allowance on its own (SendPlayerAccessLink).
+        // One after another in this very process, no queue: the Game Master
+        // pressed a button, the table is small, and a worker for it would cost a
+        // connection to start. Each one checks the day's allowance on its own
+        // (SendPlayerAccessLink) and one bounced address must not cost the rest
+        // of the table their invite.
         foreach ($players as $player) {
-            try {
-                SendPlayerAccessLink::dispatch($player->id);
-            } catch (\Throwable $exception) {
-                report($exception);
-            }
+            SendPlayerAccessLink::sendNow($player->id);
         }
     }
 }

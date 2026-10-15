@@ -5,7 +5,7 @@ namespace App\Modules\Immersion\Models;
 use App\Models\User;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
-use App\Modules\Immersion\Support\TickActivity;
+use App\Modules\Immersion\Support\TickPlanner;
 use App\Modules\Immersion\Models\Concerns\BumpsGameRevision;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -92,9 +92,13 @@ class Game extends Model
      */
     protected static function booted(): void
     {
+        // What can move the next timeline event: starting, pausing, resuming or
+        // ending a game (the cron's plan is rebuilt on its next look, see
+        // TickPlanner). Other writes to a game — an audio status, a toggled
+        // switch — leave the plan alone.
         static::saved(function (self $game) {
-            if ($game->status === 'running') {
-                TickActivity::touch();
+            if ($game->wasRecentlyCreated || $game->wasChanged(['status', 'started_at', 'paused_at', 'paused_seconds_total', 'finished_at'])) {
+                TickPlanner::invalidate();
             }
         });
 
@@ -224,8 +228,30 @@ class Game extends Model
         ]);
     }
 
+    /**
+     * Facts a snapshot already worked out (see GameSnapshot), so a game rebuilt
+     * from it answers the questions its pages ask without the database: whether
+     * the interrogation is open, whether the accusations are unlocked, which
+     * evidence has been delivered and how many accusations are pending.
+     *
+     * @var array<string, mixed>|null
+     */
+    private ?array $primed = null;
+
+    /** @param array<string, mixed> $facts */
+    public function prime(array $facts): static
+    {
+        $this->primed = $facts;
+
+        return $this;
+    }
+
     public function accusationsUnlocked(): bool
     {
+        if ($this->primed !== null && array_key_exists('accusations_unlocked', $this->primed)) {
+            return (bool) $this->primed['accusations_unlocked'];
+        }
+
         return $this->timelineEvents()
             ->where('type', 'unlock')
             ->whereNotNull('sent_at')
@@ -247,6 +273,10 @@ class Game extends Model
     {
         if (! $this->interrogation_enabled) {
             return false;
+        }
+
+        if ($this->primed !== null && array_key_exists('interrogation_open', $this->primed)) {
+            return (bool) $this->primed['interrogation_open'];
         }
 
         $gates = $this->timelineEvents()->where('cta_interrogation', true);
@@ -286,6 +316,10 @@ class Game extends Model
      */
     public function deliveredEvidenceCodes(): array
     {
+        if ($this->primed !== null && array_key_exists('delivered_evidence', $this->primed)) {
+            return (array) $this->primed['delivered_evidence'];
+        }
+
         $map = $this->caseDefinition()->evidenceCodeMap();
 
         if ($map === []) {
@@ -322,6 +356,10 @@ class Game extends Model
 
     public function pendingAccusationsCount(): int
     {
+        if ($this->primed !== null && array_key_exists('pending_accusations', $this->primed)) {
+            return (int) $this->primed['pending_accusations'];
+        }
+
         return max(0, $this->players()->count() - $this->accusations()->count());
     }
 

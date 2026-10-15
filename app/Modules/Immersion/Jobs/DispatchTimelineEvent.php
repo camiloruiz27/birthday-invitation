@@ -42,9 +42,44 @@ class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
      */
     public static function enqueue(TimelineEvent $event): void
     {
-        $slow = $event->isAudio() && $event->audio_script && ! $event->audio_path;
+        static::dispatch($event->id)->onQueue(self::needsVoice($event) ? (string) config('immersion.queues.slow') : 'default');
+    }
 
-        static::dispatch($event->id)->onQueue($slow ? (string) config('immersion.queues.slow') : 'default');
+    /**
+     * Sends the event NOW, in the process that calls it, without going through
+     * the queue table: the cron's tick, or the Game Master's click once the
+     * response has gone out. Reaching the queue would cost a connection to queue
+     * it and a worker run (another connection) to pick it up, for what is a few
+     * writes. An event that still has to be voiced is text-to-speech, which takes
+     * minutes, so that one alone goes to the slow queue.
+     *
+     * No retry on failure — the event is claimed (marked sent) before anything
+     * can fail, so a retry would find nothing to do anyway.
+     */
+    public static function run(TimelineEvent $event, bool $afterResponse = false): void
+    {
+        if (self::needsVoice($event)) {
+            static::enqueue($event);
+
+            return;
+        }
+
+        if ($afterResponse) {
+            static::dispatchAfterResponse($event->id);
+
+            return;
+        }
+
+        try {
+            static::dispatchSync($event->id);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    private static function needsVoice(TimelineEvent $event): bool
+    {
+        return $event->isAudio() && $event->audio_script && ! $event->audio_path;
     }
 
     public function uniqueId(): string
@@ -107,9 +142,15 @@ class DispatchTimelineEvent implements ShouldBeUnique, ShouldQueue
         if (GameMailPolicy::timelineEvent($event)) {
             foreach ($recipients as $recipient) {
                 try {
-                    SendTimelineMail::dispatch($event->id, $recipient->id);
+                    // El unico correo activo por defecto (acusaciones
+                    // habilitadas) sale aqui mismo, sin cola ni worker: son pocos
+                    // mensajes y se evita una conexion mas. Con `all` (cada sobre)
+                    // sigue por la cola, que es lo que absorbe el volumen.
+                    GameMailPolicy::sendTimelineInline()
+                        ? SendTimelineMail::sendNow($event->id, $recipient->id)
+                        : SendTimelineMail::dispatch($event->id, $recipient->id);
                 } catch (\Throwable $exception) {
-                    // Encolar uno no debe impedir encolar a los demas.
+                    // Un destinatario no debe impedir los demas.
                     report($exception);
                 }
             }

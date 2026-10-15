@@ -5,6 +5,8 @@ namespace App\Modules\Immersion\Jobs;
 use App\Modules\Immersion\Mail\PlayerAccessLinkMail;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\MailBudget;
+use App\Modules\Immersion\Support\MailFailures;
+use App\Modules\Immersion\Support\TickActivity;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -54,6 +56,22 @@ class SendPlayerAccessLink implements ShouldQueue
         return [new RateLimited('immersion-mail')];
     }
 
+    /**
+     * Sends it in the current process, with no queue (see SendTimelineMail).
+     * The link is a click away from the Game Master, so a failure only has to
+     * say so: they can copy it from the console.
+     */
+    public static function sendNow(int $playerId): void
+    {
+        $job = new static($playerId);
+
+        try {
+            $job->handle();
+        } catch (Throwable $exception) {
+            $job->failed($exception);
+        }
+    }
+
     public function handle(): void
     {
         $player = Player::find($this->playerId);
@@ -63,6 +81,15 @@ class SendPlayerAccessLink implements ShouldQueue
         }
 
         if (! MailBudget::canSend(MailBudget::OPTIONAL)) {
+            // In place there is no worker to retry later: say it, so the Game
+            // Master copies the link instead of waiting for an email.
+            if ($this->job === null) {
+                MailFailures::add((int) $player->game_id, 0, $player->id, "Enlace de {$player->name}: no se envio por el cupo de correo de hoy, copialo de la lista de jugadores");
+
+                return;
+            }
+
+            TickActivity::touch(now()->addSeconds(1800)->getTimestamp());
             $this->release(1800);
 
             return;
@@ -73,10 +100,17 @@ class SendPlayerAccessLink implements ShouldQueue
 
     public function failed(Throwable $exception): void
     {
-        // The link is still on the console to copy, so this is only logged.
         Log::error('player_access_link_mail_failed', [
             'player_id' => $this->playerId,
             'message' => $exception->getMessage(),
         ]);
+
+        // The link is still on the console to copy; the Game Master is told so
+        // they know to, instead of waiting for an email that did not leave.
+        $player = Player::find($this->playerId);
+
+        if ($player) {
+            MailFailures::add((int) $player->game_id, 0, $player->id, "Enlace de {$player->name}: el correo no salio, copialo de la lista de jugadores");
+        }
     }
 }

@@ -71,6 +71,65 @@ function Breakdown({ counts, labels }) {
     );
 }
 
+/**
+ * Whether persistent connections are doing anything: the share of sampled
+ * requests that reused a connection a PHP process already held. Shown only when
+ * DB_PERSISTENT is on.
+ */
+function ConnectionReuse({ reuse }) {
+    if (!reuse?.enabled) {
+        return null;
+    }
+
+    const percent = reuse.ratio === null ? null : Math.round(reuse.ratio * 100);
+
+    return (
+        <Alert variant={percent !== null && percent < 50 ? 'warning' : 'status'} className="mt-4">
+            Conexiones persistentes:{' '}
+            {percent === null
+                ? 'todavía sin muestras esta hora.'
+                : `${percent} % de las peticiones muestreadas reutilizó una conexión (${reuse.reused} reutilizadas, ${reuse.fresh} nuevas).`}
+            {percent !== null && percent < 50 && (
+                <> Si se mantiene así, el servidor no está conservando los procesos PHP y apagarlas no cambia nada.</>
+            )}
+        </Alert>
+    );
+}
+
+/** Which routes and commands opened the connections, this hour and the last. */
+function ConnectionOffenders({ connections }) {
+    const columns = [
+        ['Esta hora', Object.entries(connections.top_this_hour ?? {})],
+        ['Hora anterior', Object.entries(connections.top_last_hour ?? {})],
+    ];
+
+    if (columns.every(([, rows]) => rows.length === 0)) {
+        return null;
+    }
+
+    return (
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            {columns.map(([title, rows]) => (
+                <Card as="article" key={title}>
+                    <CardHeader title={`Quién abrió las conexiones — ${title.toLowerCase()}`} />
+                    {rows.length === 0 ? (
+                        <p className="text-sm text-ink-muted">Sin datos todavía.</p>
+                    ) : (
+                        <ul className="space-y-1 text-sm">
+                            {rows.map(([label, count]) => (
+                                <li key={label} className="flex justify-between gap-3">
+                                    <span className="truncate font-mono text-xs text-ink-muted">{label}</span>
+                                    <span className="tabular text-ink">{count}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </Card>
+            ))}
+        </div>
+    );
+}
+
 export default function AdminDashboard({ metrics, limits = null }) {
     const { people, catalog, usage, ai, health, topCases, recentGames } = metrics;
     const needsAttention =
@@ -139,9 +198,12 @@ export default function AdminDashboard({ metrics, limits = null }) {
                                 hint="Los sobres usan todo el cupo; enlaces y epílogos, el 80 %"
                             />
                         </div>
+                        <ConnectionReuse reuse={limits.connections.reuse?.this_hour} />
+                        <ConnectionOffenders connections={limits.connections} />
                         <p className="mt-3 text-xs text-ink-subtle">
-                            Cifras estimadas desde la caché del servidor: se reinician si se limpia la caché
-                            (cada despliegue). El aviso al 80 % queda en el registro.
+                            Cifras estimadas: cuentan las peticiones y comandos que abrieron una conexión
+                            (las que se responden desde la caché no). Sobreviven a los despliegues. El
+                            aviso al 80 % queda en el registro, con las rutas que más gastaron.
                         </p>
                     </section>
                 )}

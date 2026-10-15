@@ -3,7 +3,7 @@
 namespace App\Modules\Immersion\Support;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use App\Modules\Platform\Support\Ops;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -58,6 +58,10 @@ class GameRevision
 
         $channels = array_values(array_intersect(self::CHANNELS, (array) $channels));
 
+        // What readers keep ready for this game is rebuilt once the response has
+        // gone out (see GameSnapshot); it only needs to know something moved.
+        GameSnapshot::scheduleRefresh($gameId, $channels);
+
         // Inside a transaction the stamp must move AFTER the commit: a client
         // that reloads in between would read the old rows, remember the new
         // stamp and never ask again.
@@ -68,6 +72,46 @@ class GameRevision
         }
 
         self::write($gameId, $channels);
+    }
+
+    /**
+     * One suspect's transcript changed. Its own stamp, so a question to one
+     * suspect does not invalidate the transcripts of the others.
+     */
+    public static function bumpSession(?int $sessionId): void
+    {
+        if (! $sessionId) {
+            return;
+        }
+
+        GameSnapshot::scheduleSessionRefresh($sessionId);
+
+        $write = function () use ($sessionId) {
+            try {
+                Ops::store()->forever(self::sessionKey($sessionId), (string) hrtime(true));
+            } catch (Throwable) {
+            }
+        };
+
+        DB::transactionLevel() > 0 ? DB::afterCommit($write) : $write();
+    }
+
+    /** A transcript's stamp, created on first look; null when the cache cannot be read. */
+    public static function sessionStamp(int $sessionId): ?string
+    {
+        try {
+            $key = self::sessionKey($sessionId);
+            $value = Ops::store()->get($key);
+
+            if (! is_string($value)) {
+                Ops::store()->add($key, (string) hrtime(true));
+                $value = Ops::store()->get($key);
+            }
+
+            return is_string($value) ? $value : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -84,11 +128,11 @@ class GameRevision
         try {
             foreach (self::CHANNELS as $channel) {
                 $key = self::key($gameId, $channel);
-                $value = Cache::get($key);
+                $value = Ops::store()->get($key);
 
                 if (! is_string($value)) {
-                    Cache::add($key, (string) hrtime(true));
-                    $value = Cache::get($key);
+                    Ops::store()->add($key, (string) hrtime(true));
+                    $value = Ops::store()->get($key);
                 }
 
                 if (! is_string($value)) {
@@ -109,7 +153,7 @@ class GameRevision
         try {
             // add(): the page loads that call this are frequent, and rewriting
             // an unchanged file on each one is wasted disk work.
-            Cache::add(self::playerKey($token), $gameId, now()->addHours(self::PLAYER_TTL_HOURS));
+            Ops::store()->add(self::playerKey($token), $gameId, now()->addHours(self::PLAYER_TTL_HOURS));
         } catch (Throwable) {
             // Best effort: without it the poll answers "unknown" and reloads.
         }
@@ -118,7 +162,7 @@ class GameRevision
     public static function gameIdForPlayer(string $token): ?int
     {
         try {
-            $gameId = Cache::get(self::playerKey($token));
+            $gameId = Ops::store()->get(self::playerKey($token));
         } catch (Throwable) {
             return null;
         }
@@ -157,7 +201,7 @@ class GameRevision
             foreach ($channels as $channel) {
                 // Unique on every write and no read-modify-write, so two bumps
                 // at once can never collapse into the same value.
-                Cache::forever(self::key($gameId, $channel), (string) hrtime(true));
+                Ops::store()->forever(self::key($gameId, $channel), (string) hrtime(true));
             }
         } catch (Throwable) {
             // A failed hint must never fail the game action that triggered it.
@@ -167,6 +211,11 @@ class GameRevision
     private static function key(int $gameId, string $channel): string
     {
         return "immersion:rev:{$gameId}:{$channel}";
+    }
+
+    private static function sessionKey(int $sessionId): string
+    {
+        return "immersion:rev:session:{$sessionId}";
     }
 
     private static function playerKey(string $token): string

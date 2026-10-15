@@ -345,6 +345,31 @@ hosting compartido, asi que hay que agregarlo **una sola vez** a mano:
    (ajusta la ruta del binario de PHP si hPanel te ofrece un selector de
    version en vez de la ruta completa; usar PHP 8.2).
 
+   **La forma que se usa hoy** es la del script del repositorio, que decide
+   cada minuto si vale la pena arrancar PHP (ver abajo):
+   ```
+   * * * * * /bin/sh /home/u206029413/domains/misteriocode.com/public_html/cron-scheduler.sh
+   ```
+
+### Como decide el script `cron-scheduler.sh`
+
+El hosting limita al usuario MySQL a 500 conexiones nuevas por hora, y cada
+proceso del cron que toca la base gasta una. Un caso tiene un momento nuevo
+cada ~11 minutos, asi que casi todos los minutos de una partida no hay nada
+que hacer. Por eso el script, antes de arrancar PHP:
+
+- lee `storage/framework/next-run` (una hora en segundos epoch que escribe la
+  aplicacion: `TickPlanner`, el proximo evento de la linea de tiempo o el
+  proximo trabajo en cola) y **sale en milisegundos** si aun no llega;
+- cada 5 minutos (minuto 0, 5, 10...) corre `schedule:run` completo (latido,
+  reconciliacion de pagos, tareas diarias);
+- en los demas minutos, si algo esta vencido, corre solo `immersion:tick`;
+- si el archivo falta o esta vacio, corre el tick (es la opcion segura);
+- recorta `storage/logs/cron-scheduler.log` cuando pasa de ~2 MB.
+
+El latido (`platform:cron-status`) por eso es cada ~5 minutos, no cada uno.
+Detalle y diagnostico: `docs/escalabilidad-y-limites.md`.
+
 ### Cuando el cron del panel no dispara nada
 
 Le puede pasar: el cron job aparece en hPanel, con la ruta y la frecuencia

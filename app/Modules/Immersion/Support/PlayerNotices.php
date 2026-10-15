@@ -38,8 +38,16 @@ class PlayerNotices
         $game = $player->game;
         $items = [];
 
-        $events = $player->eventsForMeQuery()
-            ->get(['id', 'type', 'title', 'sent_at', 'cta_interrogation']);
+        // With snapshots on, the same facts come from what every player of the
+        // table already shares, with no database connection.
+        if (GameSnapshot::enabled()) {
+            $events = collect(GameSnapshot::visibleTo($player, GameSnapshot::timeline((int) $player->game_id)));
+            $accusation = GameSnapshot::accusationOf($player);
+        } else {
+            $events = $player->eventsForMeQuery()
+                ->get(['id', 'type', 'title', 'sent_at', 'cta_interrogation']);
+            $accusation = null;
+        }
 
         foreach ($events as $event) {
             if (in_array($event->type, ['email', 'audio_email'], true)) {
@@ -57,7 +65,9 @@ class PlayerNotices
             }
         }
 
-        $accusation = $player->accusation()->first(['id', 'epilogue_status']);
+        if (! GameSnapshot::enabled()) {
+            $accusation = $player->accusation()->first(['id', 'epilogue_status']);
+        }
 
         if ($game->ending_revealed_at) {
             $items[] = self::item('solution', 'solution', 'El caso se cerró: ya está la solución', null, $game->ending_revealed_at);

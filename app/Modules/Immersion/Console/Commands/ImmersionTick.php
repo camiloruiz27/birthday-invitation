@@ -2,8 +2,11 @@
 
 namespace App\Modules\Immersion\Console\Commands;
 
+use App\Exceptions\Handler;
 use App\Modules\Immersion\Support\TickActivity;
+use App\Modules\Immersion\Support\TickPlanner;
 use App\Modules\Platform\Support\ConnectionBudget;
+use App\Modules\Platform\Support\Ops;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -41,21 +44,35 @@ class ImmersionTick extends Command
 
     public function handle(): int
     {
-        // Nothing running, nothing queued: leave without touching the database.
-        if (! TickActivity::shouldRun(now())) {
+        $now = now();
+        $timelineDue = TickPlanner::timelineDue($now);
+        $workerDue = config('queue.default') !== 'sync' && TickActivity::workerDue($now);
+
+        // No event is due and nothing is queued: leave without touching the
+        // database. This is the common case — a case has a new moment about every
+        // eleven minutes — and it is what keeps the cron off the host's hourly
+        // connection allowance.
+        if (! $timelineDue && ! $workerDue) {
             return self::SUCCESS;
         }
 
         // This run opens a database connection of its own (the scheduler gives
         // every command its own process), which is worth counting.
-        ConnectionBudget::hit();
+        ConnectionBudget::hit('cmd:immersion:tick');
 
         $failed = false;
 
-        // Timeline first: what is due is enqueued, and the worker below then
-        // picks it up in this same tick instead of waiting a minute. The lock
-        // is short: it only stops two overlapping ticks from both scanning.
-        $failed = $this->locked('immersion:tick:timeline', 120, fn () => $this->step('immersion:process-timeline')) || $failed;
+        // Timeline first. Its events run inside this process (see
+        // DispatchTimelineEvent::run), so there is nothing for the worker to pick
+        // up for them. The lock is short: it only stops two overlapping ticks
+        // from both scanning.
+        if ($timelineDue) {
+            $failed = $this->locked('immersion:tick:timeline', 120, fn () => $this->step('immersion:process-timeline')) || $failed;
+
+            // What is due next, for the wakes that follow (and for the cron
+            // script, which does not even start PHP until then).
+            TickPlanner::plan();
+        }
 
         // Shared hosting has no daemon, so the worker is a short-lived process:
         // it drains the queue and exits. `queue:work` rejects the sync driver,
@@ -65,7 +82,11 @@ class ImmersionTick extends Command
         // never sits behind a text-to-speech that takes minutes. The lock
         // outlives the longest job (420 s) with room to spare, and expires on
         // its own if a host kill leaves it behind.
-        if (config('queue.default') !== 'sync') {
+        if ($workerDue) {
+            // Cleared BEFORE the worker starts: a job queued while it runs leaves
+            // a new note, and the next tick looks again.
+            TickActivity::clear();
+
             $queues = implode(',', [
                 (string) config('immersion.queues.mail'),
                 'default',
@@ -80,6 +101,8 @@ class ImmersionTick extends Command
                 '--quiet' => true,
             ])) || $failed;
         }
+
+        TickPlanner::publish();
 
         return $failed ? self::FAILURE : self::SUCCESS;
     }
@@ -119,6 +142,14 @@ class ImmersionTick extends Command
         try {
             return $this->call($command, $arguments) !== self::SUCCESS;
         } catch (Throwable $exception) {
+            // The database refusing connections (the host's hourly allowance) fails
+            // EVERY tick the same way until the hour turns over; one line every ten
+            // minutes says it, a line a minute buries the log.
+            if (Handler::databaseUnavailable($exception)
+                && ! Ops::store()->add('immersion:tick:db-error-logged', true, now()->addMinutes(10))) {
+                return true;
+            }
+
             Log::error('immersion_tick_step_failed', [
                 'command' => $command,
                 'message' => $exception->getMessage(),

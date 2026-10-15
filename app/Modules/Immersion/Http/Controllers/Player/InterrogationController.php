@@ -10,8 +10,10 @@ use App\Modules\Immersion\Models\InterrogationMessage;
 use App\Modules\Immersion\Models\InterrogationSession;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\AiGate;
 use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Immersion\Support\GameRevision;
+use App\Modules\Immersion\Support\GameSnapshot;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,10 +57,12 @@ class InterrogationController extends Controller
 
         // Only the claiming player's NAME is shown to the others, so the
         // related player is serialized with its credentials still hidden.
-        $sessions = InterrogationSession::where('game_id', $player->game_id)
-            ->with('player:id,name')
-            ->get()
-            ->keyBy('suspect_slug');
+        $sessions = GameSnapshot::enabled()
+            ? GameSnapshot::sessionsBySuspect((int) $player->game_id)
+            : InterrogationSession::where('game_id', $player->game_id)
+                ->with('player:id,name')
+                ->get()
+                ->keyBy('suspect_slug');
 
         // Once, not once per suspect: it is a query, and the board has a dozen.
         $delivered = $player->game->deliveredEvidenceCodes();
@@ -121,10 +125,12 @@ class InterrogationController extends Controller
         $suspect = $case->suspectForPlayer($slug);
         abort_if(! $suspect, 404);
 
-        $session = InterrogationSession::where('game_id', $player->game_id)
-            ->where('suspect_slug', $slug)
-            ->with(['messages', 'player:id,name'])
-            ->first();
+        $session = GameSnapshot::enabled()
+            ? GameSnapshot::sessionWithMessages((int) $player->game_id, $slug)
+            : InterrogationSession::where('game_id', $player->game_id)
+                ->where('suspect_slug', $slug)
+                ->with(['messages', 'player:id,name'])
+                ->first();
 
         $lockedBy = null;
 
@@ -234,6 +240,22 @@ class InterrogationController extends Controller
             ], 402);
         }
 
+        // Only so many questions are waited on at once: each one holds a PHP
+        // worker for as long as the gateway takes, and a burst must not leave the
+        // rest of the platform without any. Turned away, the player loses nothing
+        // (the slot goes back) and can simply try again.
+        $gate = AiGate::acquire();
+
+        if ($gate === null) {
+            $session->releaseQuestion();
+
+            return response()->json([
+                'message' => 'Hay muchos sospechosos respondiendo a la vez. No se gastó tu pregunta: inténtalo de nuevo en unos segundos.',
+                'ai_unavailable' => true,
+                'busy' => true,
+            ], 429)->header('Retry-After', '5');
+        }
+
         // The question is only paid for once there is a real answer to hand
         // over. A gateway that fails charges nothing and gives the slot back.
         try {
@@ -269,6 +291,8 @@ class InterrogationController extends Controller
             $session->releaseQuestion();
 
             throw $exception;
+        } finally {
+            AiGate::release($gate);
         }
 
         $this->clearFailures($session);

@@ -13,6 +13,7 @@ use App\Modules\Platform\Console\Commands\ListPromoCodes;
 use App\Modules\Platform\Console\Commands\MakeAdmin;
 use App\Modules\Platform\Console\Commands\MarketCheck;
 use App\Modules\Platform\Console\Commands\ProbeBoldUsd;
+use App\Modules\Platform\Console\Commands\PruneCache;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SendCronDiagnosticMail;
@@ -23,6 +24,8 @@ use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Geo\CountryLookup;
 use App\Modules\Platform\Support\Geo\MaxMindCountryLookup;
+use App\Modules\Platform\Support\Ops;
+use App\Modules\Platform\Support\PendingOrders;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -200,6 +203,7 @@ class PlatformServiceProvider extends ServiceProvider
                 UpdateGeoIpDatabase::class,
                 ProbeBoldUsd::class,
                 MarketCheck::class,
+                PruneCache::class,
             ]);
 
             $this->app->booted(function () {
@@ -217,7 +221,7 @@ class PlatformServiceProvider extends ServiceProvider
                 // write, no database, no lock. If this stops being current,
                 // the cron itself stopped.
                 $schedule->call(function () {
-                    Cache::put(self::HEARTBEAT_KEY, now()->toIso8601String(), now()->addDays(7));
+                    Ops::store()->put(self::HEARTBEAT_KEY, now()->toIso8601String(), now()->addDays(7));
                 })
                     ->everyMinute()
                     ->name('platform:scheduler-heartbeat')
@@ -233,6 +237,13 @@ class PlatformServiceProvider extends ServiceProvider
                         ->cron('*/7 * * * *')
                         ->withoutOverlapping(5);
                 }
+
+                // Expired cache and session files, and a count of the files the
+                // site holds (the plan allows a fixed number). Touches only the
+                // disk, never the database, so it costs no connection.
+                $schedule->command(PruneCache::class)
+                    ->hourlyAt(25)
+                    ->withoutOverlapping();
 
                 // A pending order never granted anything, so cleaning it up
                 // late costs nothing — daily is plenty.
@@ -256,9 +267,14 @@ class PlatformServiceProvider extends ServiceProvider
                 // confirmation page's own check (or Bold's webhook) resolved
                 // it. Every 5 minutes so nobody's case or credits sit
                 // unclaimed for anywhere near the 24h expiry window.
+                //
+                // Only while an order is actually waiting (PendingOrders): with
+                // none, each run is a connection to learn that. Bold's webhook is
+                // the normal way an order settles; this is the net under it.
                 if (config('platform.payments.enabled')) {
                     $schedule->command(ReconcilePendingOrders::class)
                         ->everyFiveMinutes()
+                        ->when(fn () => PendingOrders::mayExist())
                         ->withoutOverlapping();
                 }
             });

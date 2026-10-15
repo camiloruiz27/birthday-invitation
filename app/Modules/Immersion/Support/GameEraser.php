@@ -44,6 +44,9 @@ class GameEraser
 
         $game->delete();
 
+        // What was kept ready for its readers (see GameSnapshot).
+        GameSnapshot::forget((int) $game->id);
+
         foreach ($audioPaths as $path) {
             Storage::disk('local')->delete($path);
         }

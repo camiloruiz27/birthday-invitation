@@ -1,36 +1,40 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { router, usePage } from '@inertiajs/react';
 
 /**
  * Keeps a page current without hammering the database.
  *
- * It used to call `router.reload()` on a timer. Every reload is a full request
- * and every request opens a MySQL connection, and the shared host allows 500
- * of those per hour: three players plus the Game Master polling every few
- * seconds used them all in minutes and every page went down with a 500.
+ * Every reload is a full request and every request opens a MySQL connection;
+ * the shared host allows 500 of those per hour. So nothing here reloads on a
+ * timer. Each tick asks a tiny endpoint ("pollState.url") for the game's change
+ * stamps, which reads the cache and never touches the database, and only
+ * reloads when a stamp that someone on the screen WATCHES has moved.
  *
- * Now each tick only asks a tiny endpoint ("pollState.url") for the game's
- * change stamps. That endpoint reads the cache and never touches the database.
- * The real reload happens only when a stamp this page WATCHES moved, when it is
- * unknown (null: a cleared cache, a token it has not seen) or as a safety net
- * every SAFETY_RELOAD_MS for anything the stamps cannot see (time passing).
+ * One screen, one poller. The header (new-notice badges) and the page itself
+ * both need to stay current, and when each of them ran its own timer every
+ * change reloaded the page twice and every safety net doubled. They now
+ * SUBSCRIBE to a shared hub: it asks for the stamps once, works out which
+ * subscribers changed, and reloads ONCE with the union of what they asked for.
  *
- * `channels` says what the page shows: 'timeline' (envelopes, game state),
+ * `channels` says what a subscriber shows: 'timeline' (envelopes, game state),
  * 'interrogation' (suspects, questions) and 'accusation' (accusations, grading,
  * the ending). A question asked in an interrogation changes nothing in the
- * inbox, so the inbox watches only 'timeline' and does not reload because of
- * it. Leaving it out watches all three.
+ * inbox, so the inbox watches only 'timeline'. Leaving it out watches all three.
  *
- * Two brakes keep a busy table from flooding the server anyway: a change-driven
- * reload waits at least MIN_CHANGE_RELOAD_MS after the previous reload, and
- * failures back off exponentially instead of retrying at full speed. A
- * background reload that fails never replaces the page with an error screen.
+ * Brakes, all there to spare connections:
+ *  - a change waits MIN_CHANGE_RELOAD_MS after the previous reload;
+ *  - the safety net (a reload even when nothing moved) is only a backstop for a
+ *    write that forgot to move a stamp or a lost cache, so it is slow;
+ *  - failures back off exponentially instead of retrying at full speed;
+ *  - a tab nobody is looking at does nothing until it is visible again.
+ *
+ * A background reload that fails never replaces the page with an error screen.
  *
  * Inertia v1 has no `router.poll()`/`reload({ interval })` (v2+ features,
  * unavailable while pinned to v1 for Laravel 9 support), hence the hook.
  */
-const SAFETY_RELOAD_MS = 120000;
-const MIN_CHANGE_RELOAD_MS = 20000;
+export const SAFETY_RELOAD_MS = 600000;
+export const MIN_CHANGE_RELOAD_MS = 30000;
 const MAX_BACKOFF_MS = 60000;
 const ALL_CHANNELS = ['timeline', 'interrogation', 'accusation'];
 
@@ -53,141 +57,203 @@ function installInvalidGuard() {
 }
 
 /** True when any WATCHED channel differs from what the page on screen shows. */
-function hasChanged(stamps, seen, channels) {
+export function hasChanged(stamps, seen, channels) {
     if (!stamps || !seen) return true;
 
     return channels.some((channel) => stamps[channel] !== seen[channel]);
 }
 
-export default function usePoll(only, { interval = 5000, enabled = true, channels = ALL_CHANNELS } = {}) {
+/** @type {Map<string, Hub>} one hub per poll endpoint (per game and player) */
+const hubs = new Map();
+
+class Hub {
+    constructor(key, url, rev) {
+        this.key = key;
+        this.url = url;
+        this.seen = rev ?? null;
+        this.subs = new Set();
+        this.timer = null;
+        this.busy = false;
+        this.failures = 0;
+        this.ticks = 0;
+        this.lastReloadAt = Date.now();
+        this.stopped = false;
+
+        this.onVisible = () => {
+            if (document.hidden || this.stopped) return;
+
+            clearTimeout(this.timer);
+            this.tick();
+        };
+
+        document.addEventListener('visibilitychange', this.onVisible);
+        this.schedule();
+    }
+
+    active() {
+        return [...this.subs].filter((sub) => sub.enabled);
+    }
+
+    destroy() {
+        this.stopped = true;
+        clearTimeout(this.timer);
+        document.removeEventListener('visibilitychange', this.onVisible);
+        hubs.delete(this.key);
+    }
+
+    /** The shortest interval anyone asked for; hubs without an endpoint slow down. */
+    interval() {
+        const subs = this.active();
+
+        if (subs.length === 0) return 5000;
+
+        const base = Math.min(...subs.map((sub) => sub.interval));
+
+        // No endpoint to ask (a page without a game): every tick is a reload, so
+        // wait longer each time instead of hitting the server at a fixed rate.
+        if (!this.url) {
+            const cap = Math.max(...subs.map((sub) => sub.maxInterval ?? sub.interval));
+
+            return Math.min(cap, Math.round(base * 1.4 ** this.ticks));
+        }
+
+        return base;
+    }
+
+    schedule() {
+        if (this.stopped) return;
+
+        const delay = Math.min(MAX_BACKOFF_MS, this.interval() * 2 ** this.failures);
+        this.timer = setTimeout(() => this.tick(), delay);
+    }
+
+    reload(only) {
+        return new Promise((resolve) => {
+            let ok = false;
+            pollReloads += 1;
+
+            router.reload({
+                only,
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    ok = true;
+                },
+                onFinish: () => {
+                    pollReloads -= 1;
+                    resolve(ok);
+                },
+            });
+        });
+    }
+
+    async tick() {
+        if (this.stopped) return;
+
+        const subs = this.active();
+
+        // Nothing to refresh for a tab nobody is looking at (the visibility
+        // handler catches up when it returns), or nobody subscribed right now.
+        if (document.hidden || this.busy || subs.length === 0) {
+            this.schedule();
+            return;
+        }
+
+        this.busy = true;
+        this.ticks += 1;
+
+        try {
+            let stamps = null;
+            let changedSubs = subs;
+
+            if (this.url) {
+                const response = await fetch(this.url, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`poll ${response.status}`);
+                }
+
+                stamps = (await response.json()).r ?? null;
+                changedSubs = subs.filter((sub) => hasChanged(stamps, this.seen, sub.channels));
+            }
+
+            const sinceReload = Date.now() - this.lastReloadAt;
+            const stale = sinceReload >= SAFETY_RELOAD_MS;
+
+            // A change waits its turn: a table asking questions moves the stamps
+            // every few seconds, and a reload per tick per tab is exactly the
+            // traffic this exists to avoid. Unknown stamps (null) do not wait:
+            // something is wrong with the hint.
+            const due =
+                changedSubs.length > 0 && (stamps === null || sinceReload >= MIN_CHANGE_RELOAD_MS);
+
+            if (due || stale || !this.url) {
+                const targets = stale || !this.url ? subs : changedSubs;
+                const only = [...new Set(targets.flatMap((sub) => sub.only))];
+
+                const ok = await this.reload(only);
+
+                if (!ok) {
+                    this.failures += 1;
+                } else {
+                    this.failures = 0;
+                    this.lastReloadAt = Date.now();
+
+                    // The stamps read BEFORE the reload: anything that changed
+                    // while it ran shows up on the next tick.
+                    if (stamps !== null) this.seen = stamps;
+                }
+            } else {
+                this.failures = 0;
+            }
+        } catch {
+            this.failures += 1;
+        } finally {
+            this.busy = false;
+            this.schedule();
+        }
+    }
+}
+
+function subscribe(url, rev, sub) {
+    installInvalidGuard();
+
+    const key = url ?? 'none';
+    let hub = hubs.get(key);
+
+    if (!hub) {
+        hub = new Hub(key, url, rev);
+        hubs.set(key, hub);
+    }
+
+    hub.subs.add(sub);
+
+    return () => {
+        hub.subs.delete(sub);
+
+        if (hub.subs.size === 0) {
+            hub.destroy();
+        }
+    };
+}
+
+export default function usePoll(
+    only,
+    { interval = 5000, maxInterval, enabled = true, channels = ALL_CHANNELS } = {}
+) {
     const { pollState } = usePage().props;
     const url = pollState?.url ?? null;
-
-    // The stamps the page on screen corresponds to. A full page render brings
-    // its own; the hook keeps them up to date after each background reload.
-    const seen = useRef(pollState?.rev ?? null);
-    const lastRev = pollState?.rev ?? null;
-
-    useEffect(() => {
-        seen.current = lastRev;
-    }, [lastRev]);
+    const rev = pollState?.rev ?? null;
 
     useEffect(() => {
         if (!enabled) return undefined;
 
-        installInvalidGuard();
-
-        let stopped = false;
-        let timer = null;
-        let busy = false;
-        let failures = 0;
-        let lastReloadAt = Date.now();
-
-        const schedule = () => {
-            if (stopped) return;
-
-            const delay = Math.min(MAX_BACKOFF_MS, interval * 2 ** failures);
-            timer = setTimeout(tick, delay);
-        };
-
-        const reload = () =>
-            new Promise((resolve) => {
-                let ok = false;
-                pollReloads += 1;
-
-                router.reload({
-                    only,
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => {
-                        ok = true;
-                    },
-                    onFinish: () => {
-                        pollReloads -= 1;
-                        resolve(ok);
-                    },
-                });
-            });
-
-        const tick = async () => {
-            if (stopped) return;
-
-            // Nothing to refresh for a tab nobody is looking at; the
-            // visibilitychange handler catches up the moment it returns.
-            if (document.hidden || busy) {
-                schedule();
-                return;
-            }
-
-            busy = true;
-
-            try {
-                let stamps = null;
-                let changed = true;
-
-                if (url) {
-                    const response = await fetch(url, {
-                        headers: { Accept: 'application/json' },
-                        credentials: 'same-origin',
-                        cache: 'no-store',
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`poll ${response.status}`);
-                    }
-
-                    stamps = (await response.json()).r ?? null;
-                    changed = hasChanged(stamps, seen.current, channels);
-                }
-
-                const sinceReload = Date.now() - lastReloadAt;
-                const stale = sinceReload >= SAFETY_RELOAD_MS;
-
-                // A change waits its turn: a table asking questions moves the
-                // stamps every few seconds, and a reload per tick per tab is
-                // exactly the traffic this exists to avoid. Unknown stamps
-                // (null) do not wait: something is wrong with the hint.
-                const due = changed && (stamps === null || sinceReload >= MIN_CHANGE_RELOAD_MS);
-
-                if (due || stale || !url) {
-                    const ok = await reload();
-
-                    if (!ok) {
-                        failures += 1;
-                    } else {
-                        failures = 0;
-                        lastReloadAt = Date.now();
-
-                        // The stamps read BEFORE the reload: anything that
-                        // changed while it ran shows up on the next tick.
-                        if (stamps !== null) seen.current = stamps;
-                    }
-                } else {
-                    failures = 0;
-                }
-            } catch {
-                failures += 1;
-            } finally {
-                busy = false;
-                schedule();
-            }
-        };
-
-        const onVisible = () => {
-            if (document.hidden || stopped) return;
-
-            clearTimeout(timer);
-            tick();
-        };
-
-        document.addEventListener('visibilitychange', onVisible);
-        schedule();
-
-        return () => {
-            stopped = true;
-            clearTimeout(timer);
-            document.removeEventListener('visibilitychange', onVisible);
-        };
+        return subscribe(url, rev, { only, interval, maxInterval, enabled: true, channels });
+        // `rev` is only the starting point of a hub that does not exist yet.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [enabled, interval, url, JSON.stringify(only), JSON.stringify(channels)]);
+    }, [enabled, interval, maxInterval, url, JSON.stringify(only), JSON.stringify(channels)]);
 }

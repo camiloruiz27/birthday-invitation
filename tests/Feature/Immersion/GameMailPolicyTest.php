@@ -80,14 +80,18 @@ class GameMailPolicyTest extends TestCase
         $this->assertTrue($audio->fresh()->isSent());
     }
 
-    public function test_by_default_the_accusations_open_envelope_is_emailed_to_everyone(): void
+    public function test_by_default_the_accusations_open_envelope_is_emailed_to_everyone_without_the_queue(): void
     {
         Bus::fake([SendTimelineMail::class]);
+        Mail::fake();
         [, , , $unlock] = $this->table();
 
         $this->fire($unlock);
 
-        Bus::assertDispatchedTimes(SendTimelineMail::class, 2);
+        // In the same process, no queue and no worker: one email per game does
+        // not need either, and each would cost a database connection.
+        Mail::assertSent(\App\Modules\Immersion\Mail\CaseTimelineMail::class, 2);
+        Bus::assertNotDispatched(SendTimelineMail::class);
         $this->assertTrue($unlock->fresh()->isSent());
     }
 

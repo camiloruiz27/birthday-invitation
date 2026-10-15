@@ -4,6 +4,7 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
+use App\Modules\Immersion\Support\GameSnapshot;
 use App\Modules\Immersion\Support\RevealEnding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,12 @@ class AccusationController extends Controller
 {
     public function show(Player $player): Response
     {
-        $player->load('accusation');
+        // With snapshots on, their own accusation comes from what the table
+        // shares instead of a query.
+        GameSnapshot::enabled()
+            ? $player->setRelation('accusation', GameSnapshot::accusationOf($player))
+            : $player->load('accusation');
+
         $game = $player->game;
         $case = $game->caseDefinition();
 
