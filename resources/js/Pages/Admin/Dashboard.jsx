@@ -96,6 +96,35 @@ function ConnectionReuse({ reuse }) {
     );
 }
 
+/**
+ * How this hour's connections split over the MySQL users in play. Only shown
+ * when extra users are configured (DB_POOL_*): each user has its own hourly
+ * allowance, so what matters is the busiest one, not the sum.
+ */
+function ConnectionsByUser({ connections }) {
+    const rows = Object.entries(connections.by_connection ?? {});
+
+    if (rows.length < 2) {
+        return null;
+    }
+
+    return (
+        <Alert variant="status" className="mt-4">
+            Por usuario de MySQL esta hora:{' '}
+            {rows.map(([name, count], index) => (
+                <span key={name}>
+                    {index > 0 && ' · '}
+                    <span className="font-mono text-xs">{name}</span>{' '}
+                    <strong className="tabular text-ink">
+                        {count}
+                        {connections.limit > 0 ? ` de ${connections.limit}` : ''}
+                    </strong>
+                </span>
+            ))}
+        </Alert>
+    );
+}
+
 /** Which routes and commands opened the connections, this hour and the last. */
 function ConnectionOffenders({ connections }) {
     const columns = [
@@ -198,6 +227,7 @@ export default function AdminDashboard({ metrics, limits = null }) {
                                 hint="Los sobres usan todo el cupo; enlaces y epílogos, el 80 %"
                             />
                         </div>
+                        <ConnectionsByUser connections={limits.connections} />
                         <ConnectionReuse reuse={limits.connections.reuse?.this_hour} />
                         <ConnectionOffenders connections={limits.connections} />
                         <p className="mt-3 text-xs text-ink-subtle">

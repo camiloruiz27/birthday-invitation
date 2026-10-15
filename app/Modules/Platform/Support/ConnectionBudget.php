@@ -2,6 +2,7 @@
 
 namespace App\Modules\Platform\Support;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -30,17 +31,26 @@ class ConnectionBudget
     /** How many labels are remembered per hour: routes are few, but never unbounded. */
     private const MAX_LABELS = 60;
 
-    /** @param string $label the route name/URI template, or `cmd:<name>` for a command */
-    public static function hit(string $label = 'other'): void
+    /**
+     * @param  string  $label  the route name/URI template, or `cmd:<name>` for a command
+     * @param  string|null  $connection  the connection that was opened; the default one when omitted.
+     *                                    The host's allowance is per database USER, and extra users can be
+     *                                    configured (ConnectionPool), so each connection is counted, and
+     *                                    warned about, on its own.
+     */
+    public static function hit(string $label = 'other', ?string $connection = null): void
     {
         $limit = self::limit();
 
         try {
             $hour = now();
             $key = self::key($hour);
+            $connection ??= DB::getDefaultConnection();
 
             Ops::store()->add($key, 0, now()->addHours(3));
-            $count = (int) Ops::store()->increment($key);
+            Ops::store()->increment($key);
+
+            $count = self::countConnection($hour, $connection);
 
             self::countLabel($hour, $label);
 
@@ -48,6 +58,7 @@ class ConnectionBudget
             // request after it.
             if ($limit > 0 && $count === (int) ceil($limit * 0.8)) {
                 Log::warning('db_connection_budget_high', [
+                    'connection' => $connection,
                     'connections_this_hour' => $count,
                     'allowance_per_hour' => $limit,
                     'heaviest' => self::top(5),
@@ -57,6 +68,7 @@ class ConnectionBudget
 
             if ($limit > 0 && $count === $limit) {
                 Log::error('db_connection_budget_spent', [
+                    'connection' => $connection,
                     'connections_this_hour' => $count,
                     'allowance_per_hour' => $limit,
                     'heaviest' => self::top(5),
@@ -98,7 +110,11 @@ class ConnectionBudget
     /**
      * This hour and the one before, for the admin dashboard.
      *
-     * @return array{this_hour: int, last_hour: int, limit: int, top_this_hour: array<string, int>, top_last_hour: array<string, int>}
+     * `limit` is what ONE database user may open per hour; `by_connection` says
+     * how this hour's connections split over the users in play (one entry
+     * unless extra users are configured).
+     *
+     * @return array{this_hour: int, last_hour: int, limit: int, by_connection: array<string, int>, top_this_hour: array<string, int>, top_last_hour: array<string, int>}
      */
     public static function summary(): array
     {
@@ -107,6 +123,7 @@ class ConnectionBudget
                 'this_hour' => (int) Ops::store()->get(self::key(now()), 0),
                 'last_hour' => (int) Ops::store()->get(self::key(now()->subHour()), 0),
                 'limit' => self::limit(),
+                'by_connection' => self::byConnection(now()),
                 'top_this_hour' => self::top(8),
                 'top_last_hour' => self::top(8, now()->subHour()),
             ];
@@ -115,10 +132,47 @@ class ConnectionBudget
                 'this_hour' => 0,
                 'last_hour' => 0,
                 'limit' => self::limit(),
+                'by_connection' => [],
                 'top_this_hour' => [],
                 'top_last_hour' => [],
             ];
         }
+    }
+
+    /**
+     * Connections opened in an hour per database connection (user).
+     *
+     * @return array<string, int>
+     */
+    public static function byConnection(\DateTimeInterface $hour): array
+    {
+        $counts = [];
+
+        foreach ((array) Ops::store()->get(self::connectionsKey($hour), []) as $name) {
+            $counts[$name] = (int) Ops::store()->get(self::connectionKey($hour, $name), 0);
+        }
+
+        arsort($counts);
+
+        return $counts;
+    }
+
+    /** Counts one connection against its own user and returns that user's total this hour. */
+    private static function countConnection(\DateTimeInterface $hour, string $connection): int
+    {
+        $names = (array) Ops::store()->get(self::connectionsKey($hour), []);
+
+        if (! in_array($connection, $names, true)) {
+            // A handful at most (the pool has five users): no cap needed.
+            $names[] = $connection;
+            Ops::store()->put(self::connectionsKey($hour), $names, now()->addHours(3));
+        }
+
+        $key = self::connectionKey($hour, $connection);
+
+        Ops::store()->add($key, 0, now()->addHours(3));
+
+        return (int) Ops::store()->increment($key);
     }
 
     private static function countLabel(\DateTimeInterface $hour, string $label): void
@@ -149,6 +203,16 @@ class ConnectionBudget
     private static function key(\DateTimeInterface $at): string
     {
         return 'platform:db-connections:'.$at->format('YmdH');
+    }
+
+    private static function connectionsKey(\DateTimeInterface $at): string
+    {
+        return 'platform:db-connections:'.$at->format('YmdH').':conns';
+    }
+
+    private static function connectionKey(\DateTimeInterface $at, string $connection): string
+    {
+        return 'platform:db-connections:'.$at->format('YmdH').':conn:'.$connection;
     }
 
     private static function labelsKey(\DateTimeInterface $at): string

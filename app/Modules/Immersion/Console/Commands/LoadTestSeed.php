@@ -76,7 +76,9 @@ class LoadTestSeed extends Command
                 ->each(fn ($event) => $event->update(['sent_at' => now()->subMinutes(max(0, $minutes - (int) $event->trigger_offset_minutes))]));
 
             foreach (range(1, $players) as $index) {
-                $token = Str::lower(Str::random(40));
+                // A UUID, like a real player's: the column holds 36 characters, and SQLite (the
+                // tests) does not enforce lengths, so a longer token only fails on MySQL.
+                $token = (string) Str::uuid();
 
                 $game->players()->create([
                     'name' => "Carga {$number}-{$index}",

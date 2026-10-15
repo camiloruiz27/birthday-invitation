@@ -49,7 +49,10 @@ class ConnectionReuseProbe
             $id = self::connectionId();
             $pid = getmypid();
 
-            $key = 'platform:db-reuse:pid:'.$pid;
+            // Per connection too: with extra database users (ConnectionPool) one
+            // process keeps one persistent connection for each, and alternating
+            // between them must not read as "a new connection every time".
+            $key = 'platform:db-reuse:pid:'.$pid.':'.DB::getDefaultConnection();
             $last = Ops::store()->get($key);
 
             $reused = $last !== null && (int) $last === $id;

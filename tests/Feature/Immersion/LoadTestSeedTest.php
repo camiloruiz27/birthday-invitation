@@ -46,6 +46,10 @@ class LoadTestSeedTest extends TestCase
         $this->assertSame('habitacion-314', $file['case']);
         $this->assertCount(12, $file['players']);
         $this->assertCount(12, array_unique(array_column($file['players'], 'token')));
+
+        foreach ($file['players'] as $player) {
+            $this->assertTrue(\Illuminate\Support\Str::isUuid($player['token']), 'Tokens must be real-looking UUIDs: the column holds 36 characters.');
+        }
     }
 
     public function test_the_games_are_already_part_way_through_the_case(): void

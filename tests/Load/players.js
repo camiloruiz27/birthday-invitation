@@ -42,6 +42,7 @@ const pageMs = new Trend('page_ms', true);
 const askMs = new Trend('ask_ms', true);
 const askOk = new Rate('ask_ok');
 const busy = new Counter('ask_busy_429');
+const throttled = new Counter('ask_throttled_429');
 const unavailable = new Counter('http_503');
 const serverErrors = new Counter('http_5xx_other');
 
@@ -143,13 +144,24 @@ function ask(token, suspect) {
 
     record(response, askMs);
 
+    // Two different 429s. The AI gate ("busy") hands the question back unspent and
+    // is by design; the rate limiter ("Too Many Attempts") is NOT: one player has a
+    // budget of their own, so seeing it here means some other traffic is spending it.
+    let isBusy = false;
+
     if (response.status === 429) {
-        busy.add(1);
+        try {
+            isBusy = response.json('busy') === true;
+        } catch (e) {
+            isBusy = false;
+        }
+
+        (isBusy ? busy : throttled).add(1);
     }
 
-    // 200 answered; 403 (suspect taken by a teammate) and 422 (no questions left)
-    // are normal game rules, not failures of the platform.
-    askOk.add([200, 403, 422, 429].includes(response.status));
+    // 200 answered; 403 (suspect taken by a teammate), 422 (no questions left) and
+    // the AI gate's busy 429 are normal game rules, not failures of the platform.
+    askOk.add([200, 403, 422].includes(response.status) || isBusy);
 }
 
 // ---- one player's session ---------------------------------------------------------------

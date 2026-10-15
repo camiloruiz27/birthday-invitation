@@ -6,6 +6,7 @@ use App\Modules\Platform\Support\ConnectionReuseProbe;
 use App\Modules\Platform\Support\Ops;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Tests\Support\CreatesGameMasters;
 use Tests\TestCase;
@@ -58,7 +59,7 @@ class ConnectionReuseProbeTest extends TestCase
 
         ConnectionReuseProbe::sample();
         // The process is the same but MySQL gave it another connection.
-        Ops::store()->put('platform:db-reuse:pid:'.getmypid(), 999999, 600);
+        Ops::store()->put('platform:db-reuse:pid:'.getmypid().':'.DB::getDefaultConnection(), 999999, 600);
         ConnectionReuseProbe::sample();
 
         $this->assertSame(2, ConnectionReuseProbe::summary()['fresh']);
@@ -72,7 +73,7 @@ class ConnectionReuseProbeTest extends TestCase
 
         foreach (range(1, 60) as $i) {
             // Every sample finds a different connection than the last.
-            Ops::store()->put('platform:db-reuse:pid:'.getmypid(), 1_000_000 + $i, 600);
+            Ops::store()->put('platform:db-reuse:pid:'.getmypid().':'.DB::getDefaultConnection(), 1_000_000 + $i, 600);
             ConnectionReuseProbe::sample();
         }
 

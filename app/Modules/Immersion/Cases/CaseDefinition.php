@@ -306,6 +306,45 @@ class CaseDefinition
     }
 
     /**
+     * The fewest and the most ordinary questions (confrontations left out) any
+     * interrogable person of this case has. People differ: a witness who can
+     * confirm two facts does not need the five a suspect with a full story
+     * does, so copy that promises "N questions per person" has to speak of a
+     * range, not of the case default.
+     *
+     * @return array{min: int, max: int}
+     */
+    public function baseQuestionRange(): array
+    {
+        $totals = [];
+
+        foreach (array_keys($this->interrogableSuspects()) as $slug) {
+            $totals[] = array_sum(array_column(
+                array_filter($this->interrogationStages($slug), fn (array $stage) => ! $stage['confrontation']),
+                'questions'
+            ));
+        }
+
+        if ($totals === []) {
+            return ['min' => 0, 'max' => 0];
+        }
+
+        return ['min' => min($totals), 'max' => max($totals)];
+    }
+
+    /**
+     * "5 preguntas" when everyone has the same number, "entre 3 y 5 preguntas"
+     * when they do not: the words used wherever a player is told how many
+     * questions each person gets.
+     */
+    public function questionsPerPersonLabel(): string
+    {
+        ['min' => $min, 'max' => $max] = $this->baseQuestionRange();
+
+        return $min === $max ? "{$max} preguntas" : "entre {$min} y {$max} preguntas";
+    }
+
+    /**
      * Questions open right now, given the evidence codes already delivered
      * to the table: every stage whose `after` codes have all arrived.
      */

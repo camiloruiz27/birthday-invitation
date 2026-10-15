@@ -142,7 +142,7 @@
                                     Interrogar a los sospechosos
                                 </a>
                                 <p style="margin:10px 0 0;font-family:Arial,sans-serif;font-size:12px;color:#5c5236;">
-                                    Tienes {{ $interrogationQuestions }} preguntas por persona.
+                                    Tienes {{ $questionsLabel }} por persona.
                                 </p>
                             </td>
                         </tr>

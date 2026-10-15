@@ -47,7 +47,9 @@ class TrackConnectionBudget
     public function terminate(Request $request, $response): void
     {
         if (self::$queried) {
-            ConnectionBudget::hit(self::label($request));
+            // The connection the request ran on: with extra database users
+            // (ConnectionPool) it is not always the main one.
+            ConnectionBudget::hit(self::label($request), DB::getDefaultConnection());
         }
 
         self::$queried = false;

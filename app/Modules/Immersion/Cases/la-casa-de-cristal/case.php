@@ -112,7 +112,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 65,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 7,
 
         'price_amount' => 59900,
@@ -270,6 +270,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/oscar-prieto.md',
             'photo' => 'oscar-prieto.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Seguridad de la casa',
             'motive' => null,
             'alibi' => null,

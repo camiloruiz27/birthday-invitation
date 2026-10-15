@@ -24,7 +24,7 @@ const FILTER_LABELS = {
  * understood the one-investigator-per-person rule or what the end of an
  * interrogation gives you.
  */
-function interrogationTour(maxQuestions) {
+function interrogationTour(questionsLabel) {
     return [
         {
             title: 'Ya pueden interrogar',
@@ -38,7 +38,7 @@ function interrogationTour(maxQuestions) {
         },
         {
             title: '2. Pregunta con intención',
-            body: `Tienes ${maxQuestions} preguntas por persona, y cada una cuenta. Las respuestas las genera nuestro sistema que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
+            body: `Tienes ${questionsLabel} por persona, y cada una cuenta. Las respuestas las genera nuestro sistema que interpreta a la persona, así que pregunta por hechos, horarios y contradicciones; no vale pedirle que confiese.`,
         },
         {
             title: '3. Habrá nuevas preguntas más adelante',
@@ -63,8 +63,12 @@ export default function InterrogationIndex({
     victim,
     sessions,
     maxQuestions,
+    questionsLabel = null,
     availability,
 }) {
+    // Older payloads only carry the case default.
+    const questionsText = questionsLabel || `${maxQuestions} preguntas`;
+
     // Suspects are claimed by whoever asks first, so a board that only
     // updates on reload actively misleads: two players walk into the same
     // interrogation because neither saw the other take it.
@@ -149,7 +153,7 @@ export default function InterrogationIndex({
             </div>
 
             <Alert variant="info" className="mt-5">
-                Tienes <strong className="text-ink">{maxQuestions} preguntas</strong> por persona;
+                Tienes <strong className="text-ink">{questionsText}</strong> por persona;
                 a algunas se les habilitan más cuando llega nueva evidencia, y entonces puedes
                 volver a interrogarlas. Cada persona habla con un solo investigador: el primero
                 que le pregunte se queda con ese interrogatorio, así que repártanse y compartan
@@ -201,7 +205,7 @@ export default function InterrogationIndex({
                 </div>
             )}
 
-            <GuidedTour id="interrogation" steps={interrogationTour(maxQuestions)} />
+            <GuidedTour id="interrogation" steps={interrogationTour(questionsText)} />
         </PlayerLayout>
     );
 }

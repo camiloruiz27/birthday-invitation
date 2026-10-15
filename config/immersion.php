@@ -113,15 +113,35 @@ return [
     | Interrogation
     |--------------------------------------------------------------------------
     |
-    | Default question budget per suspect. Each session stores the limit it
-    | was created with (immersion_interrogation_sessions.max_questions), so
-    | changing this value never alters games already in progress. A future
-    | case definition can override it per case.
+    | Default question budget per person, and the ceiling of the ordinary
+    | questions a case may give anyone (3 to this value; see Cases/README.md).
+    | Each session stores the limit it was created with
+    | (immersion_interrogation_sessions.max_questions), so changing this value
+    | never alters games already in progress. A case overrides it per case
+    | (`limits.interrogation_questions`) and per person (`interrogation.stages`).
     |
     */
 
     'interrogation' => [
         'max_questions' => (int) env('IMMERSION_MAX_QUESTIONS', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Players per game
+    |--------------------------------------------------------------------------
+    |
+    | `max` is the table's ceiling, the Game Master included when they play
+    | (automatic mode). It is enforced on the server and mirrored by the form's
+    | "add player" button. A case's own min_players/max_players are only a
+    | recommendation shown to the buyer, never a limit. `initial_rows` is how
+    | many empty slots the new-game form opens with.
+    |
+    */
+
+    'players' => [
+        'max' => 12,
+        'initial_rows' => 3,
     ],
 
     /*
@@ -329,6 +349,11 @@ return [
 
     'rate_limits' => [
         'interrogation_ask' => env('IMMERSION_THROTTLE_ASK', '20,1'),
+
+        // The "has anything changed" polling, per IP. A table of twelve polling every
+        // twelve seconds is ~60 a minute; raise it for a load test, where every player
+        // comes from one address.
+        'poll' => env('IMMERSION_THROTTLE_POLL', '240,1'),
     ],
 
 ];

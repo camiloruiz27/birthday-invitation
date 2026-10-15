@@ -54,7 +54,7 @@ Route::get('/cookies', [LegalController::class, 'cookies'])->name('cookies');
 
 // The footer selector: a visitor correcting which price list (COP / USD) they
 // were put on. Open to everyone, signed in or not.
-Route::post('/mercado', [MarketController::class, 'update'])->middleware('throttle:30,1')->name('market.update');
+Route::post('/mercado', [MarketController::class, 'update'])->middleware('throttle:30,1,market')->name('market.update');
 
 /*
 |--------------------------------------------------------------------------
@@ -69,20 +69,20 @@ Route::post('/mercado', [MarketController::class, 'update'])->middleware('thrott
 Route::middleware('guest')->group(function () {
     Route::get('/registro', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/registro', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:'.config('platform.rate_limits.register'));
+        ->middleware('throttle:'.config('platform.rate_limits.register').',register');
 
     Route::get('/ingresar', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/ingresar', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:'.config('platform.rate_limits.login'));
+        ->middleware('throttle:'.config('platform.rate_limits.login').',login');
 
     Route::get('/recuperar-clave', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('/recuperar-clave', [PasswordResetLinkController::class, 'store'])
-        ->middleware('throttle:'.config('platform.rate_limits.password_email'))
+        ->middleware('throttle:'.config('platform.rate_limits.password_email').',password-email')
         ->name('password.email');
 
     Route::get('/restablecer-clave/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('/restablecer-clave', [NewPasswordController::class, 'store'])
-        ->middleware('throttle:'.config('platform.rate_limits.password_reset'))
+        ->middleware('throttle:'.config('platform.rate_limits.password_reset').',password-reset')
         ->name('password.store');
 });
 
@@ -106,11 +106,11 @@ Route::middleware('auth')->group(function () {
         ->name('verification.notice');
 
     Route::get('/verificar-correo/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-        ->middleware(['signed', 'throttle:'.config('platform.rate_limits.verify_email')])
+        ->middleware(['signed', 'throttle:'.config('platform.rate_limits.verify_email').',verify-email'])
         ->name('verification.verify');
 
     Route::post('/verificar-correo/reenviar', [EmailVerificationController::class, 'resend'])
-        ->middleware('throttle:'.config('platform.rate_limits.verify_email_resend'))
+        ->middleware('throttle:'.config('platform.rate_limits.verify_email_resend').',verify-resend')
         ->name('verification.send');
 
     Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -217,5 +217,5 @@ Route::post('/webhooks/bold', BoldWebhookController::class)->name('payments.webh
 */
 
 Route::get('/webhooks/cron-trigger', CronTriggerController::class)
-    ->middleware('throttle:120,1')
+    ->middleware('throttle:120,1,cron-trigger')
     ->name('cron.trigger');

@@ -22,6 +22,7 @@ use App\Modules\Platform\Console\Commands\UpdateGeoIpDatabase;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Pricing\QuoteBuilder;
+use App\Modules\Platform\Support\ConnectionPool;
 use App\Modules\Platform\Support\Geo\CountryLookup;
 use App\Modules\Platform\Support\Geo\MaxMindCountryLookup;
 use App\Modules\Platform\Support\Ops;
@@ -101,6 +102,9 @@ class PlatformServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // Defines the extra MySQL users' connections, if any are configured.
+        ConnectionPool::register();
+
         // Bound directly, not behind a config switch like the AI providers:
         // there is no safe "Null" fallback for real money (see
         // PaymentProvider's docblock). Whether a real checkout is offered at

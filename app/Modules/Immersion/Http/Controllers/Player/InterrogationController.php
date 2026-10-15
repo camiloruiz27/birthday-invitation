@@ -51,6 +51,7 @@ class InterrogationController extends Controller
                 'victim' => $case->victim(),
                 'sessions' => (object) [],
                 'maxQuestions' => $case->interrogationQuestions(),
+                'questionsLabel' => $case->questionsPerPersonLabel(),
                 'availability' => (object) [],
             ]);
         }
@@ -75,6 +76,10 @@ class InterrogationController extends Controller
             'victim' => $case->victim(),
             'sessions' => $sessions,
             'maxQuestions' => $case->interrogationQuestions(),
+
+            // People differ (a witness with two facts has fewer questions than
+            // a suspect with a full story), so the board speaks of a range.
+            'questionsLabel' => $case->questionsPerPersonLabel(),
 
             // Per person: what is open now and what the case holds in total,
             // so the board can say "hasta 8 preguntas, algunas más adelante".

@@ -90,7 +90,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 45,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 6,
 
         'price_amount' => 49900,
@@ -243,6 +243,9 @@ return [
             'role' => 'fuente secundaria (personal de emergencias)',
             'file' => 'suspects/paramedico.md',
             'photo' => 'paramedico.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Equipo de emergencias que atendió a la víctima',
             'motive' => null,
             'alibi' => null,

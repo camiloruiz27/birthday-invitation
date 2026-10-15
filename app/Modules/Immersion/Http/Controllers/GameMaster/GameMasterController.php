@@ -88,6 +88,13 @@ class GameMasterController extends Controller
         return Inertia::render('GameMaster/CreateGame', [
             'initialCase' => $library->pluck('slug')->contains($requested) ? $requested : null,
 
+            // The form opens with a few empty slots and stops offering more at
+            // the ceiling; the server enforces the same number in store().
+            'playerLimits' => [
+                'max' => $this->maxPlayers(),
+                'initial_rows' => (int) config('immersion.players.initial_rows', 3),
+            ],
+
             // Each case carries its own quota, so the form can react as the
             // Game Master switches between them.
             'library' => $library->map(function ($case) use ($quotas, $cases, $cost) {
@@ -121,8 +128,21 @@ class GameMasterController extends Controller
         ]);
     }
 
+    /**
+     * The most players a table can have, the Game Master included when they
+     * play (automatic mode).
+     */
+    private function maxPlayers(): int
+    {
+        return max(1, (int) config('immersion.players.max', 12));
+    }
+
     public function store(Request $request, CaseRegistry $cases, GameQuota $quota): RedirectResponse
     {
+        // The form lists the OTHER players; in automatic mode the owner joins
+        // them on their own, so they take one of the seats.
+        $maxOthers = $this->maxPlayers() - ($request->input('mode') === Game::MODE_AUTOMATIC ? 1 : 0);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'case_slug' => ['nullable', 'string', Rule::in($cases->slugs())],
@@ -139,9 +159,12 @@ class GameMasterController extends Controller
             ])],
             'interrogation_enabled' => ['nullable', 'boolean'],
 
-            'players' => ['required', 'array', 'min:1'],
+            'players' => ['required', 'array', 'min:1', 'max:'.$maxOthers],
             'players.*.name' => ['required', 'string', 'max:255'],
             'players.*.email' => ['required', 'email'],
+        ], [
+            'players.max' => 'Una partida admite como máximo '.$this->maxPlayers().' jugadores'
+                .($maxOthers < $this->maxPlayers() ? ' contándote a ti (juegas en modo automático)' : '').'.',
         ]);
 
         $case = $cases->get($data['case_slug'] ?? (string) config('immersion.default_case'));

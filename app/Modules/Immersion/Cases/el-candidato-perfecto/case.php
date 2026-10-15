@@ -171,7 +171,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 65,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 6,
 
         'price_amount' => 59900,
@@ -344,7 +344,7 @@ return [
             // His note about Ramón's behaviour that afternoon is gated on V11 + TP.
             'interrogation' => ['stages' => [
                 ['questions' => 3],
-                ['questions' => 2, 'after' => ['V11', 'TP'], 'note' => 'Con el registro de acceso y la declaración de Paola'],
+                ['questions' => 1, 'after' => ['V11', 'TP'], 'note' => 'Con el registro de acceso y la declaración de Paola'],
             ]],
             'public' => [
                 'age' => '58 años',

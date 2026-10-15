@@ -27,7 +27,7 @@ Tomados de tu hPanel y de la documentación de Hostinger. Los límites son **fij
 
 | Recurso | Valor | Qué pasa al pasarlo |
 |---|---|---|
-| Conexiones nuevas por hora a MySQL (por usuario) | **500** (lo dice el propio error; la tabla pública no lo lista) | Error 1226: todo falla hasta que el contador se reinicia |
+| Conexiones nuevas por hora a MySQL | **500, por cuenta de MySQL** (usuario@host). Verificado el 2026-10-15 en test: `SHOW GRANTS FOR 'u206029413_test_misterio'@'%'` dice `WITH MAX_CONNECTIONS_PER_HOUR 500 MAX_USER_CONNECTIONS 75`. Ojo: phpMyAdmin entra como `@127.0.0.1`, otra cuenta, y esa **no** muestra el tope; la que cuenta es la `@%` que usa la aplicación. Producción y test usan usuarios distintos, así que tienen contadores separados | Error 1226: todo falla hasta que el contador se reinicia |
 | Conexiones MySQL abiertas a la vez, por usuario | 75 | Errores de "demasiadas conexiones" |
 | PHP workers | 60 | Las peticiones se encolan; si se agotan, 503/508 |
 | Procesos máximos | 120 | Errores de recursos |
@@ -48,6 +48,8 @@ Se editan desde hPanel → Archivos → Administrador de archivos → `public_ht
 |---|---|---|---|
 | `DB_PERSISTENT` | `false` | Cada proceso PHP conserva su conexión a MySQL entre peticiones | Tras probarlo en test (§6.2) |
 | `DB_REUSE_PROBE_EVERY` | `20` | Con persistente, 1 de cada N peticiones mide si se reutiliza | Bájalo a 1–5 mientras pruebas |
+| `DB_POOL_1_USERNAME` / `DB_POOL_1_PASSWORD` (hasta `_5`) | vacío | Otros usuarios MySQL sobre la **misma base**: las páginas del jugador se reparten entre ellos (§8.9) | **Solo** tras confirmar con Hostinger que el tope es por usuario |
+| `DB_POOL_SPARE_DEFAULT` | `false` | Deja al usuario principal fuera del reparto, para el cron, el Game Master y los pagos | Con el pool activo |
 | `IMMERSION_SNAPSHOTS` | `false` | Las páginas del jugador se sirven de caché y no de la base (§4.3) | Tras probarlo en test (§6.1) |
 | `IMMERSION_TICK_IDLE_SKIP` | `true` | El cron no consulta la base si no hay nada que hacer | Solo `false` para depurar |
 | `IMMERSION_TICK_NEXT_RUN_FILE` | `storage/framework/next-run` | Archivo donde el cron lee cuándo despertar PHP | No tocar |
@@ -78,9 +80,9 @@ conexiones por hora  =  cron  +  peticiones web que tocan la base  +  visitas an
 | Recargas por cambio de cada pestaña | hasta 180/h | tope de una cada 30 s; de caché con instantáneas |
 | Clics de navegación del jugador | 60–180/h | ~0 con instantáneas |
 | Audio de sobres (rangos) | 50–150 por mesa | 0 (URL estática) |
-| Preguntas a sospechosos | ~45–70 por partida | igual: **escriben** |
+| Preguntas a sospechosos | ~45–70 por partida | ~42–65: **escriben**, así que siguen gastando (ver abajo) |
 
-Una partida de 4 + Game Master gastaba del orden de **900–1.300 conexiones/h** (estimado). Con todo activado queda en **~70–90/h**, casi todas preguntas, más el cron compartido.
+Una partida de 3–4 jugadores + Game Master gastaba del orden de **900–1.300 conexiones/h** (estimado). Con todo activado queda en **~70–90/h**, casi todas preguntas, más el cron compartido.
 
 Ejemplos con el tope de 500:
 
@@ -89,6 +91,8 @@ Ejemplos con el tope de 500:
 | 1 partida (4 jugadores) | ~80 | Sí, con holgura |
 | 6 partidas a la vez (24 jugadores) | ~500 | En el límite |
 | 50 partidas a la vez (200 jugadores) | ~2.500 (solo preguntas) | **No** sin conexión persistente o sin tope |
+
+**Preguntas por persona (2026-10-15).** Cada pregunta es una escritura y abre una conexión, y un sospechoso lo interroga solo quien le pregunta primero, así que el gasto de una partida es la suma de las preguntas de todas sus personas. Antes todas tenían 5; ahora cada persona tiene de 3 a 5 según cuántos hechos distintos le deja confirmar su `.md` (testigos y sistemas con pocos datos: 3 o 4; el culpable y los sospechosos con historia completa: 5). En los 13 casos publicados bajó un 7 % las preguntas normales (550 → 511); las de confrontación no cambiaron. Es una palanca **lineal y modesta**: recortar un 40 % más sube la capacidad ~40 %, nunca la multiplica. Lo que la multiplica es `DB_PERSISTENT` (§6.2) o más cupo (§8). Los números de cada caso están en su `case.php` (`interrogation.stages`); la regla, en `Cases/README.md`.
 
 ### 4.2 Qué hace cada pieza
 
@@ -191,6 +195,7 @@ Abre un ticket (chat de hPanel). Texto sugerido:
 > Hola. Mi sitio misteriocode.com (usuario MySQL `u206029413_viaje_ctg`) recibe el error `1226: User has exceeded the 'max_connections_per_hour' resource (current value: 500)`. Es una plataforma de juego multijugador: las partidas generan tráfico real y legítimo, y el tope de 500 conexiones nuevas por hora se agota con unas pocas partidas simultáneas.
 > Ya redujimos el consumo en el código (caché, sondeo sin base de datos, cron predictivo) y estamos probando conexiones persistentes, pero necesito margen.
 > ¿Pueden **subir `max_connections_per_hour`** de ese usuario (por ejemplo a 5.000), o indicarme qué plan lo incluye? También quiero confirmar si en mi plan los PHP workers (60) y las 75 conexiones simultáneas son fijos.
+> Además necesito saber si ese tope de 500 conexiones nuevas por hora se cuenta **por usuario de MySQL, por base de datos o por cuenta de hosting**, y si desde hPanel puedo crear **varios usuarios MySQL con acceso a la misma base**. (`SHOW GRANTS` de mi usuario no muestra `MAX_CONNECTIONS_PER_HOUR`.)
 > Gracias.
 
 El resultado es incierto: a veces suben el tope, a veces solo reinician el contador. Guarda su respuesta en este manual.
@@ -252,6 +257,41 @@ Qué **no** conviene en esta etapa: una base SQLite por partida (sin tope de con
 ### 8.8 Plan B si LiteSpeed no reutiliza conexiones y no hay migración aún
 
 **Volcado diferido de preguntas** (no implementado; solo diseño): `ask` escribe la pregunta y la respuesta en un archivo por partida (con `flock`) y el cron las pasa a la base en bloque cada minuto. Quita la conexión de cada pregunta, pero toca el cobro de créditos y la exclusividad del sospechoso (hoy se garantizan con una actualización atómica en MySQL). Solo vale la pena si tras medir `DB_PERSISTENT` no sirve **y** migrar a VPS no es posible.
+
+### 8.9 Varias bases o varios usuarios MySQL
+
+La idea: que el tope de 500 por hora no sea uno solo. Hay dos formas, y solo una está construida.
+
+**A. Una base por Game Master, con una base central que enruta** (descartada). Cada Game Master tendría su base y una central diría cuál. Es un cambio de semanas con riesgo sobre el dinero:
+- Los créditos, los pagos y las partidas se escriben en la **misma transacción** (`EndingBilling`, `InterrogationController`, `StartCheckout`); con bases distintas se pierde esa atomicidad y no existen llaves foráneas entre bases.
+- Un jugador entra con un token suelto: habría que averiguar en qué base está su partida (otra consulta, otra conexión).
+- Cada petición abriría **dos** conexiones (central y propia): el gasto se duplica en vez de bajar.
+- El cron, los trabajos en cola, el panel `/admin`, las migraciones y 76 archivos de test tendrían que recorrer todas las bases.
+
+**B. Varios usuarios MySQL sobre la misma base** (construida, apagada). Una petición a `/jugador/{token}/...` se fija a uno de los usuarios según un hash del token (`ConnectionPool`, `UseConnectionPool`). Dentro de esa petición todo (consultas, transacciones, candados, trabajos en cola) usa **esa** conexión, así que nada del código cambia; entre peticiones, la mesa se reparte. Como la base es la misma, los ids, las llaves y la caché valen igual. El Game Master, los pagos y el cron quedan en el usuario principal.
+
+Sirve porque el tope es **por cuenta de MySQL** (verificado, §2). Lo que falta confirmar es si hPanel deja crear más usuarios sobre la misma base y si Hostinger les pone el mismo tope de 500. Antes de activarla:
+1. Confirma por escrito con soporte (§8.1) que está permitido y que cada usuario nuevo trae su propio contador.
+2. En hPanel → Bases de datos, crea usuarios con los **mismos privilegios sobre la misma base** (si hPanel solo deja uno por base, no hay forma de usar esto).
+3. Pruébalo primero en **test**.
+
+Activarla (en el `.env`, sin desplegar):
+
+```
+DB_POOL_1_USERNAME=u206029413_pool1
+DB_POOL_1_PASSWORD=...
+DB_POOL_2_USERNAME=u206029413_pool2     # opcional, hasta 5
+DB_POOL_2_PASSWORD=...
+DB_POOL_SPARE_DEFAULT=true              # el usuario principal queda para cron, Game Master y pagos
+```
+
+Cómo comprobar que funciona: en `/admin`, "Por usuario de MySQL esta hora" debe mostrar varios usuarios con cifras parecidas, y el aviso del 80 % se evalúa **por usuario** (el registro dice cuál). Con `DB_PERSISTENT` cada worker guarda una conexión por usuario: 60 workers × usuarios sigue bajo las 75 simultáneas **de cada usuario**, pero vigila el tope global de MySQL del servidor.
+
+Capacidad estimada: el tráfico de jugadores recibe el cupo de cada usuario del reparto (con `DB_POOL_SPARE_DEFAULT=true` y 2 usuarios, 1.000 por hora para jugadores más los 500 del principal para lo demás). Sigue siendo un tope: sirve para ganar tiempo, no para llegar a 200 jugadores.
+
+Revertir: vacía las variables `DB_POOL_*` y todo vuelve al usuario principal en la siguiente petición.
+
+Una advertencia: repartir conexiones entre usuarios para sortear un límite puede ir contra las condiciones del hosting. Pregunta primero.
 
 ---
 

@@ -6,6 +6,7 @@ import { TextField, SelectField, CheckboxField } from '../ui/Field';
 import QuotaMeter from '../app/QuotaMeter';
 import PlayerRow from './PlayerRow';
 import TextLink from '../ui/TextLink';
+import { formatPlayerRange } from '../../lib/format';
 
 function emptyPlayer() {
     return { name: '', email: '' };
@@ -215,8 +216,18 @@ function CostEstimate({ credits, questions, interrogation, endingType }) {
     );
 }
 
-export default function NewGameForm({ library, credits = null, initialCase = null }) {
-    const [players, setPlayers] = useState(() => Array.from({ length: 6 }, emptyPlayer));
+export default function NewGameForm({
+    library,
+    credits = null,
+    initialCase = null,
+    playerLimits = null,
+}) {
+    // The limits come from the server (config/immersion.php) so the button and
+    // the validation can never disagree about the ceiling.
+    const maxPlayers = playerLimits?.max ?? 12;
+    const initialRows = playerLimits?.initial_rows ?? 3;
+
+    const [players, setPlayers] = useState(() => Array.from({ length: initialRows }, emptyPlayer));
 
     // Start on a case that still has room, so the form does not open already
     // blocked when only one of several cases is full.
@@ -240,6 +251,12 @@ export default function NewGameForm({ library, credits = null, initialCase = nul
     const selectedCase = library.find((item) => item.slug === data.case_slug);
     const quota = selectedCase?.quota;
     const caseIsFull = Boolean(quota?.full);
+
+    // The ceiling counts the Game Master when they play: in automatic mode they
+    // join on their own, so they take one of the seats.
+    const seatsTaken = players.length + (isAutomatic ? 1 : 0);
+    const atLimit = seatsTaken >= maxPlayers;
+    const recommended = formatPlayerRange(selectedCase?.min_players, selectedCase?.max_players);
 
     function updatePlayers(next) {
         setPlayers(next);
@@ -347,9 +364,11 @@ export default function NewGameForm({ library, credits = null, initialCase = nul
                     {isAutomatic ? 'Los demás jugadores' : 'Jugadores'}
                 </legend>
                 <p className="mt-1 text-xs text-ink-muted">
-                    Cada jugador recibe su propio enlace de acceso. Quita filas si van a
-                    ser menos de 6.
+                    Cada jugador recibe su propio enlace de acceso. Empiezas con {initialRows}{' '}
+                    espacios para los demás jugadores; agrega más con el botón (máximo{' '}
+                    {maxPlayers}) o quita los que no uses.
                     {isAutomatic && ' Tú te agregas solo, no hace falta que te pongas aquí.'}
+                    {recommended && ` Recomendado para este caso: ${recommended}.`}
                 </p>
                 <p className="mt-1 text-xs text-ink-muted">
                     Al inscribir a alguien declaras que sabe y está de acuerdo con que usemos su
@@ -378,14 +397,26 @@ export default function NewGameForm({ library, credits = null, initialCase = nul
                     ))}
                 </div>
 
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => updatePlayers([...players, emptyPlayer()])}
-                    className="mt-3"
-                >
-                    + Agregar jugador
-                </Button>
+                {errors.players && (
+                    <p className="mt-3 text-xs font-medium text-danger-strong" role="alert">
+                        {errors.players}
+                    </p>
+                )}
+
+                <div className="mt-3 flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updatePlayers([...players, emptyPlayer()])}
+                        disabled={atLimit}
+                    >
+                        + Agregar jugador
+                    </Button>
+                    <span className="text-xs text-ink-subtle">
+                        {seatsTaken} de {maxPlayers}
+                        {isAutomatic && ' (contándote a ti)'}
+                    </span>
+                </div>
             </fieldset>
 
             <Button type="submit" loading={processing} disabled={caseIsFull} fullWidth>

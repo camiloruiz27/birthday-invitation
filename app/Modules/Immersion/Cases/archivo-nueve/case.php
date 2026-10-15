@@ -113,7 +113,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 90,
-        'min_players' => 5,
+        'min_players' => 4,
         'max_players' => 8,
 
         'price_amount' => 68900,
@@ -274,6 +274,9 @@ return [
             'role' => 'testigo (no es sospechosa oficial)',
             'file' => 'suspects/carmen-ruiz.md',
             'photo' => 'carmen-ruiz.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Recepcionista',
             'motive' => null,
             'alibi' => null,
@@ -292,6 +295,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/andres-pelaez.md',
             'photo' => 'andres-pelaez.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 3],
+            ]],
             'connection' => 'Técnico de laboratorio',
             'motive' => null,
             'alibi' => null,

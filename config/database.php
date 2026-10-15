@@ -37,6 +37,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Extra MySQL users on the same database (OFF unless filled in)
+    |--------------------------------------------------------------------------
+    |
+    | The host counts new connections per MySQL user. If that allowance is per
+    | USER (to be confirmed with the host), extra users granted on the same
+    | database multiply it: each gets its own. A request to a player's pages is
+    | pinned to one of them by a hash of the player's token (see ConnectionPool),
+    | so a table's requests spread over the users while every query of one
+    | request, transactions and locks included, stays on a single connection.
+    |
+    | Fill DB_POOL_1_USERNAME / DB_POOL_1_PASSWORD (up to 5 users) with accounts
+    | that have the same privileges on the same database. Empty = disabled.
+    | docs/escalabilidad-y-limites.md explains when this helps and when it does not.
+    |
+    | spare_default keeps the main user (DB_USERNAME) out of the rotation, so its
+    | allowance stays for the cron, the Game Master and payments.
+    |
+    */
+
+    'pool' => [
+        'users' => array_values(array_filter(array_map(fn (int $n) => [
+            'username' => env("DB_POOL_{$n}_USERNAME"),
+            'password' => env("DB_POOL_{$n}_PASSWORD", ''),
+        ], range(1, 5)), fn (array $user) => filled($user['username']))),
+
+        'spare_default' => (bool) env('DB_POOL_SPARE_DEFAULT', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |

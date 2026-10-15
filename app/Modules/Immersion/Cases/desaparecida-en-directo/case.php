@@ -108,7 +108,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 60,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 6,
 
         // PLACEHOLDER: precio sugerido, pendiente de confirmar con el usuario.
@@ -237,7 +237,7 @@ return [
             'file' => 'suspects/ivan-soler.md',
             'photo' => 'ivan-soler.png',
             'interrogation' => ['stages' => [
-                ['questions' => 5],
+                ['questions' => 3],
                 ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
             ]],
             'connection' => 'Jefe técnico del evento',
@@ -258,7 +258,7 @@ return [
             'file' => 'suspects/paula-rey.md',
             'photo' => 'paula-rey.png',
             'interrogation' => ['stages' => [
-                ['questions' => 5],
+                ['questions' => 3],
                 ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
             ]],
             'connection' => 'Otra creadora asistente al evento',

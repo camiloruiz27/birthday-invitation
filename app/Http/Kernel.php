@@ -27,6 +27,10 @@ class Kernel extends HttpKernel
         // Terminable: with DB_PERSISTENT on, samples whether connections are being
         // reused. Does nothing otherwise.
         \App\Http\Middleware\SampleConnectionReuse::class,
+        // Does nothing unless extra MySQL users are configured (DB_POOL_*). LAST,
+        // on purpose: the terminable ones above must still see the connection the
+        // request used when they look at it after the response.
+        \App\Http\Middleware\UseConnectionPool::class,
     ];
 
     /**

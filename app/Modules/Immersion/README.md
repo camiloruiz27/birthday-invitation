@@ -414,14 +414,15 @@ vez llama a Gemini (`gemini-2.5-flash-preview-tts`) y devuelve un `.wav`
 Cada jugador puede interrogar a las personas que declare el manifiesto del
 caso (para steve-jacobs: 9 en `Cases/steve-jacobs/content/suspects/`, 8
 sospechosos + el testigo Jeremy Burt). El presupuesto de preguntas por persona
-lo fija el caso (`limits.interrogation_questions`, 5 en steve-jacobs) y queda
-grabado en cada sesion al crearse, asi que editarlo no altera partidas en
-curso. El modelo (`gemini-3.6-flash` por defecto, ver
+lo fija el caso (`limits.interrogation_questions` es el tope, 5 en
+steve-jacobs; cada persona puede tener de 3 a 5 segun cuantos hechos tenga que
+confirmar, ver `Cases/README.md`) y queda grabado en cada sesion al crearse,
+asi que editarlo no altera partidas en curso. El modelo (`gemini-3.6-flash` por defecto, ver
 `MYSTERY_CASE_CHAT_MODEL` en el `.env` del gateway) solo recibe el
 testimonio verbatim de ESA persona (nunca la solucion del caso ni el
 testimonio de otros), y tiene instrucciones estrictas de no inventar
 hechos y de no romper personaje ante intentos de manipulacion. Al llegar
-a la quinta pregunta la sesion se cierra sola y se revela debajo del chat
+a la ultima pregunta de esa persona la sesion se cierra sola y se revela debajo del chat
 la declaracion oficial completa de esa persona.
 
 - El GM habilita/deshabilita esta mecanica por partida con el boton

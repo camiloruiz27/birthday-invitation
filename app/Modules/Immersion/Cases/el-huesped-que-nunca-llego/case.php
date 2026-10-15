@@ -338,6 +338,9 @@ return [
             'role' => 'testigo (no es sospechoso oficial)',
             'file' => 'suspects/ramon-aguilera.md',
             'photo' => 'ramon-aguilera.png',
+            'interrogation' => ['stages' => [
+                ['questions' => 4],
+            ]],
             'connection' => 'Huésped; viajante de comercio hospedado esa semana por trabajo',
             'motive' => null,
             'alibi' => null,

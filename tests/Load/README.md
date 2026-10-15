@@ -49,9 +49,10 @@ Sube de escalón solo si el anterior pasó. Cada corrida dura unos 11 minutos (2
 | `http_req_failed` | < 1 % |
 | `page_ms` p(95) | < 1,5 s |
 | `state_poll_ms` p(95) | < 0,5 s |
-| `ask_ok` | > 97 % (cuentan como bien 200, 403, 422 y 429) |
+| `ask_ok` | > 97 % (cuentan como bien 200, 403, 422 y el 429 "ocupado" del limitador de IA) |
 | `http_503` | 0 (un 503 es el sitio sin conexiones a la base) |
 | `ask_busy_429` | informativo: preguntas que el limitador de IA devolvió sin gastar |
+| `ask_throttled_429` | 0 (un "Too Many Attempts" aquí es un límite de ritmo mal repartido, no el limitador de IA) |
 
 **En el servidor**, antes y después de cada corrida:
 

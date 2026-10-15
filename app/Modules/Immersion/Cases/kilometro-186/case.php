@@ -109,7 +109,7 @@ return [
 
         'difficulty' => 'hard',
         'duration_minutes' => 75,
-        'min_players' => 4,
+        'min_players' => 3,
         'max_players' => 7,
 
         // PLACEHOLDER: precio sugerido, pendiente de confirmar con el usuario.
@@ -283,7 +283,7 @@ return [
                 ],
             ],
             'interrogation' => ['stages' => [
-                ['questions' => 5],
+                ['questions' => 3],
                 ['questions' => 3, 'after' => ['V12'], 'confrontation' => true],
             ]],
             'accusable' => false,
@@ -304,7 +304,7 @@ return [
                 ],
             ],
             'interrogation' => ['stages' => [
-                ['questions' => 5],
+                ['questions' => 3],
                 ['questions' => 3, 'after' => ['V6'], 'confrontation' => true],
             ]],
             'accusable' => false,
