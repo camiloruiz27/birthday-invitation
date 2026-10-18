@@ -4,6 +4,7 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
+use App\Modules\Immersion\Support\GameRevision;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -23,6 +24,10 @@ class PrivacyNoticeController extends Controller
                 'privacy_accepted_at' => now(),
                 'privacy_version' => config('legal.privacy_version'),
             ])->save();
+
+            // From now on this player counts for "ya lei toda la informacion":
+            // the table's readiness changed even though no envelope did.
+            GameRevision::bump((int) $player->game_id, GameRevision::READINESS);
         }
 
         return back();

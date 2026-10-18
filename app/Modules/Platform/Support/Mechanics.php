@@ -24,13 +24,13 @@ class Mechanics
             'inbox' => [
                 'name' => 'Bandeja de entrada',
                 'summary' => 'El expediente llega por correo, en tiempo real.',
-                'detail' => 'Cada jugador tiene su propia bandeja y recibe correos reales durante la partida: informes policiales, comunicados, mensajes de la detective a cargo. No se entrega todo de golpe — el caso se va abriendo mientras juegan.',
+                'detail' => 'Cada jugador tiene su propia bandeja y recibe correos reales durante la partida: informes policiales, comunicados, mensajes de la detective a cargo. No se entrega todo de golpe — el caso se va abriendo mientras juegan, y los equipos que leen rápido pueden pedir el siguiente sobre sin esperar.',
                 'ai' => false,
             ],
             'timeline' => [
                 'name' => 'Eventos cronometrados',
                 'summary' => 'La investigación avanza sola con el reloj.',
-                'detail' => 'El caso tiene una línea de tiempo propia: a los 10 minutos llega el expediente, a los 45 un mensaje de voz, a los 75 se habilitan las acusaciones. El Game Master puede pausar, reanudar o adelantar un evento cuando la mesa lo necesita.',
+                'detail' => 'El caso tiene una línea de tiempo propia: a los 10 minutos llega el expediente, a los 45 un mensaje de voz, a los 75 se habilitan las acusaciones. El Game Master puede pausar, reanudar o adelantar un evento cuando la mesa lo necesita. Y si todos los jugadores pulsan «Ya leí toda la información», el siguiente sobre llega al instante en lugar de esperar al reloj.',
                 'ai' => false,
             ],
             'gallery' => [

@@ -310,6 +310,21 @@ return [
         'enabled' => (bool) env('IMMERSION_SNAPSHOTS', false),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Early release
+    |--------------------------------------------------------------------------
+    |
+    | After an envelope arrives each player can say they read everything; when
+    | every player who has joined says so, the next envelope is sent without
+    | waiting for its minute and the game clock moves up by what was saved (see
+    | EarlyRelease). For tables with fast readers. false removes the button.
+    |
+    */
+    'early_release' => [
+        'enabled' => (bool) env('IMMERSION_EARLY_RELEASE', true),
+    ],
+
     'tick' => [
         'idle_skip' => (bool) env('IMMERSION_TICK_IDLE_SKIP', true),
 
@@ -349,6 +364,9 @@ return [
 
     'rate_limits' => [
         'interrogation_ask' => env('IMMERSION_THROTTLE_ASK', '20,1'),
+
+        // "Ya lei toda la informacion", per player: attempts,minutes.
+        'envelope_ready' => env('IMMERSION_THROTTLE_READY', '10,1'),
 
         // The "has anything changed" polling, per IP. A table of twelve polling every
         // twelve seconds is ~60 a minute; raise it for a load test, where every player

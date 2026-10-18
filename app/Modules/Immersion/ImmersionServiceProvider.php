@@ -145,6 +145,23 @@ class ImmersionServiceProvider extends ServiceProvider
             );
         });
 
+        // "Ya lei toda la informacion", per player and with the same fallback.
+        RateLimiter::for('immersion-ready', function (Request $request) {
+            $pair = explode(',', (string) config('immersion.rate_limits.envelope_ready', '10,1'));
+            $attempts = (int) ($pair[0] ?? 0);
+            $minutes = (int) ($pair[1] ?? 0);
+
+            if ($attempts < 1 || $minutes < 1) {
+                [$attempts, $minutes] = [10, 1];
+            }
+
+            $player = $request->route('player');
+
+            return Limit::perMinutes($minutes, $attempts)->by(
+                'ready:'.(is_object($player) ? $player->getKey() : sha1((string) $player))
+            );
+        });
+
         RateLimiter::for('immersion-mail', function () {
             $perMinute = (int) config('immersion.mail.per_minute');
 

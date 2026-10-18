@@ -2,6 +2,7 @@
 
 use App\Modules\Immersion\Http\Controllers\GameMaster\GameMasterController;
 use App\Modules\Immersion\Http\Controllers\Player\AccusationController;
+use App\Modules\Immersion\Http\Controllers\Player\EnvelopeReadyController;
 use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
 use App\Modules\Immersion\Http\Controllers\Player\PrivacyNoticeController;
@@ -144,6 +145,12 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
     // PrivacyNoticeController.
     Route::post('/privacidad', [PrivacyNoticeController::class, 'accept'])->name('privacy.accept');
     Route::get('/audio/{event}', [InboxController::class, 'audio'])->name('audio');
+
+    // "Ya lei toda la informacion": when every player who joined presses it, the
+    // next envelope comes without waiting for its minute. See EarlyRelease.
+    Route::post('/sobres/listo', [EnvelopeReadyController::class, 'store'])
+        ->middleware('throttle:immersion-ready')
+        ->name('envelope.ready');
     Route::get('/acusacion', [AccusationController::class, 'show'])->name('accusation');
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
 

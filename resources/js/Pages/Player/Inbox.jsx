@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
 import EmptyState from '../../components/ui/EmptyState';
 import InboxItem, { EnvelopeRow } from '../../components/player/InboxItem';
+import ReadyBar from '../../components/player/ReadyBar';
 import usePoll from '../../hooks/usePoll';
 import { INBOX_READ_EVENT } from '../../hooks/usePlayerNotices';
 
@@ -53,10 +54,11 @@ function readEnvelopes(gameId) {
     }
 }
 
-export default function Inbox({ player, game, items, case: mysteryCase }) {
+export default function Inbox({ player, game, items, readiness, case: mysteryCase }) {
     // New envelopes arrive on the server's clock, so the inbox refreshes
-    // itself while the player is reading.
-    usePoll(['items', 'game'], { interval: 15000, channels: ['timeline'] });
+    // itself while the player is reading. 'readiness' is who has said they
+    // read everything so far (see ReadyBar).
+    usePoll(['items', 'game', 'readiness'], { interval: 15000, channels: ['timeline', 'readiness'] });
 
     const openId = useOpenEnvelope();
     const selected = items.find((item) => item.event.id === openId) ?? null;
@@ -124,11 +126,13 @@ export default function Inbox({ player, game, items, case: mysteryCase }) {
         >
             <Head title={`Bandeja de ${player.name}`} />
 
+            <ReadyBar player={player} readiness={readiness} />
+
             {items.length === 0 ? (
                 <div data-tour="inbox-main">
                     <EmptyState
                         title="Sin mensajes todavía"
-                        description="El expediente llegará por partes a medida que avance la investigación. Deja esta página abierta: se actualiza sola."
+                        description="El expediente llegará por partes, según el reloj del caso o antes si todo el equipo confirma que ya leyó. Deja esta página abierta: se actualiza sola."
                     />
                 </div>
             ) : (
@@ -181,7 +185,7 @@ export default function Inbox({ player, game, items, case: mysteryCase }) {
                         ) : (
                             <EmptyState
                                 title="Elige un sobre"
-                                description="Cada sobre trae una parte del expediente. Ábrelos en orden si es tu primera vuelta."
+                                description="Cada sobre trae una parte del expediente. Ábrelos en orden si es tu primera vuelta. Cuando termines de leer, pulsa «Ya leí toda la información»: si todo el equipo lo hace, el siguiente sobre llega sin esperar."
                             />
                         )}
                     </div>

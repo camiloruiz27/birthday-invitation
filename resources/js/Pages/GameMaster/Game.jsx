@@ -287,6 +287,16 @@ function StartGuide({ guide, ready, onStart }) {
                         a las personas de interés.
                     </li>
                 )}
+                <li>
+                    <strong className="text-ink">
+                        {interrogation ? '5' : first ? '4' : '3'}. Los lectores rápidos pueden adelantar el
+                        ritmo.
+                    </strong>{' '}
+                    Tras cada sobre, los jugadores ven el botón <em>Ya leí toda la información</em>. Cuando
+                    todos los que ya entraron lo pulsan, el siguiente sobre llega al instante y el reloj avanza
+                    lo que se ahorró. Si alguien aún lee, nada cambia y el sobre llega en su minuto. Tú puedes
+                    seguir usando <em>Forzar siguiente</em>.
+                </li>
             </ol>
 
             <div className="mt-5">
@@ -307,6 +317,7 @@ export default function Game({
     credits,
     mail = null,
     startGuide = null,
+    readers = null,
 }) {
     // The advanced endings finish on the queue after the reveal, so the console
     // has to keep looking until the recording or the last epilogue lands.
@@ -316,12 +327,13 @@ export default function Game({
 
     // The clock and the timeline advance on the server, so a running game
     // refreshes itself; a draft, paused or finished game has nothing to poll.
-    usePoll(['game', 'timelineSummary', 'ending', 'mail'], {
+    usePoll(['game', 'timelineSummary', 'ending', 'mail', 'readers'], {
         interval: 5000,
         enabled: game.status === 'running' || Boolean(endingIsWorking),
-        // The console shows the timeline and the ending; the interrogation
-        // transcripts have their own page.
-        channels: ['timeline', 'accusation'],
+        // The console shows the timeline, the ending and who has confirmed they
+        // read the latest envelope; the interrogation transcripts have their
+        // own page.
+        channels: ['timeline', 'accusation', 'readiness'],
     });
 
     const [confirming, setConfirming] = useState(null);
@@ -451,7 +463,7 @@ export default function Game({
                             target: '[data-tour="gm-guide"]',
                             optional: true,
                             title: 'Léelo antes de iniciar',
-                            body: 'Este recuadro resume el orden: compartir enlaces, iniciar, y cuándo llega el primer sobre y se abren los interrogatorios.',
+                            body: 'Este recuadro resume el orden: compartir enlaces, iniciar, cuándo llega el primer sobre y se abren los interrogatorios, y cómo los lectores rápidos pueden adelantar los sobres.',
                         },
                         {
                             target: '[data-tour="gm-players"]',
@@ -634,6 +646,17 @@ export default function Game({
                             )
                         }
                     />
+
+                    {readers?.available && game.status === 'running' && (
+                        <p className="mb-4 text-sm text-ink-muted" aria-live="polite">
+                            Lectores listos para el siguiente sobre:{' '}
+                            <strong className="tabular text-ink">
+                                {readers.ready} de {readers.total}
+                            </strong>
+                            . Cuando todos pulsen «Ya leí toda la información», el siguiente sobre llega sin
+                            esperar el reloj.
+                        </p>
+                    )}
 
                     {!hasTimeline ? (
                         <>

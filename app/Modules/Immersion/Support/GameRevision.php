@@ -40,7 +40,10 @@ class GameRevision
 
     public const ACCUSATION = 'accusation';
 
-    public const CHANNELS = [self::TIMELINE, self::INTERROGATION, self::ACCUSATION];
+    /** Who has confirmed they read the latest envelope ("ya lei toda la informacion"). */
+    public const READINESS = 'readiness';
+
+    public const CHANNELS = [self::TIMELINE, self::INTERROGATION, self::ACCUSATION, self::READINESS];
 
     /** Players are looked up by their token, which the poll cannot resolve without a query. */
     private const PLAYER_TTL_HOURS = 24;

@@ -96,7 +96,7 @@ Ejemplos con el tope de 500:
 
 ### 4.2 Qué hace cada pieza
 
-- **Sondeo sin base de datos** (`/jugador/{token}/estado`, `/partidas/{id}/estado`): leen un sello de la caché. La pantalla solo recarga si un sello que le interesa cambió (canales: `timeline`, `interrogation`, `accusation`). Un solo sondeador por pantalla.
+- **Sondeo sin base de datos** (`/jugador/{token}/estado`, `/partidas/{id}/estado`): leen un sello de la caché. La pantalla solo recarga si un sello que le interesa cambió (canales: `timeline`, `interrogation`, `accusation`, `readiness`; este último solo lo vigilan la bandeja del jugador y la consola del GM, para el botón «Ya leí toda la información»: cada pulsación es una escritura y una conexión, la lectura del contador no). Un solo sondeador por pantalla.
 - **Cron inteligente** (`cron-scheduler.sh`): lee `storage/framework/next-run` y **no arranca PHP** si no toca. Cada 5 minutos corre `schedule:run` completo. La hora de cada evento se conoce (inicio + pausas + minuto): `TickPlanner`. Los eventos corren dentro del propio tick, sin cola.
 - **Correos**: por defecto solo el enlace de acceso (clic del Game Master) y el sobre "Fase de acusaciones habilitada". Salen en el mismo proceso, sin cola. Con `IMMERSION_MAIL_TIMELINE=all` vuelven los de cada sobre, por cola y con cupo diario.
 - **Almacén `ops`** (`storage/app/ops-cache`): `php artisan optimize:clear` (cada despliegue) **no lo borra**. Ahí viven los sellos, los contadores de conexiones y de correo, y el plan del tick.

@@ -82,6 +82,26 @@ dos veces reutiliza la cuenta.
    acusacion en `/jugador/{access_token}/acusacion`.
 7. El GM ve el resumen comparativo en "Ver acusaciones".
 
+### "Ya lei toda la informacion" (adelantar el siguiente sobre)
+
+Tras cada sobre, la bandeja del jugador muestra el boton **Ya lei toda la
+informacion**. Cuando lo pulsan **todos los jugadores que ya entraron**
+(`is_owner` o `privacy_accepted_at`), el siguiente grupo de eventos se envia
+sin esperar su minuto y el reloj de la partida avanza lo que se ahorro
+(`started_at` se mueve hacia atras), asi que los sobres que siguen conservan su
+separacion original. Funciona en ambos modos; el GM sigue pudiendo "Forzar
+siguiente", y su consola muestra "Lectores listos: N de M".
+
+- Logica: `Support/EarlyRelease` (marca por jugador en
+  `immersion_players.ready_event_id` = ultimo sobre enviado cuando pulso).
+  Un sobre nuevo deja a todos en "no listos" solo.
+- Ruta: `POST /jugador/{token}/sobres/listo` (`immersion.player.envelope.ready`),
+  limitada por jugador (`IMMERSION_THROTTLE_READY`, 10,1).
+- Nunca se adelanta el grupo que contiene el evento `unlock` (abre acusaciones),
+  ni se ofrece con la partida en pausa, terminada o sin sobres enviados.
+- Se apaga con `IMMERSION_EARLY_RELEASE=false`.
+- Lectura sin base de datos: canal de sondeo `readiness`.
+
 ## 4.2 Modos de partida
 
 Una partida se crea en uno de dos modos, y **ambos corren sobre el mismo

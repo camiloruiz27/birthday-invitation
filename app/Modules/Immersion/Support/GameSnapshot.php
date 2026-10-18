@@ -108,6 +108,19 @@ class GameSnapshot
     }
 
     /**
+     * What the "ya lei toda la informacion" button needs, the same for the whole
+     * table (see EarlyRelease::buildFacts). It moves with the timeline (a new
+     * envelope resets everybody) and with the readiness stamp (somebody pressed,
+     * or accepted the privacy notice and so started to count).
+     *
+     * @return array{point: int|null, next_minute: int|null, next_has_unlock: bool, joined: array<int, array{id: int, ready: int|null}>}
+     */
+    public static function readiness(int $gameId): array
+    {
+        return (array) self::part('readiness', $gameId, [GameRevision::TIMELINE, GameRevision::READINESS], fn () => EarlyRelease::buildFacts($gameId));
+    }
+
+    /**
      * What the inbox shows of each envelope: the rendered body and the gallery.
      * Heavy (the whole text of every sent envelope), so it is its own part and
      * only the inbox reads it.
@@ -358,6 +371,11 @@ class GameSnapshot
             }
         }
 
+        if (in_array(GameRevision::TIMELINE, $channels, true) || in_array(GameRevision::READINESS, $channels, true)) {
+            self::forgetPart('readiness', $gameId);
+            self::readiness($gameId);
+        }
+
         if (in_array(GameRevision::INTERROGATION, $channels, true)) {
             self::forgetPart('board', $gameId);
             self::board($gameId);
@@ -372,7 +390,7 @@ class GameSnapshot
     /** Drops every part of a game (it was deleted, or an operator wants a clean slate). */
     public static function forget(int $gameId): void
     {
-        foreach (['meta', 'timeline', 'inbox', 'board', 'accusations'] as $name) {
+        foreach (['meta', 'timeline', 'inbox', 'readiness', 'board', 'accusations'] as $name) {
             self::forgetPart($name, $gameId);
         }
     }

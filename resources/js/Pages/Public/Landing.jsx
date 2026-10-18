@@ -311,8 +311,10 @@ export default function Landing({ featured, mechanics }) {
                                 de pasar.
                             </p>
                             <p>
-                                Si el grupo va rápido, adelantas un evento. Si necesitan un
-                                respiro, pausas y el reloj se detiene. Puedes leer todos los
+                                Si el grupo va rápido, adelantas un evento, o ellos mismos lo
+                                piden: cuando todos pulsan «Ya leí toda la información», llega
+                                el siguiente sobre. Si necesitan un respiro, pausas y el reloj se
+                                detiene. Puedes leer todos los
                                 interrogatorios mientras ocurren y comparar las acusaciones al
                                 final.
                             </p>

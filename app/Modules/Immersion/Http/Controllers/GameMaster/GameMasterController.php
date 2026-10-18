@@ -17,6 +17,7 @@ use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Models\TimelineEvent;
 use App\Modules\Immersion\Support\AccusationScoreboard;
 use App\Modules\Immersion\Support\AiCredits;
+use App\Modules\Immersion\Support\EarlyRelease;
 use App\Modules\Immersion\Support\GameCost;
 use App\Modules\Immersion\Support\GameEraser;
 use App\Modules\Immersion\Support\GameQuota;
@@ -362,6 +363,10 @@ class GameMasterController extends Controller
                 'total' => $game->timelineEvents()->count(),
                 'sent' => $game->timelineEvents()->whereNotNull('sent_at')->count(),
             ],
+
+            // How many players confirmed they read the latest envelope (see
+            // EarlyRelease). Counts only: the titles are spoilers.
+            'readers' => fn () => EarlyRelease::tally($game),
 
             // When things start to happen after pressing "Iniciar caso", so the
             // Game Master can tell the table what to expect. Only minutes, no

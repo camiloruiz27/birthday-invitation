@@ -260,6 +260,12 @@ function playerTourSteps(game) {
             body: 'El expediente llega por partes, a medida que avanza la investigación. Esta página se actualiza sola: déjala abierta. Toca un sobre para leerlo; algunos traen fotos en otra pestaña.',
         },
         {
+            target: '[data-tour="inbox-ready"]',
+            optional: true,
+            title: 'Ya leí toda la información',
+            body: 'Cuando termines de leer lo que ha llegado, pulsa este botón. Si todo el equipo lo pulsa, el siguiente sobre llega al instante, sin esperar el reloj. Si alguien aún lee, simplemente esperan. Aparece después de que llega un sobre.',
+        },
+        {
             target: '[data-tour="nav-inbox"]',
             optional: true,
             title: 'Bandeja',
@@ -269,7 +275,7 @@ function playerTourSteps(game) {
             target: '[data-tour="case-clock"]',
             optional: true,
             title: 'El reloj del caso',
-            body: 'Marca cuánto lleva la partida en juego. Los sobres salen según este reloj, y se detiene si el Game Master pausa.',
+            body: 'Marca cuánto lleva la partida en juego. Los sobres salen según este reloj, o antes si todo el equipo confirma con «Ya leí toda la información». Se detiene si el Game Master pausa.',
         },
         ...(game?.interrogation_enabled
             ? [
