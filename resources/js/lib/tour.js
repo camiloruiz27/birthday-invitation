@@ -20,7 +20,8 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // one year
 
 export const TOUR_VERSIONS = {
     // First visit to a case as a player.
-    player: 1,
+    // v2: botón "Ya leí toda la información" y envíos adelantados.
+    player: 2,
     // First time the interrogation area is open.
     // v2: preguntas por etapas y confrontaciones.
     interrogation: 2,

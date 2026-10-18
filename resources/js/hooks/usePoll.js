@@ -19,7 +19,9 @@ import { router, usePage } from '@inertiajs/react';
  * `channels` says what a subscriber shows: 'timeline' (envelopes, game state),
  * 'interrogation' (suspects, questions) and 'accusation' (accusations, grading,
  * the ending). A question asked in an interrogation changes nothing in the
- * inbox, so the inbox watches only 'timeline'. Leaving it out watches all three.
+ * inbox, so the inbox watches only 'timeline'. Leaving it out watches those
+ * three. 'readiness' (who pressed "Ya leí toda la información") is opt-in: only
+ * the inbox and the Game Master console show it, so nothing else reloads for it.
  *
  * Brakes, all there to spare connections:
  *  - a change waits MIN_CHANGE_RELOAD_MS after the previous reload;

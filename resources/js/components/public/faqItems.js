@@ -25,6 +25,10 @@ export const FAQ = [
         answer: 'Depende del caso; cada uno indica su duración en su página. La mayoría está pensada para una sesión de una tarde o una noche.',
     },
     {
+        question: '¿Qué pasa si todos leen más rápido que el reloj?',
+        answer: 'Tras cada sobre, los jugadores ven el botón «Ya leí toda la información». Cuando todos los que ya entraron lo pulsan, el siguiente sobre llega al instante y el reloj del caso avanza lo que se ahorró. Si alguien sigue leyendo, el sobre llega en su minuto de siempre.',
+    },
+    {
         question: '¿Necesito preparar algo antes?',
         answer: 'Crear la partida y cargar los nombres y correos de tus jugadores. Nada más: el caso trae su propia línea de tiempo.',
     },

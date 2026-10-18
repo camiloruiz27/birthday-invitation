@@ -5,46 +5,49 @@ import Button from '../../../components/ui/Button';
 import TextLink from '../../../components/ui/TextLink';
 import { openCookieSettings } from '../../../lib/consent';
 
+// The tables tell the public that these cookies exist, what kind they are and
+// what they are for, but not the names they are stored under: `type` is a plain
+// description, never the identifier used in the code or in the browser.
 const NECESSARY = [
     {
-        name: 'misteriocode_session',
+        type: 'Sesión',
         provider: 'MisterioCode',
         purpose: 'Mantiene su sesión iniciada y los avisos temporales entre páginas.',
         duration: 'Hasta 2 horas de inactividad',
     },
     {
-        name: 'XSRF-TOKEN',
+        type: 'Seguridad de formularios',
         provider: 'MisterioCode',
         purpose: 'Protege los formularios contra solicitudes falsificadas.',
         duration: 'Hasta 2 horas',
     },
     {
-        name: 'remember_web_*',
+        type: 'Recordar sesión',
         provider: 'MisterioCode',
         purpose: 'Solo si marca "Recordarme": lo mantiene conectado en este dispositivo.',
         duration: 'Hasta 5 años',
     },
     {
-        name: 'mc_consent',
+        type: 'Preferencias de cookies',
         provider: 'MisterioCode',
         purpose: 'Recuerda su elección sobre las cookies.',
         duration: '6 meses',
     },
     {
-        name: 'mc_tour',
+        type: 'Guía de bienvenida',
         provider: 'MisterioCode',
         purpose:
             'Recuerda que ya vio la guía de bienvenida de la plataforma o de una partida, para no mostrársela otra vez.',
         duration: '1 año',
     },
     {
-        name: 'localStorage / sessionStorage',
+        type: 'Almacenamiento del navegador',
         provider: 'MisterioCode',
         purpose: 'Recuerda en su navegador qué documentos de la partida ya abrió.',
         duration: 'Hasta que borre los datos del navegador',
     },
     {
-        name: 'Cloudflare Turnstile',
+        type: 'Verificación anti-bots',
         provider: 'Cloudflare',
         purpose: 'Verificación anti-bots en registro, ingreso y canje de códigos.',
         duration: 'Temporal, según Cloudflare',
@@ -53,7 +56,7 @@ const NECESSARY = [
 
 const AUDIENCE = [
     {
-        name: '_ga, _ga_*',
+        type: 'Analítica de audiencia',
         provider: 'Google Analytics',
         purpose:
             'Distingue visitantes y une sus visitas para medir cuánto tiempo están, cuántas páginas ven y si se van rápido.',
@@ -63,7 +66,7 @@ const AUDIENCE = [
 
 const RECORDING = [
     {
-        name: '_clck, _clsk, CLID',
+        type: 'Grabaciones y mapas de calor',
         provider: 'Microsoft Clarity',
         purpose:
             'Siguen una sesión entre páginas para grabar el uso (movimiento del cursor, toques, desplazamiento) y generar mapas de calor.',
@@ -73,14 +76,14 @@ const RECORDING = [
 
 const MARKETING = [
     {
-        name: '_fbp, _fbc',
+        type: 'Medición publicitaria',
         provider: 'Meta (Facebook e Instagram)',
         purpose:
             'Reconocen su navegador y, si llegó desde un anuncio de Meta, cuál fue, para medir cuántos anuncios terminan en un registro o una compra.',
         duration: 'Hasta 3 meses',
     },
     {
-        name: '_ttp, ttclid',
+        type: 'Medición publicitaria',
         provider: 'TikTok',
         purpose:
             'Reconocen su navegador y, si llegó desde un anuncio de TikTok, cuál fue, para medir cuántos anuncios terminan en un registro o una compra.',
@@ -94,7 +97,7 @@ function CookieTable({ rows }) {
             <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead className="bg-surface-sunken text-xs uppercase tracking-wider text-ink-subtle">
                     <tr>
-                        <th scope="col" className="px-4 py-2.5 font-medium">Nombre</th>
+                        <th scope="col" className="px-4 py-2.5 font-medium">Tipo</th>
                         <th scope="col" className="px-4 py-2.5 font-medium">Proveedor</th>
                         <th scope="col" className="px-4 py-2.5 font-medium">Finalidad</th>
                         <th scope="col" className="px-4 py-2.5 font-medium">Duración</th>
@@ -102,8 +105,8 @@ function CookieTable({ rows }) {
                 </thead>
                 <tbody className="divide-y divide-line">
                     {rows.map((row) => (
-                        <tr key={row.name}>
-                            <td className="px-4 py-3 align-top font-mono text-xs text-ink">{row.name}</td>
+                        <tr key={`${row.type}-${row.provider}`}>
+                            <td className="px-4 py-3 align-top font-medium text-ink">{row.type}</td>
                             <td className="px-4 py-3 align-top">{row.provider}</td>
                             <td className="px-4 py-3 align-top">{row.purpose}</td>
                             <td className="px-4 py-3 align-top">{row.duration}</td>

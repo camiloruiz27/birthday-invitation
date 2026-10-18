@@ -4,6 +4,7 @@ namespace App\Modules\Immersion\Http\Controllers\Player;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
+use App\Modules\Immersion\Support\EarlyRelease;
 use App\Modules\Immersion\Support\GameSnapshot;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -23,6 +24,11 @@ class InboxController extends Controller
                 'name' => $case->name(),
                 'code' => $case->code(),
             ],
+
+            // "Ya lei toda la informacion": whether the button is offered and how
+            // many of the table have pressed it. Lazy, so it is only read when the
+            // page loads or reloads on a change, never by the stamp poll.
+            'readiness' => fn () => EarlyRelease::state($player),
             'items' => fn () => GameSnapshot::enabled()
                 ? $this->itemsFromSnapshot($player)
                 : $player->inboxEvents()->map(function ($event) use ($case) {
