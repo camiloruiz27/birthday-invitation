@@ -118,11 +118,21 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The cases this person owns, each carrying `acquired_at` (when access
+     * was first granted) so the library can order by it. One query: the date
+     * is a subselect, not a second round trip.
+     *
      * @return \Illuminate\Support\Collection<int, MysteryCase>
      */
     public function library(): Collection
     {
         return MysteryCase::query()
+            ->addSelect(['mystery_cases.*', 'acquired_at' => Entitlement::query()
+                ->select('granted_at')
+                ->whereColumn('mystery_case_id', 'mystery_cases.id')
+                ->active()
+                ->where('user_id', $this->id)
+                ->limit(1)])
             ->whereHas(
                 'entitlements',
                 fn (Builder $entitlement) => $entitlement->active()->where('user_id', $this->id)

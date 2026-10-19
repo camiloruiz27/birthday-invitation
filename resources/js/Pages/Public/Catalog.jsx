@@ -5,8 +5,12 @@ import CaseCard from '../../components/public/CaseCard';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 import Reveal from '../../components/ui/Reveal';
+import CaseDiscoveryControls from '../../components/cases/CaseDiscoveryControls';
+import useCaseDiscovery from '../../hooks/useCaseDiscovery';
 
 export default function Catalog({ cases }) {
+    const discovery = useCaseDiscovery(cases, 'catalog');
+
     return (
         <PublicLayout current="cases.index">
             <Head title="Casos" />
@@ -26,15 +30,25 @@ export default function Catalog({ cases }) {
                             </Button>
                         }
                     />
-                ) : (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {cases.map((item, index) => (
-                            <Reveal key={item.slug} delay={(index % 3) * 0.1}>
-                                <CaseCard mysteryCase={item} />
-                            </Reveal>
-                        ))}
-                    </div>
-                )}
+                ) : <>
+                    <CaseDiscoveryControls discovery={discovery} />
+
+                    {discovery.results.length === 0 ? (
+                        <EmptyState
+                            title="No encontramos casos con esos criterios"
+                            description="Prueba con otra búsqueda o elimina algunos filtros para ver más misterios."
+                            action={<Button type="button" onClick={discovery.reset} variant="secondary">Limpiar filtros</Button>}
+                        />
+                    ) : (
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {discovery.results.map((item, index) => (
+                                <Reveal key={item.slug} delay={(index % 3) * 0.1}>
+                                    <CaseCard mysteryCase={item} />
+                                </Reveal>
+                            ))}
+                        </div>
+                    )}
+                </>}
             </Section>
         </PublicLayout>
     );

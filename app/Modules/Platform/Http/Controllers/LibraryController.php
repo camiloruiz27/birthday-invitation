@@ -5,8 +5,10 @@ namespace App\Modules\Platform\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Support\GameQuota;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Mechanics;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,6 +18,11 @@ class LibraryController extends Controller
     {
         $user = $request->user();
         $library = $user->library();
+
+        // The library page filters and orders in the browser, so it ships the
+        // whole (small) list once and never asks for it again: each filter the
+        // owner tries costs no request, and so no database connection.
+        $quotes = QuoteBuilder::make();
 
         // The per-case game quota belongs here more than anywhere else: this
         // is the page where a case is a thing you own and can run.
@@ -36,6 +43,10 @@ class LibraryController extends Controller
                 'min_players' => $case->min_players,
                 'max_players' => $case->max_players,
                 'mechanics' => Mechanics::describe((array) $case->mechanics),
+                'acquired_at' => $case->acquired_at ? Carbon::parse($case->acquired_at)->toIso8601String() : null,
+                // Today's price in the owner's market, not what they paid: it
+                // makes the library's price filter and ordering meaningful.
+                ...$quotes->display((int) $case->price_amount),
                 'uses_ai' => collect(Mechanics::describe((array) $case->mechanics))->contains(fn (array $mechanic) => $mechanic['ai']),
                 'quota' => $quotas[$case->slug],
                 // A case whose manifest is not deployed cannot be played, so
