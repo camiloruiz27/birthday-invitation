@@ -40,7 +40,7 @@
             "¿Cuántos pagos hiciste?"
           ],
           "response_exact": "Claro que es mío y el dinero salió de mi cuenta. Aquí dice aprobado; si su sistema no lo muestra, no es un problema mío.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "dos_pedidos",
@@ -49,7 +49,7 @@
             "¿Qué compraste a las doce?"
           ],
           "response_exact": "Sí, volví por otro pedido. Ambos costaban igual. Por eso los dos recibos se ven parecidos.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Estuvo en el puesto a las 12:03 y a las 13:05.",
@@ -73,7 +73,7 @@
             "¿Por qué marcaste aprobado?"
           ],
           "response_exact": "Falló la conexión. Vi un comprobante con estado aprobado y lo marqué manualmente. Debí confirmar la referencia.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "referencia",
@@ -82,7 +82,7 @@
             "¿Viste dos transferencias?"
           ],
           "response_exact": "No consulté la lista de pagos en ese momento, solo la imagen. El monto coincidía con el pedido.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Atendió al cliente frente a testigos.",
@@ -106,7 +106,7 @@
             "¿A quién despachaste?"
           ],
           "response_exact": "Sí: el #204 a las 12:07 y el #218 a las 13:08. Los recogió el mismo cliente, Iván.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "aprobacion",
@@ -115,7 +115,7 @@
             "¿Viste el pago?"
           ],
           "response_exact": "Mariana marcó la orden lista para despacho. Yo no reviso transferencias desde cocina.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Se mantuvo en cocina mientras se cobraba.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "document",
       "title": "Primer pedido",
@@ -154,7 +154,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "screenshot",
       "title": "Conciliación de pagos",
@@ -162,7 +162,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "cctv",
       "title": "Registro de retiro de pedidos",
@@ -170,7 +170,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "screenshot",
       "title": "Auditoría de caja",

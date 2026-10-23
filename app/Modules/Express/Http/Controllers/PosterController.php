@@ -19,7 +19,7 @@ class PosterController
         return Inertia::render('Express/Poster', [
             'event' => ['slug' => $found['slug'], 'name' => $found['name']],
             'url' => ExpressEvents::posterUrl($found),
-            'title' => 'Resuelve un caso en 3 minutos',
+            'title' => 'Resuelve un caso en 5 minutos',
         ]);
     }
 }

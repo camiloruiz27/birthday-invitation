@@ -5,7 +5,7 @@
 | Express — demo de feria
 |--------------------------------------------------------------------------
 |
-| Mini-casos de 2-4 minutos que juegan varios grupos a la vez, sin registro
+| Mini-casos de 5 minutos que juegan varios grupos a la vez, sin registro
 | (ver app/Modules/Express/README.md). Un evento es una entrada de `events`:
 | otra feria = otra entrada, sin tocar codigo ni tablas.
 |
@@ -51,12 +51,12 @@ return [
 
     // El reloj de la demo, en segundos desde que el GM inicia.
     'schedule' => [
-        'interrogation_opens_s' => 20,
-        'accusations_open_s' => 120,
-        'window_end_s' => 150,
-        'hard_close_s' => 180,
+        'interrogation_opens_s' => 45,
+        'accusations_open_s' => 220,
+        'window_end_s' => 270,
+        'hard_close_s' => 300,
         // Pasado este punto ya nadie nuevo puede unirse a la ronda.
-        'join_cutoff_s' => 75,
+        'join_cutoff_s' => 130,
     ],
 
     // El sospechoso lo interpreta la IA del gateway (lawxora-ai-service,
@@ -69,7 +69,7 @@ return [
         // Segundos que se espera al gateway antes de responder con el texto
         // del autor. Con razonamiento minimo el gateway contesta en ~1 s; en
         // la prueba real (2026-10-22) hubo llamadas sueltas de 7-10 s, y en una
-        // demo de 3 minutos esperar mas que esto es peor que la respuesta del
+        // demo de 5 minutos esperar mas que esto es peor que la respuesta del
         // autor, asi que se corta antes que el limite del gateway (10-13 s).
         'timeout' => (int) env('EXPRESS_AI_TIMEOUT', 8),
     ],

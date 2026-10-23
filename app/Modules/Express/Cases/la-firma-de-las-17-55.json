@@ -40,7 +40,7 @@
             "¿Quién tuvo la carpeta tras firmar?"
           ],
           "response_exact": "Me llevé la carpeta a digitalización y la devolví. Ese era mi trabajo. No cambié lo acordado.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "porcentaje",
@@ -49,7 +49,7 @@
             "¿Por qué apareció el 40%?"
           ],
           "response_exact": "Manejamos muchos borradores de anexos. El cuarenta por ciento era una propuesta, no recuerdo que se hubiera firmado.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Recibió el expediente tras firma para escanearlo.",
@@ -73,7 +73,7 @@
             "¿Quién ganaba con el 40%?"
           ],
           "response_exact": "La empresa había aprobado una bonificación por cierre más favorable. No autoricé a nadie a reemplazar hojas después de firmadas.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "firma",
@@ -82,7 +82,7 @@
             "¿Volviste después de las 18?"
           ],
           "response_exact": "Yo defendía el 40% en la negociación, pero el acuerdo de la mesa quedó en 10%. Me retiré poco después de las seis menos cinco.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Se fue de la reunión a las 17:58, registro de acceso.",
@@ -106,7 +106,7 @@
             "¿Qué decía la hoja al firmar?"
           ],
           "response_exact": "Diez por ciento. Leí esa página antes de firmar; nadie nos pidió inicialar los anexos.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "despues",
@@ -115,7 +115,7 @@
             "¿Tocaste el contrato después?"
           ],
           "response_exact": "Paz recogió el documento para escanearlo cuando terminamos. Yo no volví a tenerlo hasta el correo del día siguiente.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Estuvo presente en firma y luego fuera de la sala.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "document",
       "title": "Custodia del expediente",
@@ -154,7 +154,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "screenshot",
       "title": "Cola de impresión",
@@ -162,7 +162,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "document",
       "title": "Condiciones de bonificación",
@@ -170,7 +170,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "screenshot",
       "title": "Historial de archivo final",

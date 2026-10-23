@@ -41,7 +41,7 @@
             "¿Qué pasó en la consola?"
           ],
           "response_exact": "El sistema recuperó estado cero después de la señal caída. Yo no pedí borrar un marcador válido.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "sara",
@@ -50,7 +50,7 @@
             "¿Tienes familiares compitiendo?"
           ],
           "response_exact": "Conozco a muchos estudiantes del torneo. Mi vida familiar no debería afectar la decisión de los árbitros.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Permaneció en el puesto arbitral durante toda la incidencia.",
@@ -74,7 +74,7 @@
             "¿Se cortó la luz?"
           ],
           "response_exact": "Perdimos la señal de salida de video. Las luces del escenario y la consola siguieron alimentadas.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "marcador",
@@ -83,7 +83,7 @@
             "¿Qué hace la consola?"
           ],
           "response_exact": "La caída de video no altera el marcador. Si quedó en cero, alguien ejecutó un reinicio o cargó un estado diferente.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "En consola de realización todo el incidente, registrado por un auxiliar.",
@@ -107,7 +107,7 @@
             "¿Leo es tu hermano?"
           ],
           "response_exact": "Sí, somos hermanos. No lo dije porque pensé que era mejor mantener separada mi vida privada del torneo.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "incidente",
@@ -116,7 +116,7 @@
             "¿Cambiaste los puntos?"
           ],
           "response_exact": "La pantalla se fue a negro, pero las PC seguían encendidas. Yo seguí jugando cuando nos autorizaron.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "En escenario, vista por árbitros auxiliares.",
@@ -147,7 +147,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "document",
       "title": "Acta parcial del encuentro",
@@ -155,7 +155,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "screenshot",
       "title": "Registro del marcador",
@@ -163,7 +163,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "document",
       "title": "Inscripción del equipo Rojo",
@@ -171,7 +171,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "document",
       "title": "Auditoría de energía y permisos",

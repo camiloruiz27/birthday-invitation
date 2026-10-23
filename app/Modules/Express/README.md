@@ -1,6 +1,6 @@
 # Express — demo de feria
 
-Mini‑casos de 2–4 minutos que juegan varios grupos a la vez, sin registro. Un
+Mini‑casos de 5 minutos que juegan varios grupos a la vez, sin registro. Un
 visitante (el GM, que también juega) crea una sala, invita de 1 a 4 amigos con
 un QR/código y todos reciben pistas distintas (A/B) en su celular.
 
@@ -36,9 +36,9 @@ Sin assets el juego funciona: iniciales en vez de retrato y evidencia solo texto
 ## Reloj
 
 Segundos desde `started_at`, calculado en cada lectura (sin cron):
-E1/E2 0 s · E3 20 s (abre interrogatorios) · E4/E5 70 s · E6 105 s ·
-acusaciones 120 s · ventana hasta 150 s (revela antes si todos acusaron) ·
-cierre duro 180 s. Se puede unir hasta 75 s después de iniciar.
+E1/E2 0 s · E3 45 s (abre interrogatorios) · E4/E5 120 s · E6 180 s ·
+acusaciones 220 s · ventana hasta 270 s (revela antes si todos acusaron) ·
+cierre duro 300 s. Se puede unir hasta 130 s después de iniciar.
 
 ## Rutas (todas bajo `/express`)
 
@@ -86,8 +86,8 @@ en `Create`, `case_slug`.
     "min_players": 2, "max_players": 5,
     "case": { "slug": "…", "title": "…", "tagline": "…", "genre": "…",
               "scenario": "…", "incident": "…", "hook": "…", "hero": "/express-assets/x/hero.jpg|null" },
-    "schedule": { "interrogation_opens_s": 20, "accusations_open_s": 120,
-                  "window_end_s": 150, "hard_close_s": 180, "join_cutoff_s": 75 },
+    "schedule": { "interrogation_opens_s": 45, "accusations_open_s": 220,
+                  "window_end_s": 270, "hard_close_s": 300, "join_cutoff_s": 130 },
     "event": { "slug": "usb-cali-2026", "name": "…" }
   },
   "me": { "id": 12, "nickname": "Ana", "audience": "A", "is_gm": true,
@@ -137,9 +137,9 @@ en `Create`, `case_slug`.
 `accusation.open` es `true` solo mientras la ventana está abierta **y el jugador
 aún no ha acusado**; tras acusar pasa a `false` y `accusation.submitted` a `true`.
 La ventana dura hasta que todos acusan (se revela de inmediato) o hasta el
-cierre duro de 180 s; `window_end_s` (150 s) solo la marca la interfaz.
+cierre duro de 300 s; `window_end_s` (270 s) solo la marca la interfaz.
 
-`status`: `lobby` (sin iniciar) → `playing` (0–120 s) → `accusing` (≥120 s,
+`status`: `lobby` (sin iniciar) → `playing` (0–220 s) → `accusing` (≥220 s,
 acusaciones abiertas) → `reveal` (o `expired` si nadie terminó la sala). `accusation.options` solo llega con
 `accusation.open`; no hay puntajes ni aciertos hasta `reveal`. `evidence` solo
 incluye lo ya desbloqueado y visible para el jugador (privadas de su audiencia

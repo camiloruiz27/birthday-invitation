@@ -40,7 +40,7 @@
             "¿Transportaste alguna obra?"
           ],
           "response_exact": "Una funda vacía y material de montaje. Nadie registró un traslado de obra, porque no debía haberlo.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "comprador",
@@ -49,7 +49,7 @@
             "¿Para quién era el traslado?"
           ],
           "response_exact": "Tengo conversaciones con muchos coleccionistas. Eso no significa que haya vendido una obra sin autorización.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Afirmó retirarse de la galería antes del cierre de montaje.",
@@ -73,7 +73,7 @@
             "¿Hay marcas detrás del cuadro?"
           ],
           "response_exact": "El reverso del original lleva un sello triangular de conservación. La reproducción nunca lo tuvo.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "reproduccion",
@@ -82,7 +82,7 @@
             "¿Había un duplicado?"
           ],
           "response_exact": "La copia era para pruebas de iluminación. Inés debía devolverla al depósito después del montaje.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Permaneció en recepción al finalizar montaje; registro cruzado.",
@@ -106,7 +106,7 @@
             "¿Viste alguna funda rígida?"
           ],
           "response_exact": "Vi a Inés salir con una funda para transportar cuadros alrededor de las cuatro menos cuarto. Parecía normal: ella montaba la exposición.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "pieza",
@@ -115,7 +115,7 @@
             "¿Viste algún daño?"
           ],
           "response_exact": "Recogí un fragmento suelto del marco del original durante limpieza de la tarde. No me llevé ningún cuadro.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Entró al turno nocturno después de activar alarma de obras.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "document",
       "title": "Bitácora de montaje",
@@ -154,7 +154,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "photo",
       "title": "Foto del cuadro expuesto, 16:12",
@@ -162,7 +162,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "document",
       "title": "Registro de salida de material",
@@ -170,7 +170,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "document",
       "title": "Acuerdo privado de entrega",

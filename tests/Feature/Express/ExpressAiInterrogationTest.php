@@ -66,7 +66,7 @@ class ExpressAiInterrogationTest extends TestCase
         ])->headers->get('Location'));
 
         $this->postJson(route('express.start', $host))->assertOk();
-        $this->later(25);
+        $this->later(50);
 
         return [$host, $friend];
     }
