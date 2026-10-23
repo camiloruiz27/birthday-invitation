@@ -1,0 +1,206 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "el-pago-perfecto",
+  "case_number": 7,
+  "title": "El pago perfecto",
+  "tagline": "Un comprobante verdadero no demuestra dos pagos.",
+  "genre": "fraude cotidiano",
+  "high_concept": {
+    "scenario": "Puesto gastronómico en una feria de emprendimiento con sistema de pedidos y pagos digitales.",
+    "incident": "Un cliente recibe un pedido de $45.000 a las 13:05 mostrando un recibo aprobado, pero la cuenta solo registra un pago.",
+    "hook": "El comprobante es real. Entonces, ¿dónde está el dinero?"
+  },
+  "author_only": {
+    "truth": "Iván utilizó una captura auténtica de su transferencia de las 12:03 por un primer pedido #204 y la mostró nuevamente para retirar el pedido #218 de las 13:05, por idéntico valor. Mariana lo marcó manualmente como pagado al no tener conectividad. Nunca hubo una segunda transferencia.",
+    "culprit_id": "ivan",
+    "accusation": {
+      "who": "ivan",
+      "how": "Reutilizó el comprobante 9FD2 de la compra #204 para retirar sin pagar la compra #218.",
+      "why": "Obtener el segundo pedido sin efectuar otro pago.",
+      "reconstruction": "La referencia 9FD2 solo se liquidó una vez; hay dos pedidos entregados por el mismo cliente y un segundo marcado manualmente."
+    },
+    "deduction_nodes": [
+      "C1: Referencia auténtica solo de #204 (E1+E3+E4).",
+      "C2: #218 fue entregado sin transacción nueva (E2+E5+E6).",
+      "C3: Iván participó en las dos entregas (E1+E5+Felipe).",
+      "C4: Mariana no actuó como autora del fraude, sino por verificación defectuosa (E6+Mariana)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "ivan",
+      "name": "Iván Ortiz",
+      "role": "cliente",
+      "relation_to_incident": "Presentó un pago verdadero.",
+      "topics": [
+        {
+          "id": "comprobante",
+          "paraphrases": [
+            "¿Es tu comprobante?",
+            "¿Cuántos pagos hiciste?"
+          ],
+          "response_exact": "Claro que es mío y el dinero salió de mi cuenta. Aquí dice aprobado; si su sistema no lo muestra, no es un problema mío.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "dos_pedidos",
+          "paraphrases": [
+            "¿Volviste al puesto?",
+            "¿Qué compraste a las doce?"
+          ],
+          "response_exact": "Sí, volví por otro pedido. Ambos costaban igual. Por eso los dos recibos se ven parecidos.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Estuvo en el puesto a las 12:03 y a las 13:05.",
+      "secret": "Volvió a usar el mismo recibo.",
+      "lie": "«Yo pagué cada vez que compré».",
+      "knows": "Sabe que la segunda orden tenía el mismo valor que la primera.",
+      "believes": "Cree que una imagen aprobada convencerá a la cajera.",
+      "does_not_know": "No sabe que el sistema vincula la referencia a un único pedido.",
+      "tone": "seguro, aparentemente ofendido"
+    },
+    {
+      "id": "mariana",
+      "name": "Mariana Torres",
+      "role": "cajera",
+      "relation_to_incident": "Marcó como pagado el pedido de las 13:05.",
+      "topics": [
+        {
+          "id": "validacion",
+          "paraphrases": [
+            "¿Verificaste el pago?",
+            "¿Por qué marcaste aprobado?"
+          ],
+          "response_exact": "Falló la conexión. Vi un comprobante con estado aprobado y lo marqué manualmente. Debí confirmar la referencia.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "referencia",
+          "paraphrases": [
+            "¿Revisaste el número del recibo?",
+            "¿Viste dos transferencias?"
+          ],
+          "response_exact": "No consulté la lista de pagos en ese momento, solo la imagen. El monto coincidía con el pedido.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Atendió al cliente frente a testigos.",
+      "secret": "Marcó manualmente el pago sin confirmación bancaria.",
+      "lie": "«El sistema validó ambas operaciones».",
+      "knows": "Sabe que usó modo manual y no corroboró referencia.",
+      "believes": "Cree que el cliente sí pagó.",
+      "does_not_know": "No conoce si Iván hizo una segunda transferencia.",
+      "tone": "rápida, avergonzada"
+    },
+    {
+      "id": "felipe",
+      "name": "Felipe Mora",
+      "role": "encargado de cocina",
+      "relation_to_incident": "Entregó ambos pedidos.",
+      "topics": [
+        {
+          "id": "entregas",
+          "paraphrases": [
+            "¿Entregaste dos pedidos?",
+            "¿A quién despachaste?"
+          ],
+          "response_exact": "Sí: el #204 a las 12:07 y el #218 a las 13:08. Los recogió el mismo cliente, Iván.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "aprobacion",
+          "paraphrases": [
+            "¿Quién aprobó la entrega?",
+            "¿Viste el pago?"
+          ],
+          "response_exact": "Mariana marcó la orden lista para despacho. Yo no reviso transferencias desde cocina.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Se mantuvo en cocina mientras se cobraba.",
+      "secret": "Entregó un pedido antes de recibir visto bueno definitivo.",
+      "lie": "«No despacho sin que esté pagado».",
+      "knows": "Sabe los números de los dos pedidos entregados.",
+      "believes": "Cree que caja validó ambos.",
+      "does_not_know": "No vio la captura ni cuentas bancarias.",
+      "tone": "colaborador, apurado"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Comprobante de Iván",
+      "content_exact": "Transacción aprobada | 12:03 | $45.000 COP | Referencia 9FD2 | Titular Iván Ortiz."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Orden solicitada",
+      "content_exact": "Pedido #218 | 13:05 | Total $45.000 | Cliente Iván Ortiz | Entrega autorizada por caja: manual."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "document",
+      "title": "Primer pedido",
+      "content_exact": "Pedido #204 | 12:03 | $45.000 | Referencia bancaria 9FD2 | Entregado 12:07."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Conciliación de pagos",
+      "content_exact": "Movimientos 12:00–13:20 | Una única transacción por $45.000 de Iván | Referencia 9FD2 | 12:03 | Sin segunda referencia."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "cctv",
+      "title": "Registro de retiro de pedidos",
+      "content_exact": "12:07 | Iván recoge #204. 13:08 | Iván recoge #218. Ambas entregas confirmadas."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "screenshot",
+      "title": "Auditoría de caja",
+      "content_exact": "#204: Aprobación automática, referencia 9FD2. #218: Aprobación MANUAL, sin referencia bancaria asociada."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "ivan",
+        "label": "Iván Ortiz"
+      },
+      {
+        "id": "mariana",
+        "label": "Mariana Torres"
+      },
+      {
+        "id": "felipe",
+        "label": "Felipe Mora"
+      }
+    ],
+    "how_options": [
+      "Reutilizó el comprobante 9FD2 de la compra #204 para retirar sin pagar la compra #218.",
+      "Registró un cobro ficticio en caja sin que Iván lo supiera.",
+      "Entregó por su cuenta un pedido no registrado."
+    ],
+    "why_options": [
+      "Obtener el segundo pedido sin efectuar otro pago.",
+      "Cubrir un error de cierre.",
+      "Apropiarse de dinero de la cocina."
+    ]
+  }
+}

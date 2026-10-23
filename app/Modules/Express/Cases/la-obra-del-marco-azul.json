@@ -1,0 +1,206 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "la-obra-del-marco-azul",
+  "case_number": 4,
+  "title": "La obra del marco azul",
+  "tagline": "La pintura se parece; las marcas físicas no.",
+  "genre": "robo de arte",
+  "high_concept": {
+    "scenario": "Galería pequeña de arte contemporáneo durante montaje e inauguración.",
+    "incident": "Una restauradora descubre que una pintura expuesta es una reproducción y el original desapareció sin alarma.",
+    "hook": "El cuadro no desapareció. Lo cambiaron por otro."
+  },
+  "author_only": {
+    "truth": "Inés, representante de la artista, cambió el original por una reproducción durante el montaje, antes del cierre de seguridad, y retiró la pieza auténtica en un portacuadros registrado como material vacío. Buscaba obtener el dinero de una venta privada no autorizada.",
+    "culprit_id": "ines",
+    "accusation": {
+      "who": "ines",
+      "how": "Cambió el original por una copia durante el montaje y sacó el original en un portacuadros.",
+      "why": "Obtener dinero con una venta privada no autorizada.",
+      "reconstruction": "La fotografía y el reverso prueban sustitución; Inés custodió el embalaje y dejó preparada la entrega privada."
+    },
+    "deduction_nodes": [
+      "C1: Hay una copia en exhibición (E1+E2+E4).",
+      "C2: La sustitución fue antes del cierre (E3+Mateo).",
+      "C3: Inés movilizó una funda compatible (E3+E5+Julia).",
+      "C4: Existía un comprador interesado en el original (E6+Inés)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "ines",
+      "name": "Inés Valdés",
+      "role": "representante de la artista",
+      "relation_to_incident": "Coordinó entradas y traslados de obras.",
+      "topics": [
+        {
+          "id": "transporte",
+          "paraphrases": [
+            "¿Qué llevaba en la funda?",
+            "¿Transportaste alguna obra?"
+          ],
+          "response_exact": "Una funda vacía y material de montaje. Nadie registró un traslado de obra, porque no debía haberlo.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "comprador",
+          "paraphrases": [
+            "¿Vendiste el original?",
+            "¿Para quién era el traslado?"
+          ],
+          "response_exact": "Tengo conversaciones con muchos coleccionistas. Eso no significa que haya vendido una obra sin autorización.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Afirmó retirarse de la galería antes del cierre de montaje.",
+      "secret": "Pactó una entrega privada.",
+      "lie": "«Solo saqué material promocional».",
+      "knows": "Conoce diferencia física entre original y copia.",
+      "believes": "Cree que los dos marcos parecerán idénticos.",
+      "does_not_know": "Ignora que el conservador fotografió reverso.",
+      "tone": "elegante, cortante"
+    },
+    {
+      "id": "mateo",
+      "name": "Mateo Sarmiento",
+      "role": "curador",
+      "relation_to_incident": "Tenía llaves de la sala.",
+      "topics": [
+        {
+          "id": "sello",
+          "paraphrases": [
+            "¿Cómo diferencian original y copia?",
+            "¿Hay marcas detrás del cuadro?"
+          ],
+          "response_exact": "El reverso del original lleva un sello triangular de conservación. La reproducción nunca lo tuvo.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "reproduccion",
+          "paraphrases": [
+            "¿Dónde quedó la copia?",
+            "¿Había un duplicado?"
+          ],
+          "response_exact": "La copia era para pruebas de iluminación. Inés debía devolverla al depósito después del montaje.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Permaneció en recepción al finalizar montaje; registro cruzado.",
+      "secret": "No revisó el dorso antes de exhibir.",
+      "lie": "«Verifiqué personalmente cada marca».",
+      "knows": "Sabe que el original porta sello de conservación triangular.",
+      "believes": "Cree que la reproducción quedó guardada.",
+      "does_not_know": "Ignora quién sacó la funda rígida.",
+      "tone": "meticuloso, avergonzado"
+    },
+    {
+      "id": "julia",
+      "name": "Julia Márquez",
+      "role": "encargada de limpieza",
+      "relation_to_incident": "Circuló por la galería con bolsas grandes.",
+      "topics": [
+        {
+          "id": "bolsas",
+          "paraphrases": [
+            "¿Qué bolsos retiraste?",
+            "¿Viste alguna funda rígida?"
+          ],
+          "response_exact": "Vi a Inés salir con una funda para transportar cuadros alrededor de las cuatro menos cuarto. Parecía normal: ella montaba la exposición.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "pieza",
+          "paraphrases": [
+            "¿Tomaste algo del marco azul?",
+            "¿Viste algún daño?"
+          ],
+          "response_exact": "Recogí un fragmento suelto del marco del original durante limpieza de la tarde. No me llevé ningún cuadro.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Entró al turno nocturno después de activar alarma de obras.",
+      "secret": "Recogió un fragmento de listón azul caído para desecharlo.",
+      "lie": "«No recogí nada del área de cuadros».",
+      "knows": "Vio una bolsa rígida con Inés antes de la apertura.",
+      "believes": "Cree que eran folletos grandes.",
+      "does_not_know": "Desconoce ventas privadas y sellos del reverso.",
+      "tone": "reservada, factual"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "photo",
+      "title": "Foto del montaje, 15:25",
+      "content_exact": "En la esquina inferior izquierda del marco azul aparece una muesca de madera expuesta."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Ficha de conservación",
+      "content_exact": "Original: sello triangular estampado en reverso del bastidor. Copia de ensayo: SIN sello. Ambas usan marcos azules similares."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "document",
+      "title": "Bitácora de montaje",
+      "content_exact": "15:10 | Inés recibe obra y copia de prueba. 16:00 | Montaje cerrado. 16:05 | Alarmas activadas. No hubo aperturas posteriores."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "photo",
+      "title": "Foto del cuadro expuesto, 16:12",
+      "content_exact": "El marco azul no tiene muesca; foto del reverso adjunta: no hay sello triangular."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "document",
+      "title": "Registro de salida de material",
+      "content_exact": "15:47 | Inés Valdés | funda rígida para obra N° F-12 | salida de galería | declaración: «material vacío»."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "document",
+      "title": "Acuerdo privado de entrega",
+      "content_exact": "Entrega reservada: pintura original «Marco Azul» | custodio: Inés Valdés | comprador espera entrega a las 17:00 | anticipo sujeto a original verificado."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "ines",
+        "label": "Inés Valdés"
+      },
+      {
+        "id": "mateo",
+        "label": "Mateo Sarmiento"
+      },
+      {
+        "id": "julia",
+        "label": "Julia Márquez"
+      }
+    ],
+    "how_options": [
+      "Cambió el original por una copia durante el montaje y sacó el original en un portacuadros.",
+      "Retiró el original después de activar la alarma con llave de curador.",
+      "Sacó el original dentro de una bolsa de basura durante limpieza nocturna."
+    ],
+    "why_options": [
+      "Obtener dinero con una venta privada no autorizada.",
+      "Cubrir un error de inventario.",
+      "Revenderlo clandestinamente."
+    ]
+  }
+}

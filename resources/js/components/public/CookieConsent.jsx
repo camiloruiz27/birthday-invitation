@@ -161,7 +161,7 @@ export default function CookieConsent() {
                             >
                                 <CookieIcon />
                                 <span className="sm:hidden">Cookies</span>
-                                <span className="hidden sm:inline">Tu privacidad, en corto</span>
+                                <span className="hidden sm:inline">Tu privacidad rápidamente</span>
                             </h2>
 
                             {!showSettings && (

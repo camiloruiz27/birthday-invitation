@@ -17,8 +17,15 @@ class CatalogController extends Controller
     public function index(): Response
     {
         return Inertia::render('Public/Catalog', [
+            // Searching and filtering happen in the browser (see
+            // lib/caseDiscovery.js), so the page carries the whole published
+            // list plus the text a search looks through. The list is cached
+            // and the visitor never asks the server again for a filter.
             'cases' => fn () => PublishedCases::all()
-                ->map(fn (MysteryCase $case) => CaseCardData::summary($case))
+                ->map(fn (MysteryCase $case) => CaseCardData::summary($case) + [
+                    'search' => trim($case->tagline.' '.$case->description),
+                    'published_at' => $case->published_at?->toIso8601String(),
+                ])
                 ->values(),
         ]);
     }

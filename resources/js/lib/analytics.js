@@ -72,6 +72,7 @@ export function trackAd(event, data = {}, eventId) {
  * and verification links also carry an email or a signature in the query:
  *
  *   /jugador/{token}/...             whoever holds it IS that player
+ *   /express/s/{token}/...           the same, for a fair-demo room player
  *   /restablecer-clave/{token}?email  a password reset
  *   /verificar-correo/{id}/{hash}?... a signed verification link
  *
@@ -83,6 +84,7 @@ export function sanitizeUrl(url) {
     return String(url)
         .replace(/[?#].*$/, '')
         .replace(/(\/jugador\/)[^/]+/, '$1:token')
+        .replace(/(\/express\/s\/)[^/]+/, '$1:token')
         .replace(/(\/restablecer-clave\/)[^/]+/, '$1:token')
         .replace(/(\/verificar-correo\/)[^/]+\/[^/]+/, '$1:id/:hash');
 }

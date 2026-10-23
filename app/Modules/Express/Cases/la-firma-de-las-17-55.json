@@ -1,0 +1,206 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "la-firma-de-las-17-55",
+  "case_number": 5,
+  "title": "La firma de las 17:55",
+  "tagline": "La firma no era falsa: la hoja fue sustituida.",
+  "genre": "fraude contractual",
+  "high_concept": {
+    "scenario": "Reunión de inversión de una startup y archivo digital del acuerdo firmado.",
+    "incident": "Un socio descubre que el contrato firmado a las 17:55 contiene ahora 40% de participación, aunque había aceptado 10%.",
+    "hook": "Todo el mundo reconoce la firma. ¿Dónde ocurrió el fraude?"
+  },
+  "author_only": {
+    "truth": "Paz, coordinadora del cierre, imprimió un nuevo anexo con 40% a las 18:04 mientras custodiaba la carpeta. Cambió la hoja sin iniciales conservando la página de firmas auténtica y cargó al archivo el anexo nuevo. Buscaba una bonificación privada vinculada a cerrar la operación en términos favorables al inversor.",
+    "culprit_id": "paz",
+    "accusation": {
+      "who": "paz",
+      "how": "Sustituyó el anexo económico después de la firma por una versión impresa a las 18:04.",
+      "why": "Cobrar una bonificación condicionada a obtener 40% para el inversor.",
+      "reconstruction": "La firma auténtica permaneció en la carpeta mientras Paz tuvo la custodia exclusiva; la versión subida a las 18:09 contiene el porcentaje alterado."
+    },
+    "deduction_nodes": [
+      "C1: Existía un anexo del 10% anterior (E1+Andrés).",
+      "C2: La firma no identifica porcentaje (E2+Paz).",
+      "C3: Paz tuvo custodia en ventana de impresión (E3+E4+E6).",
+      "C4: La bonificación generó incentivo (E5+Mauricio)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "paz",
+      "name": "Paz Escobar",
+      "role": "coordinadora del cierre",
+      "relation_to_incident": "Armó, imprimió y archivó contrato.",
+      "topics": [
+        {
+          "id": "archivo",
+          "paraphrases": [
+            "¿Quién digitalizó el contrato?",
+            "¿Quién tuvo la carpeta tras firmar?"
+          ],
+          "response_exact": "Me llevé la carpeta a digitalización y la devolví. Ese era mi trabajo. No cambié lo acordado.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "porcentaje",
+          "paraphrases": [
+            "¿Se volvió a imprimir el anexo?",
+            "¿Por qué apareció el 40%?"
+          ],
+          "response_exact": "Manejamos muchos borradores de anexos. El cuarenta por ciento era una propuesta, no recuerdo que se hubiera firmado.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Recibió el expediente tras firma para escanearlo.",
+      "secret": "Alteró el anexo no inicialado.",
+      "lie": "«Todo quedó firmado a las 17:55, sin modificaciones».",
+      "knows": "Sabe que el anexo carece de iniciales.",
+      "believes": "Cree que la firma validará todo el paquete.",
+      "does_not_know": "Ignora que el historial de impresión conserva hora y usuario.",
+      "tone": "resuelta, formal"
+    },
+    {
+      "id": "mauricio",
+      "name": "Mauricio Duque",
+      "role": "inversionista",
+      "relation_to_incident": "Ganaría más participación con la versión alterada.",
+      "topics": [
+        {
+          "id": "bono",
+          "paraphrases": [
+            "¿Le ofreciste una comisión a Paz?",
+            "¿Quién ganaba con el 40%?"
+          ],
+          "response_exact": "La empresa había aprobado una bonificación por cierre más favorable. No autoricé a nadie a reemplazar hojas después de firmadas.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "firma",
+          "paraphrases": [
+            "¿Qué porcentaje firmaste?",
+            "¿Volviste después de las 18?"
+          ],
+          "response_exact": "Yo defendía el 40% en la negociación, pero el acuerdo de la mesa quedó en 10%. Me retiré poco después de las seis menos cinco.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Se fue de la reunión a las 17:58, registro de acceso.",
+      "secret": "Prometió una bonificación por cierre favorable, sin autorizar fraude.",
+      "lie": "«Nunca ofrecí incentivos fuera del contrato».",
+      "knows": "Conoce el incentivo negociado con Paz.",
+      "believes": "Cree que Paz pudo conseguir una enmienda válida.",
+      "does_not_know": "No vio el anexo que ella imprimió después.",
+      "tone": "frío, comercial"
+    },
+    {
+      "id": "andres",
+      "name": "Andrés Salcedo",
+      "role": "socio fundador",
+      "relation_to_incident": "Alega ser afectado por el cambio.",
+      "topics": [
+        {
+          "id": "porcentaje",
+          "paraphrases": [
+            "¿Cuánto aprobaste realmente?",
+            "¿Qué decía la hoja al firmar?"
+          ],
+          "response_exact": "Diez por ciento. Leí esa página antes de firmar; nadie nos pidió inicialar los anexos.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "despues",
+          "paraphrases": [
+            "¿Quién tomó la carpeta?",
+            "¿Tocaste el contrato después?"
+          ],
+          "response_exact": "Paz recogió el documento para escanearlo cuando terminamos. Yo no volví a tenerlo hasta el correo del día siguiente.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Estuvo presente en firma y luego fuera de la sala.",
+      "secret": "Había negociado secretamente vender otra pequeña participación, ajena al anexo.",
+      "lie": "«Nunca pensé vender acciones adicionales».",
+      "knows": "Vio la versión del 10% al momento de firmar.",
+      "believes": "Cree que su socio le oculta algo.",
+      "does_not_know": "No sabe quién custodió el expediente tras su salida.",
+      "tone": "impulsivo, honesto sobre la firma"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "photo",
+      "title": "Foto antes de firmar",
+      "content_exact": "17:42 | Anexo económico: participación del inversionista 10%. Papel identificado como ANEXO A / versión 3."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Página de firmas",
+      "content_exact": "17:55 | Documento principal firmado por las partes. La página de firmas no enumera el porcentaje ni contiene iniciales del Anexo A."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "document",
+      "title": "Custodia del expediente",
+      "content_exact": "17:57 | Paz recibe carpeta para escaneo. 18:12 | Paz devuelve carpeta al archivo. Sin accesos de Mauricio ni Andrés."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Cola de impresión",
+      "content_exact": "18:04 | Usuario paz.escobar | ANEXO_A_v4.pdf | 1 página | Participación 40%."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "document",
+      "title": "Condiciones de bonificación",
+      "content_exact": "Paz recibe bono de cierre únicamente si se formaliza participación de 40% o superior. Emitido antes de la reunión."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "screenshot",
+      "title": "Historial de archivo final",
+      "content_exact": "18:09 | Escaneo subido por paz.escobar | Anexo A: 40% | Página principal: firmas auténticas de 17:55."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "paz",
+        "label": "Paz Escobar"
+      },
+      {
+        "id": "mauricio",
+        "label": "Mauricio Duque"
+      },
+      {
+        "id": "andres",
+        "label": "Andrés Salcedo"
+      }
+    ],
+    "how_options": [
+      "Sustituyó el anexo económico después de la firma por una versión impresa a las 18:04.",
+      "Falsificó las firmas para hacerse dueño del 40%.",
+      "Negó el porcentaje firmado para forzar un nuevo precio."
+    ],
+    "why_options": [
+      "Cobrar una bonificación condicionada a obtener 40% para el inversor.",
+      "Obtener más acciones directamente.",
+      "Recuperar control societario."
+    ]
+  }
+}

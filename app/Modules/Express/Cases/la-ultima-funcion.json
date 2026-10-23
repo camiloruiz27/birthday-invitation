@@ -1,0 +1,206 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "la-ultima-funcion",
+  "case_number": 10,
+  "title": "La última función",
+  "tagline": "Seguir la orden no fue lo mismo que redactarla.",
+  "genre": "sabotaje moral",
+  "high_concept": {
+    "scenario": "Teatro universitario durante estreno, hoja de indicaciones, sistema de niebla y ventilación.",
+    "incident": "Una niebla escénica activada a las 20:17 dispara una alarma y obliga a evacuar la función.",
+    "hook": "El técnico pulsó el botón, pero ¿quién decidió que debía hacerlo?"
+  },
+  "author_only": {
+    "truth": "Nuria alteró la hoja de indicaciones para adelantar la niebla de las 20:35 a las 20:17, sabiendo que la ventilación tenía una falla ignorada por producción. Quería obligar a cancelar para que inspeccionaran el recinto. Tomás ejecutó la orden sin saber que había sido alterada.",
+    "culprit_id": "nuria",
+    "accusation": {
+      "who": "nuria",
+      "how": "Modificó deliberadamente la orden de efectos para activar niebla a las 20:17.",
+      "why": "Forzar una inspección tras ignorarse advertencias de ventilación.",
+      "reconstruction": "La hoja original señalaba 20:35; la copia entregada a Tomás cambió a 20:17 desde la terminal de Nuria después de que rechazaran su informe."
+    },
+    "deduction_nodes": [
+      "C1: Hora aprobada difiere de hora ejecutada (E1+E3+E4).",
+      "C2: Tomás ejecutó hoja alterada, no eligió la hora (E4+Tomás).",
+      "C3: Nuria modificó el documento (E6+E4).",
+      "C4: El motivo fue una advertencia ignorada (E2+E5+Nuria)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "nuria",
+      "name": "Nuria Beltrán",
+      "role": "directora de escena",
+      "relation_to_incident": "Supervisaba todas las señales de efectos.",
+      "topics": [
+        {
+          "id": "orden",
+          "paraphrases": [
+            "¿Quién cambió la hora?",
+            "¿Autorizaste las 20:17?"
+          ],
+          "response_exact": "Yo envié la hoja final de efectos, como siempre. La hora venía de una actualización de producción.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "seguridad",
+          "paraphrases": [
+            "¿Qué sabías de ventilación?",
+            "¿Por qué querías suspender?"
+          ],
+          "response_exact": "Advertí que el sistema no había pasado revisión. Me dijeron que no era motivo para cancelar. Eso me pareció irresponsable.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "En el puesto de regiduría al inicio del incidente.",
+      "secret": "Modificó conscientemente la instrucción.",
+      "lie": "«No alteré el orden aprobado».",
+      "knows": "Conoce el fallo reportado y quién ignoró el aviso.",
+      "believes": "Cree que una evacuación llevará a la inspección obligatoria.",
+      "does_not_know": "No previó el pánico del público.",
+      "tone": "contenida, convencida de su causa"
+    },
+    {
+      "id": "tomas",
+      "name": "Tomás Cárdenas",
+      "role": "técnico de efectos",
+      "relation_to_incident": "Activó físicamente la máquina.",
+      "topics": [
+        {
+          "id": "hora",
+          "paraphrases": [
+            "¿Por qué activaste la niebla a las 20:17?",
+            "¿Qué hora decía tu hoja?"
+          ],
+          "response_exact": "Mi hoja actualizada decía 20:17. No elegí esa hora. Esperé la señal y la ejecuté.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "copia",
+          "paraphrases": [
+            "¿Quién te entregó el documento?",
+            "¿Lo editaste tú?"
+          ],
+          "response_exact": "La copia llegó de regiduría, la carpeta de Nuria. No tengo permisos para modificar órdenes.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "En su puesto de control, frente a dos auxiliares.",
+      "secret": "No comprobó contra la versión previa que la orden había cambiado.",
+      "lie": "«La orden fue exactamente la de siempre».",
+      "knows": "Recibió copia que indicaba 20:17.",
+      "believes": "Cree que Nuria autorizó el cambio.",
+      "does_not_know": "Desconoce quién editó el documento.",
+      "tone": "directo, frustrado"
+    },
+    {
+      "id": "elena",
+      "name": "Elena Duarte",
+      "role": "productora",
+      "relation_to_incident": "Decidió continuar la función pese al informe de riesgo.",
+      "topics": [
+        {
+          "id": "riesgo",
+          "paraphrases": [
+            "¿Te avisaron de la ventilación?",
+            "¿Por qué no suspendiste?"
+          ],
+          "response_exact": "Recibimos una observación técnica, pero no exigía parar toda la función, según nuestra interpretación.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "cambio",
+          "paraphrases": [
+            "¿Autorizaste activar antes la niebla?",
+            "¿Quién fijó la nueva hora?"
+          ],
+          "response_exact": "No. Producción mantenía la indicación de 20:35. No ordené adelantar el efecto.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Estuvo recibiendo invitados durante la modificación y activación.",
+      "secret": "Ignoró la advertencia de ventilación.",
+      "lie": "«No había ningún reporte de falla».",
+      "knows": "Sabía que los detectores podían activarse con niebla en horario incorrecto.",
+      "believes": "Cree que técnicos debían gestionar el riesgo.",
+      "does_not_know": "No sabe quién alteró la hoja.",
+      "tone": "institucional, defensiva"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "document",
+      "title": "Hoja original de indicaciones",
+      "content_exact": "Versión aprobada a las 17:00 | Señal N-12 | Máquina de niebla: 20:35."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Reporte de mantenimiento",
+      "content_exact": "16:40 | Ventilación no ha completado revisión. Riesgo: niebla concentrada puede activar detectores si se libera antes del ciclo de ventilación."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "audio",
+      "title": "Aviso de evacuación",
+      "content_exact": "[Timbre breve] «Atención. Evacúen con calma por las salidas señalizadas». Registro de control: 20:17."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "document",
+      "title": "Hoja entregada al técnico",
+      "content_exact": "Versión enviada a efectos 20:10 | Señal N-12 | Máquina de niebla: 20:17."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "screenshot",
+      "title": "Correo de producción",
+      "content_exact": "17:10 | Nuria: «La revisión de ventilación no está terminada; recomiendo suspender». 17:23 | Elena: «La función continúa. Sin cambios»."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "screenshot",
+      "title": "Historial de versiones",
+      "content_exact": "20:09 | Usuario nuria.beltran | Señal N-12: 20:35 → 20:17. 20:10 | Copia enviada a Tomás. Sin autorización de producción."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "nuria",
+        "label": "Nuria Beltrán"
+      },
+      {
+        "id": "tomas",
+        "label": "Tomás Cárdenas"
+      },
+      {
+        "id": "elena",
+        "label": "Elena Duarte"
+      }
+    ],
+    "how_options": [
+      "Modificó deliberadamente la orden de efectos para activar niebla a las 20:17.",
+      "Activó por error la máquina antes de lo indicado.",
+      "Ordenó crear una alarma para reclamar al seguro."
+    ],
+    "why_options": [
+      "Forzar una inspección tras ignorarse advertencias de ventilación.",
+      "Descuido al operar el espectáculo.",
+      "Obtener una compensación económica."
+    ]
+  }
+}

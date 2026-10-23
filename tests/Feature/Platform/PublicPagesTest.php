@@ -150,7 +150,9 @@ class PublicPagesTest extends TestCase
         // The catalog is public, so what crosses is an explicit list.
         $this->assertSame(
             ['slug', 'name', 'tagline', 'cover_url', 'difficulty', 'duration_minutes',
-                'min_players', 'max_players', 'price_amount', 'currency', 'mechanics'],
+                'min_players', 'max_players', 'price_amount', 'currency', 'mechanics',
+                // What the in-browser search and ordering read.
+                'search', 'published_at'],
             array_keys($case)
         );
     }

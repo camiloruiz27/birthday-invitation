@@ -10,6 +10,9 @@ import EmptyState from '../components/ui/EmptyState';
 import { CaseFacts } from '../components/public/CaseCard';
 import TextLink from '../components/ui/TextLink';
 import QuotaMeter from '../components/app/QuotaMeter';
+import CaseDiscoveryControls from '../components/cases/CaseDiscoveryControls';
+import useCaseDiscovery from '../hooks/useCaseDiscovery';
+import { formatPrice } from '../lib/format';
 
 /**
  * The case, without leaving the library. "Ver el caso" used to send the owner
@@ -117,6 +120,9 @@ function LibraryCase({ mysteryCase, onView }) {
                 )}
 
                 <CaseFacts mysteryCase={mysteryCase} className="mt-3" />
+                <p className="mt-2 text-sm text-ink-muted">
+                    Precio actual: {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                </p>
 
                 {!mysteryCase.playable ? (
                     <Alert variant="warning" className="mt-4 mb-0">
@@ -153,6 +159,7 @@ function LibraryCase({ mysteryCase, onView }) {
 
 export default function Library({ cases }) {
     const [viewing, setViewing] = useState(null);
+    const discovery = useCaseDiscovery(cases, 'library');
 
     return (
         <AppLayout
@@ -173,13 +180,23 @@ export default function Library({ cases }) {
                     description="Los casos que adquieras quedan aquí de forma permanente, y puedes dirigir partidas de cada uno las veces que quieras."
                     action={<Button href={route('cases.index')}>Ver los casos disponibles</Button>}
                 />
-            ) : (
-                <div className="space-y-5">
-                    {cases.map((item) => (
-                        <LibraryCase key={item.slug} mysteryCase={item} onView={setViewing} />
-                    ))}
-                </div>
-            )}
+            ) : <>
+                <CaseDiscoveryControls discovery={discovery} />
+
+                {discovery.results.length === 0 ? (
+                    <EmptyState
+                        title="No encontramos casos con esos criterios"
+                        description="Prueba con otra búsqueda o elimina algunos filtros para ver los casos de tu biblioteca."
+                        action={<Button type="button" onClick={discovery.reset} variant="secondary">Limpiar filtros</Button>}
+                    />
+                ) : (
+                    <div className="space-y-5">
+                        {discovery.results.map((item) => (
+                            <LibraryCase key={item.slug} mysteryCase={item} onView={setViewing} />
+                        ))}
+                    </div>
+                )}
+            </>}
 
             <CaseModal mysteryCase={viewing} onClose={() => setViewing(null)} />
 

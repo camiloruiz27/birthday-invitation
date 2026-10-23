@@ -1,0 +1,206 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "el-mural-de-medianoche",
+  "case_number": 9,
+  "title": "El mural de medianoche",
+  "tagline": "No taparon el arte: taparon lo que el arte mostraba.",
+  "genre": "encubrimiento cultural",
+  "high_concept": {
+    "scenario": "Pasillo abierto de un campus universitario, mural financiado mediante convocatoria pública.",
+    "incident": "Por la mañana aparece una zona pintada de negro sobre un mural recién terminado. Culpan a un artista inconforme.",
+    "hook": "¿Por qué alguien dañaría solo ese rectángulo?"
+  },
+  "author_only": {
+    "truth": "Raúl, coordinador cultural, incluyó sin autorización la publicidad de un patrocinador en el mural mediante un acuerdo paralelo. Al enterarse de una auditoría, compró pintura negra y tapó el logotipo a las 06:18 del día de la revisión. Quiso ocultar el patrocinio e inventó un vandalismo.",
+    "culprit_id": "raul",
+    "accusation": {
+      "who": "raul",
+      "how": "Cubrió con pintura negra el logotipo de patrocinio y denunció falsamente vandalismo.",
+      "why": "Ocultar un patrocinio irregular antes de una auditoría.",
+      "reconstruction": "La foto anterior conserva el logotipo; Raúl accedió temprano, pidió pintura y el video del pasillo lo muestra durante el repintado."
+    },
+    "deduction_nodes": [
+      "C1: El negro cubre publicidad identificable (E1+E3).",
+      "C2: Publicidad constituía infracción antes de auditoría (E2+Simón).",
+      "C3: Raúl preparó y ejecutó intervención (E4+E5+E6).",
+      "C4: Simón y Paula llegan después (E4+interrogatorios)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "raul",
+      "name": "Raúl Barrera",
+      "role": "coordinador cultural",
+      "relation_to_incident": "Organizó la convocatoria del mural.",
+      "topics": [
+        {
+          "id": "pintura",
+          "paraphrases": [
+            "¿Quién pidió la pintura negra?",
+            "¿Estuviste en el almacén?"
+          ],
+          "response_exact": "Los materiales de mantenimiento los administra otro departamento. Yo no hago reparaciones en paredes.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "patrocinio",
+          "paraphrases": [
+            "¿Qué logo había en el mural?",
+            "¿Firmaste un acuerdo con el patrocinador?"
+          ],
+          "response_exact": "El mural no debía promocionar ninguna marca. Se aprobaron bocetos artísticos, nada comercial.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Accedió al campus antes de abrir el pasillo.",
+      "secret": "Acuerdo paralelo de patrocinio.",
+      "lie": "«Nunca pedí pintura negra ni entré antes de las siete».",
+      "knows": "Sabe qué logotipo debía borrar.",
+      "believes": "Cree que la protesta de Simón servirá como explicación.",
+      "does_not_know": "Ignora que el control de materiales guarda solicitudes.",
+      "tone": "indignado, institucional"
+    },
+    {
+      "id": "simon",
+      "name": "Simón Vega",
+      "role": "artista no seleccionado",
+      "relation_to_incident": "Protestó contra la convocatoria.",
+      "topics": [
+        {
+          "id": "enojo",
+          "paraphrases": [
+            "¿Amenazaste el mural?",
+            "¿Te disgustó la convocatoria?"
+          ],
+          "response_exact": "Sí, critiqué la elección públicamente. Me molestó que metieran publicidad en una obra pagada con fondos culturales.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "hora",
+          "paraphrases": [
+            "¿A qué hora entraste?",
+            "¿Dónde estabas al amanecer?"
+          ],
+          "response_exact": "Llegué después de las ocho. Cuando vi la pared ya estaba cubierta de negro.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "No ingresó al campus hasta las 08:05, registro de portería.",
+      "secret": "Escribió mensaje molesto el día anterior.",
+      "lie": "«No dije nada contra el proyecto».",
+      "knows": "Vio el logo comercial en la obra final.",
+      "believes": "Cree que fue una censura desde la institución.",
+      "does_not_know": "No sabe quién recibió patrocinio.",
+      "tone": "frustrado, franco si se confronta"
+    },
+    {
+      "id": "paula",
+      "name": "Paula Niño",
+      "role": "mantenimiento",
+      "relation_to_incident": "Utiliza pintura en sus tareas.",
+      "topics": [
+        {
+          "id": "material",
+          "paraphrases": [
+            "¿Quién compró pintura negra?",
+            "¿Faltaban materiales?"
+          ],
+          "response_exact": "Había dos botes negros reservados por la coordinación cultural desde ayer. No eran míos.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "turno",
+          "paraphrases": [
+            "¿A qué hora llegaste?",
+            "¿Pintaste el mural?"
+          ],
+          "response_exact": "A las 07:30. Cuando llegué el rectángulo ya estaba negro.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Inició turno allí a las 07:30; estuvo registrada en otro edificio a las 06:18.",
+      "secret": "Usó diluyente en trabajo paralelo sin registrar.",
+      "lie": "«Hoy no manejé ningún material de pintura».",
+      "knows": "Sabe que desapareció pintura del almacén de artes.",
+      "believes": "Cree que pudo ser un encargo verbal.",
+      "does_not_know": "Ignora el acuerdo con el patrocinador.",
+      "tone": "práctica, desconfiada"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "photo",
+      "title": "Foto del mural, día anterior",
+      "content_exact": "19:10 (día anterior) | Mural completo. Sobre el sector derecho se distingue un logotipo comercial ajeno al diseño cultural."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Lineamientos de convocatoria",
+      "content_exact": "«Las obras financiadas no podrán incorporar publicidad comercial ni convenios privados sin aprobación escrita». Auditoría programada para las 10:00."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "photo",
+      "title": "Hallazgo a las 07:00",
+      "content_exact": "Fotografía del mismo mural: un rectángulo negro reciente cubre la zona donde estaba el logotipo."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Registro de acceso",
+      "content_exact": "06:10 | Credencial raul.barrera | puerta lateral del pasillo de mural. 07:30 | paula.nino llega. 08:05 | simon.vega entra."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "document",
+      "title": "Solicitud de materiales",
+      "content_exact": "Día anterior, 16:38 | Solicitante: Raúl Barrera | Pintura negra mate: 2 botes | Retiro autorizado 06:05."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "cctv",
+      "title": "Fotograma pasillo, 06:18",
+      "content_exact": "06:18 | Cámara de servicio muestra a Raúl junto a la sección derecha del mural con rodillo y pintura negra."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "raul",
+        "label": "Raúl Barrera"
+      },
+      {
+        "id": "simon",
+        "label": "Simón Vega"
+      },
+      {
+        "id": "paula",
+        "label": "Paula Niño"
+      }
+    ],
+    "how_options": [
+      "Cubrió con pintura negra el logotipo de patrocinio y denunció falsamente vandalismo.",
+      "Arrojó pintura negra durante una protesta nocturna.",
+      "Cubrió la pared durante su turno de mantenimiento."
+    ],
+    "why_options": [
+      "Ocultar un patrocinio irregular antes de una auditoría.",
+      "Vengarse por no ser seleccionado.",
+      "Tapar un error de reparación."
+    ]
+  }
+}

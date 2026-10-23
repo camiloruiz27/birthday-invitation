@@ -8,7 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     {{-- A player page is never indexable, whatever the site-wide switch says:
          its URL is the player's credential (/jugador/{token}). --}}
-    @php($isPlayerPage = request()->is('jugador/*'))
+    {{-- The Express fair demo's /express/s/{token} is the same kind of URL. --}}
+    @php($isPlayerPage = request()->is('jugador/*') || request()->is('express/s/*'))
     {{-- Computed in PHP on purpose. This used to be an inline
          `index, follow@else noindex...@endif`, and Blade does not read an
          @else glued to a word: it printed an EMPTY content attribute, which
