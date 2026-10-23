@@ -41,7 +41,7 @@ export default function Poster({ event, url, title }) {
 
                 <div>
                     <h1 className="font-display text-4xl font-bold leading-[1.02] tracking-tight print:text-7xl">
-                        Resuelve un caso en 3 minutos
+                        Resuelve un caso en 5 minutos
                     </h1>
                     {event?.name && (
                         <p className="mt-3 text-base font-medium uppercase tracking-widest print:mt-6 print:text-2xl">

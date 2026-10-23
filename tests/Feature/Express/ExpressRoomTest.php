@@ -328,24 +328,24 @@ class ExpressRoomTest extends TestCase
         $this->assertSame(['E1'], array_column($this->state($host)['evidence'], 'id'));
         $this->assertSame(['E2'], array_column($this->state($friend)['evidence'], 'id'));
 
-        // 20 s: E3 for everyone, and the interrogations open.
-        $this->later(20);
+        // 45 s: E3 for everyone, and the interrogations open.
+        $this->later(45);
         $this->assertSame(['E1', 'E3'], array_column($this->state($host)['evidence'], 'id'));
         $this->assertSame(['E2', 'E3'], array_column($this->state($friend)['evidence'], 'id'));
         $this->assertTrue($this->state($host)['interrogation']['open']);
 
-        // 70 s: E4 to A, E5 to B.
-        $this->later(50);
+        // 120 s: E4 to A, E5 to B.
+        $this->later(75);
         $this->assertSame(['E1', 'E3', 'E4'], array_column($this->state($host)['evidence'], 'id'));
         $this->assertSame(['E2', 'E3', 'E5'], array_column($this->state($friend)['evidence'], 'id'));
 
-        // 105 s: E6 for everyone.
-        $this->later(35);
+        // 180 s: E6 for everyone.
+        $this->later(60);
         $this->assertSame(['E1', 'E3', 'E4', 'E6'], array_column($this->state($host)['evidence'], 'id'));
         $this->assertSame('playing', $this->state($host)['room']['status']);
 
-        // 120 s: the accusation opens.
-        $this->later(15);
+        // 220 s: the accusation opens.
+        $this->later(40);
         $state = $this->state($host);
         $this->assertSame('accusing', $state['room']['status']);
         $this->assertTrue($state['accusation']['open']);
@@ -371,13 +371,13 @@ class ExpressRoomTest extends TestCase
 
         $this->later(5);
 
-        $this->assertSame(['at_s' => 20, 'in_s' => 15], $this->state($host)['next_unlock']);
+        $this->assertSame(['at_s' => 45, 'in_s' => 40], $this->state($host)['next_unlock']);
     }
 
     public function test_a_late_arrival_still_gets_everything_unlocked_so_far(): void
     {
         [$host] = $this->runningRoom();
-        $this->later(30);
+        $this->later(60);
 
         $third = $this->join(Room::query()->firstOrFail()->code, 'Eva');
 
@@ -389,7 +389,7 @@ class ExpressRoomTest extends TestCase
         [$host] = $this->runningRoom();
         $code = Room::query()->firstOrFail()->code;
 
-        $this->later(76);
+        $this->later(131);
 
         $this->post(route('express.join.store', $code), ['nickname' => 'Tarde', 'contact_type' => 'none'])
             ->assertSessionHasErrors('nickname');
@@ -429,7 +429,7 @@ class ExpressRoomTest extends TestCase
     public function test_a_suggested_question_is_answered_from_the_case_file(): void
     {
         [$host] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', '¿Cómo recibieron el audio?', 'reproduccion')
             ->assertOk()
@@ -445,7 +445,7 @@ class ExpressRoomTest extends TestCase
     public function test_a_free_text_question_is_matched_and_an_unclear_one_costs_nothing(): void
     {
         [$host] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', '¿Quién cambió los créditos del corto?')
             ->assertOk()
@@ -462,7 +462,7 @@ class ExpressRoomTest extends TestCase
     public function test_asking_again_about_a_known_topic_is_free(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', 'x', 'reproduccion')->assertOk();
 
@@ -475,7 +475,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_first_to_ask_a_suspect_keeps_them(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', 'x', 'reproduccion')->assertOk();
 
@@ -492,7 +492,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_team_has_three_questions_in_total(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', 'x', 'reproduccion')->assertOk();
         $this->ask($host, 'nora', 'x', 'creditos')->assertOk();
@@ -507,7 +507,7 @@ class ExpressRoomTest extends TestCase
     public function test_a_topic_must_belong_to_the_suspect_asked(): void
     {
         [$host] = $this->runningRoom();
-        $this->later(25);
+        $this->later(50);
 
         $this->ask($host, 'nora', 'x', 'ensayo')->assertStatus(422)->assertJsonPath('code', 'invalid');
         $this->ask($host, 'fantasma', 'x', 'ensayo')->assertStatus(422)->assertJsonPath('code', 'invalid');
@@ -519,7 +519,7 @@ class ExpressRoomTest extends TestCase
     public function test_a_perfect_accusation_scores_100_and_the_round_ends_when_everyone_has_accused(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
 
         $this->postJson(route('express.accuse', $host), $this->winningIds($this->state($host)))
             ->assertOk()
@@ -556,7 +556,7 @@ class ExpressRoomTest extends TestCase
     public function test_a_wrong_answer_scores_only_what_it_got_right(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
 
         $ids = $this->winningIds($this->state($host));
         $ids['why'] = $this->losingIds($this->state($host))['why'];
@@ -571,18 +571,18 @@ class ExpressRoomTest extends TestCase
         $this->assertTrue($my['who']['correct']);
     }
 
-    public function test_the_round_closes_by_itself_at_180_seconds_and_silence_scores_zero(): void
+    public function test_the_round_closes_by_itself_at_300_seconds_and_silence_scores_zero(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
 
         $this->postJson(route('express.accuse', $host), $this->winningIds($this->state($host)))->assertOk();
         $late = $this->winningIds($this->state($friend)); // what the friend could have sent in time
 
-        $this->later(40); // 165 s: the window is still open for the one who has not answered
+        $this->later(40); // 265 s: the window is still open for the one who has not answered
         $this->assertSame('accusing', $this->state($friend)['room']['status']);
 
-        $this->later(20); // 185 s
+        $this->later(40); // 305 s
         $closed = $this->state($friend);
 
         $this->assertSame('reveal', $closed['room']['status']);
@@ -598,7 +598,7 @@ class ExpressRoomTest extends TestCase
     public function test_an_accusation_cannot_be_changed_and_garbage_is_refused(): void
     {
         [$host] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
 
         $this->postJson(route('express.accuse', $host), ['who' => 'x', 'how' => 'y', 'why' => 'z'])
             ->assertStatus(422)->assertJsonPath('code', 'invalid');
@@ -645,7 +645,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_correct_option_is_not_first_on_the_wire(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
 
         $case = $this->case();
         $correct = $case->correct();
@@ -733,7 +733,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_group_can_play_another_round(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
         $this->postJson(route('express.accuse', $host), $this->winningIds($this->state($host)))->assertOk();
         $this->postJson(route('express.accuse', $friend), $this->winningIds($this->state($friend)))->assertOk();
 
@@ -786,7 +786,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_report_and_the_export_run(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
         $this->postJson(route('express.accuse', $host), $this->winningIds($this->state($host)))->assertOk();
         $this->postJson(route('express.accuse', $friend), $this->losingIds($this->state($friend)))->assertOk();
 
@@ -817,7 +817,7 @@ class ExpressRoomTest extends TestCase
     public function test_the_end_screen_sends_people_to_the_catalog_with_the_fairs_promo(): void
     {
         [$host, $friend] = $this->runningRoom();
-        $this->later(125);
+        $this->later(225);
         $this->postJson(route('express.accuse', $host), $this->winningIds($this->state($host)))->assertOk();
         $this->postJson(route('express.accuse', $friend), $this->winningIds($this->state($friend)))->assertOk();
 

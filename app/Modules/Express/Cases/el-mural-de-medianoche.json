@@ -40,7 +40,7 @@
             "¿Estuviste en el almacén?"
           ],
           "response_exact": "Los materiales de mantenimiento los administra otro departamento. Yo no hago reparaciones en paredes.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "patrocinio",
@@ -49,7 +49,7 @@
             "¿Firmaste un acuerdo con el patrocinador?"
           ],
           "response_exact": "El mural no debía promocionar ninguna marca. Se aprobaron bocetos artísticos, nada comercial.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Accedió al campus antes de abrir el pasillo.",
@@ -73,7 +73,7 @@
             "¿Te disgustó la convocatoria?"
           ],
           "response_exact": "Sí, critiqué la elección públicamente. Me molestó que metieran publicidad en una obra pagada con fondos culturales.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "hora",
@@ -82,7 +82,7 @@
             "¿Dónde estabas al amanecer?"
           ],
           "response_exact": "Llegué después de las ocho. Cuando vi la pared ya estaba cubierta de negro.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "No ingresó al campus hasta las 08:05, registro de portería.",
@@ -106,7 +106,7 @@
             "¿Faltaban materiales?"
           ],
           "response_exact": "Había dos botes negros reservados por la coordinación cultural desde ayer. No eran míos.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "turno",
@@ -115,7 +115,7 @@
             "¿Pintaste el mural?"
           ],
           "response_exact": "A las 07:30. Cuando llegué el rectángulo ya estaba negro.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Inició turno allí a las 07:30; estuvo registrada en otro edificio a las 06:18.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "photo",
       "title": "Hallazgo a las 07:00",
@@ -154,7 +154,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "screenshot",
       "title": "Registro de acceso",
@@ -162,7 +162,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "document",
       "title": "Solicitud de materiales",
@@ -170,7 +170,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "cctv",
       "title": "Fotograma pasillo, 06:18",

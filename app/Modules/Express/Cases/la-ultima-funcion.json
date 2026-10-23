@@ -40,7 +40,7 @@
             "¿Autorizaste las 20:17?"
           ],
           "response_exact": "Yo envié la hoja final de efectos, como siempre. La hora venía de una actualización de producción.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "seguridad",
@@ -49,7 +49,7 @@
             "¿Por qué querías suspender?"
           ],
           "response_exact": "Advertí que el sistema no había pasado revisión. Me dijeron que no era motivo para cancelar. Eso me pareció irresponsable.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "En el puesto de regiduría al inicio del incidente.",
@@ -73,7 +73,7 @@
             "¿Qué hora decía tu hoja?"
           ],
           "response_exact": "Mi hoja actualizada decía 20:17. No elegí esa hora. Esperé la señal y la ejecuté.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "copia",
@@ -82,7 +82,7 @@
             "¿Lo editaste tú?"
           ],
           "response_exact": "La copia llegó de regiduría, la carpeta de Nuria. No tengo permisos para modificar órdenes.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "En su puesto de control, frente a dos auxiliares.",
@@ -106,7 +106,7 @@
             "¿Por qué no suspendiste?"
           ],
           "response_exact": "Recibimos una observación técnica, pero no exigía parar toda la función, según nuestra interpretación.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "cambio",
@@ -115,7 +115,7 @@
             "¿Quién fijó la nueva hora?"
           ],
           "response_exact": "No. Producción mantenía la indicación de 20:35. No ordené adelantar el efecto.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Estuvo recibiendo invitados durante la modificación y activación.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "audio",
       "title": "Aviso de evacuación",
@@ -154,7 +154,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "document",
       "title": "Hoja entregada al técnico",
@@ -162,7 +162,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "screenshot",
       "title": "Correo de producción",
@@ -170,7 +170,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "screenshot",
       "title": "Historial de versiones",

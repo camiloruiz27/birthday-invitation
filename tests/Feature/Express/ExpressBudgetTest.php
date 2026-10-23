@@ -12,7 +12,7 @@ use Tests\TestCase;
  * The host gives the database user 500 connections an hour for the WHOLE site,
  * and every request that runs a query costs one. This plays a complete round of
  * five people the way phones really behave (landing, forms, a poll every few
- * seconds for the whole 3 minutes, every action) and counts how many requests
+ * seconds for the five minutes, every action) and counts how many requests
  * touched the database — a number a fair can be planned with.
  */
 class ExpressBudgetTest extends TestCase
@@ -83,7 +83,7 @@ class ExpressBudgetTest extends TestCase
 
         $this->counted(fn () => $this->postJson(route('express.start', $host)));
 
-        // The 3 minutes: everybody polls every 3 s.
+        // The five minutes: everybody polls every 3 s until accusations open.
         $poll = function () use ($tokens) {
             foreach ($tokens as $token) {
                 $this->counted(fn () => $this->getJson(route('express.state', $token)));
@@ -91,18 +91,18 @@ class ExpressBudgetTest extends TestCase
         };
 
         $ticks = 0;
-        for ($second = 3; $second <= 120; $second += 3, $ticks++) {
+        for ($second = 3; $second <= 222; $second += 3, $ticks++) {
             Carbon::setTestNow(Carbon::parse('2026-10-28 15:00:00')->addSeconds($second));
             $poll();
 
-            if ($second === 21) {
+            if ($second === 48) {
                 // Three questions to two suspects (authored mode keeps this deterministic).
                 $this->counted(fn () => $this->postJson(route('express.ask', $host), ['suspect_id' => 'nora', 'question' => 'x', 'topic_id' => 'reproduccion']));
                 $this->counted(fn () => $this->postJson(route('express.ask', $host), ['suspect_id' => 'nora', 'question' => 'x', 'topic_id' => 'creditos']));
                 $this->counted(fn () => $this->postJson(route('express.ask', $tokens[1]), ['suspect_id' => 'luisa', 'question' => 'x', 'topic_id' => 'ensayo']));
             }
 
-            if ($second === 45) {
+            if ($second === 90) {
                 $this->counted(fn () => $this->postJson(route('express.share', $tokens[1]), ['evidence_id' => 'E2']));
             }
         }

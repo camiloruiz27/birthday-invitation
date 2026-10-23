@@ -41,7 +41,7 @@
             "¿Quién puso ese mensaje?"
           ],
           "response_exact": "La consola recibió un clip, sí, pero yo pensé que venía del sistema de la cabina. No revisé la programación.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "creditos",
@@ -51,7 +51,7 @@
             "¿Qué hiciste durante la alarma?"
           ],
           "response_exact": "Preparé una versión de créditos más justa. Estaba trabajando en producción desde mucho antes del incidente.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Tenía acceso a programación y edición; dice haberse quedado en recepción.",
@@ -76,7 +76,7 @@
             "¿Qué suena al fondo?"
           ],
           "response_exact": "Sí. A las 08:52 Alma ensayó una escena de encierro. Al principio sonó la campana del arranque del ensayo. Esa campana no volvió a utilizarse en la mañana.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "archivo",
@@ -85,7 +85,7 @@
             "¿Guardaste la grabación?"
           ],
           "response_exact": "El archivo se guardó como ensayo_cabina_0852.wav en la carpeta compartida de producción. Nora tenía permiso para reproducir archivos.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Presente en la sala de mezcla con un operador desde las 10:45.",
@@ -109,7 +109,7 @@
             "¿Cómo estaba la cabina?"
           ],
           "response_exact": "Abrí a las 11:10. No encontré a nadie. Solo estaba la silla, el micrófono y el panel de sonido.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         },
         {
           "id": "alma",
@@ -118,7 +118,7 @@
             "¿Quién entró a sala B?"
           ],
           "response_exact": "Vi en la planilla que Alma entró en la sala B a las 10:58. No me consta que saliera antes de la alarma.",
-          "requires_unlock_second": 20
+          "requires_unlock_second": 45
         }
       ],
       "opportunity_alibi": "Estaba en el corredor durante el aviso y abrió a las 11:10.",
@@ -149,7 +149,7 @@
     },
     {
       "id": "E3",
-      "unlock_second": 20,
+      "unlock_second": 45,
       "audience": "global",
       "type": "document",
       "title": "Registro de seguridad",
@@ -157,7 +157,7 @@
     },
     {
       "id": "E4",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "A",
       "type": "screenshot",
       "title": "Consola de reproducción",
@@ -165,7 +165,7 @@
     },
     {
       "id": "E5",
-      "unlock_second": 70,
+      "unlock_second": 120,
       "audience": "B",
       "type": "screenshot",
       "title": "Historial de créditos",
@@ -173,7 +173,7 @@
     },
     {
       "id": "E6",
-      "unlock_second": 105,
+      "unlock_second": 180,
       "audience": "global",
       "type": "screenshot",
       "title": "Ficha del archivo original",

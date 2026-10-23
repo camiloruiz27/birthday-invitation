@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * El modulo "Express": la demo de feria (mini-casos de 2-4 minutos, sin
+ * El modulo "Express": la demo de feria (mini-casos de 5 minutos, sin
  * registro). Vive entero bajo app/Modules/Express; quitar esta clase de
  * config/app.php y borrar la carpeta lo desactiva sin tocar nada mas.
  * Ver app/Modules/Express/README.md.

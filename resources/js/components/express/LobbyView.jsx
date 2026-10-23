@@ -47,7 +47,7 @@ export default function LobbyView({ state, onStart }) {
             try {
                 await navigator.share({
                     title: `Sala ${room.code}`,
-                    text: `Únete a mi sala para resolver "${room.case?.title}" en 3 minutos.`,
+                    text: `Únete a mi sala para resolver "${room.case?.title}" en 5 minutos.`,
                     url,
                 });
 

@@ -77,13 +77,13 @@ export default function Landing({ event, enabled = true, closed_reason: closedRe
 
     return (
         <ExpressLayout brandHref={route('express.home')}>
-            <Head title="Resuelvan un caso en 3 minutos" />
+            <Head title="Resuelvan un caso en 5 minutos" />
 
             <ExpressContainer className="py-8 sm:py-12">
                 {event?.name && <p className="case-stamp text-[10px] text-accent">{event.name}</p>}
 
                 <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-5xl">
-                    Resuelvan un caso en 3 minutos.{' '}
+                    Resuelvan un caso en 5 minutos.{' '}
                     <span className="text-ink-muted">Cada celular ve pistas distintas.</span>
                 </h1>
 
