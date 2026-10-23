@@ -29,6 +29,8 @@
         <!-- Mail guard, rate limiter and idle tick are production concerns with
              their own tests; elsewhere they would only make results depend on the
              clock and on how many messages earlier tests sent. -->
+        <!-- The local .env points at the real AI gateway: no test may reach it unless it fakes the HTTP itself (ExpressAiInterrogationTest turns this on). -->
+        <env name="EXPRESS_AI_ENABLED" value="false"/>
         <env name="IMMERSION_MAIL_DAILY_LIMIT" value="0"/>
         <!-- The product default emails only the accusations envelope; the older
              tests are about what the full mode sends, and the policy has its own. -->

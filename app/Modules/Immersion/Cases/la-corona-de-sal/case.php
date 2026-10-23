@@ -177,7 +177,7 @@ return [
         'ad' => [
             'hook' => 'El permiso es real. Lo que dice, no siempre fue lo mismo.',
             'bullets' => [
-                '3 a 7 investigadores comparando un permiso, un registro y una ficha de dos plantas',
+                '3 a 7 investigadores comparando un permiso, un registro y una ficha de plantas',
                 'Cinco sospechosos, dos testigos y la reserva del humedal a quienes interrogar',
                 '55 minutos con el expediente llegando en tiempo real',
             ],

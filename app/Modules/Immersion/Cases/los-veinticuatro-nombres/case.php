@@ -177,7 +177,7 @@ return [
         'ad' => [
             'hook' => 'Los veinticuatro nombres son reales. Lo que hicieron, no todos.',
             'bullets' => [
-                '4 a 8 investigadores y una hoja de horas repartida en extractos privados: la tabla completa solo existe si la reconstruyen entre todos',
+                '4 a 8 investigadores y una hoja de horas repartida en extractos privados',
                 'Siete sospechosos, tres testigos y dos fuentes de registro a quienes interrogar',
                 '100 minutos con el expediente llegando en tiempo real',
             ],

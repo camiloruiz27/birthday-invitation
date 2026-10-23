@@ -425,3 +425,35 @@ button:not(:disabled),
         display: none;
     }
 }
+
+/*
+|------------------------------------------------------------------------------
+| Printable poster (Pages/Express/Poster)
+|------------------------------------------------------------------------------
+|
+| When a page has a `.print-poster`, printing leaves ONLY the poster: the
+| layout, the cookie banner and anything else that floats are hidden. Scoped
+| with :has() so no other page's print output is touched.
+|
+*/
+
+@media print {
+    body:has(.print-poster) {
+        background: #fff;
+    }
+
+    body:has(.print-poster) * {
+        visibility: hidden;
+    }
+
+    body:has(.print-poster) .print-poster,
+    body:has(.print-poster) .print-poster * {
+        visibility: visible;
+    }
+
+    body:has(.print-poster) .print-poster {
+        position: absolute;
+        inset: 0 0 auto 0;
+        margin: 0;
+    }
+}

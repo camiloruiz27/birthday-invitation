@@ -1,0 +1,209 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "el-mensaje-de-las-11-03",
+  "case_number": 2,
+  "title": "El mensaje de las 11:03",
+  "tagline": "La voz era auténtica; la hora, no.",
+  "genre": "misterio audiovisual",
+  "high_concept": {
+    "scenario": "Sala de edición de una muestra estudiantil de cortometrajes, dos cabinas y una recepción común.",
+    "incident": "Alma parece pedir ayuda desde una cabina cerrada a las 11:03; al abrirla no hay nadie.",
+    "hook": "Si la puerta estaba cerrada, ¿cómo pudo desaparecer sin que nadie la viera salir?"
+  },
+  "author_only": {
+    "truth": "Nora programó a las 11:03 la reproducción de un audio de ensayo grabado por Alma a las 08:52. Citó a Alma a la sala B para revisar una versión nueva y creó una falsa emergencia para ganar tiempo mientras alteraba los créditos del corto; nunca hubo encierro.",
+    "culprit_id": "nora",
+    "accusation": {
+      "who": "nora",
+      "how": "Programó la reproducción de un audio pregrabado para fingir la emergencia.",
+      "why": "Ganar tiempo para atribuirse crédito en el cortometraje.",
+      "reconstruction": "La frase de auxilio provenía de una toma de ensayo a las 08:52, se emitió a las 11:03, Alma estaba en la sala B y la cuenta de Nora modificó créditos durante el caos."
+    },
+    "deduction_nodes": [
+      "C1: La voz no demuestra presencia a las 11:03 (E1+E2+E6).",
+      "C2: La transmisión fue programada por Nora (E4+pregunta a Luisa+E6).",
+      "C3: Nora obtuvo beneficio alterando créditos (E5+interrogatorio Nora).",
+      "C4: No hubo desaparición: Alma ya estaba en sala B (E3+Emilio)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "nora",
+      "name": "Nora Leal",
+      "role": "productora",
+      "relation_to_incident": "Controlaba el material y los horarios.",
+      "topics": [
+        {
+          "id": "reproduccion",
+          "paraphrases": [
+            "¿Cómo recibieron el audio?",
+            "¿Fue en directo?",
+            "¿Quién puso ese mensaje?"
+          ],
+          "response_exact": "La consola recibió un clip, sí, pero yo pensé que venía del sistema de la cabina. No revisé la programación.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "creditos",
+          "paraphrases": [
+            "¿Quién cambió los créditos?",
+            "¿Por qué editaste el cortometraje?",
+            "¿Qué hiciste durante la alarma?"
+          ],
+          "response_exact": "Preparé una versión de créditos más justa. Estaba trabajando en producción desde mucho antes del incidente.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Tenía acceso a programación y edición; dice haberse quedado en recepción.",
+      "secret": "Editó créditos sin autorización.",
+      "lie": "«Solo transmitimos lo que Alma dijo en directo».",
+      "knows": "Sabía que el audio era ensayo y que Alma estaba citada a sala B.",
+      "believes": "Cree que nadie notará el sonido de ensayo.",
+      "does_not_know": "No sabe qué personas escucharon el ensayo original.",
+      "tone": "contenida, profesional, evasiva"
+    },
+    {
+      "id": "luisa",
+      "name": "Luisa Arias",
+      "role": "técnica de sonido",
+      "relation_to_incident": "Operó los micrófonos durante el ensayo.",
+      "topics": [
+        {
+          "id": "ensayo",
+          "paraphrases": [
+            "¿Grabaron esa voz antes?",
+            "¿Es una grabación?",
+            "¿Qué suena al fondo?"
+          ],
+          "response_exact": "Sí. A las 08:52 Alma ensayó una escena de encierro. Al principio sonó la campana del arranque del ensayo. Esa campana no volvió a utilizarse en la mañana.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "archivo",
+          "paraphrases": [
+            "¿Quién tenía el audio?",
+            "¿Guardaste la grabación?"
+          ],
+          "response_exact": "El archivo se guardó como ensayo_cabina_0852.wav en la carpeta compartida de producción. Nora tenía permiso para reproducir archivos.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Presente en la sala de mezcla con un operador desde las 10:45.",
+      "secret": "Durante un ensayo etiquetó mal un archivo, pero lo corrigió.",
+      "lie": "«No escuché nada extraño».",
+      "knows": "Conoce el sonido distintivo del ensayo y el archivo fuente 08:52.",
+      "believes": "Cree que una producción lo usó fuera de contexto.",
+      "does_not_know": "Desconoce quién cambió los créditos.",
+      "tone": "precisa, algo defensiva"
+    },
+    {
+      "id": "emilio",
+      "name": "Emilio Castro",
+      "role": "vigilante",
+      "relation_to_incident": "Abrió la cabina cuando sonó la alerta.",
+      "topics": [
+        {
+          "id": "apertura",
+          "paraphrases": [
+            "¿Cuándo abriste la puerta?",
+            "¿Cómo estaba la cabina?"
+          ],
+          "response_exact": "Abrí a las 11:10. No encontré a nadie. Solo estaba la silla, el micrófono y el panel de sonido.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "alma",
+          "paraphrases": [
+            "¿Dónde viste a Alma?",
+            "¿Quién entró a sala B?"
+          ],
+          "response_exact": "Vi en la planilla que Alma entró en la sala B a las 10:58. No me consta que saliera antes de la alarma.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Estaba en el corredor durante el aviso y abrió a las 11:10.",
+      "secret": "Tardó varios minutos en conseguir la llave maestra.",
+      "lie": "«La cabina estaba completamente sellada».",
+      "knows": "Vio el cuarto vacío y registró a Alma en sala B.",
+      "believes": "Cree que Alma salió antes de la alerta.",
+      "does_not_know": "Desconoce el origen técnico del audio.",
+      "tone": "concreto, preocupado"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "audio",
+      "title": "La llamada de auxilio",
+      "content_exact": "«Estoy encerrada en la cabina. No puedo salir». Al inicio se escucha una campana doble de ensayo."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "document",
+      "title": "Plan del rodaje",
+      "content_exact": "08:50–09:00 | Cabina A | Ensayo escena 4: personaje encerrado; grabación de voz de Alma."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "document",
+      "title": "Registro de seguridad",
+      "content_exact": "10:58 | Alma P. entra a Sala B. 11:03 | aviso por altavoz. 11:10 | Cabina A abierta: sin ocupantes."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Consola de reproducción",
+      "content_exact": "11:03:00 | Reproducción programada | ensayo_cabina_0852.wav | Ejecutó usuario: nora.leal"
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "screenshot",
+      "title": "Historial de créditos",
+      "content_exact": "11:01 | créditos_v3 → créditos_v4 | Cambio: «Dirección: Alma» → «Codirección: Alma / Nora» | Usuario: nora.leal"
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "screenshot",
+      "title": "Ficha del archivo original",
+      "content_exact": "Creación de ensayo_cabina_0852.wav: 08:52. Duración: 00:09. Hash de reproducción de las 11:03: coincide con el original."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "nora",
+        "label": "Nora Leal"
+      },
+      {
+        "id": "luisa",
+        "label": "Luisa Arias"
+      },
+      {
+        "id": "emilio",
+        "label": "Emilio Castro"
+      }
+    ],
+    "how_options": [
+      "Programó la reproducción de un audio pregrabado para fingir la emergencia.",
+      "La técnica imitó la voz en directo desde la mesa de sonido.",
+      "El vigilante escondió a Alma tras abrir la cabina."
+    ],
+    "why_options": [
+      "Ganar tiempo para atribuirse crédito en el cortometraje.",
+      "Evitar una sanción por fallas de audio.",
+      "Encubrir un retraso en el protocolo de seguridad."
+    ]
+  }
+}

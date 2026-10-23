@@ -177,7 +177,7 @@ return [
         'ad' => [
             'hook' => 'El altar estaba intacto. La cera, no.',
             'bullets' => [
-                '4 a 8 investigadores leyendo una escena por el estado de la cera, sin química ni conocimientos técnicos',
+                '4 a 8 investigadores leyendo la escena por el estado de la cera, sin química',
                 'Seis sospechosos, tres testigos y un proveedor a quienes interrogar',
                 '90 minutos con el expediente llegando en tiempo real',
             ],

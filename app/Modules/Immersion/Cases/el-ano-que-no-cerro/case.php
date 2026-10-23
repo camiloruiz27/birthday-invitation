@@ -190,7 +190,7 @@ return [
         'ad' => [
             'hook' => 'El balance cerró perfecto. Eso era, precisamente, el problema.',
             'bullets' => [
-                '3 a 7 investigadores cruzando un reglamento, listados contables y correspondencia',
+                '3 a 7 investigadores cruzando un reglamento, listados y correspondencia',
                 'Cinco sospechosos, dos testigos y un revisor de cuentas a quienes interrogar',
                 '75 minutos con el expediente llegando en tiempo real, sin saber de contabilidad',
             ],

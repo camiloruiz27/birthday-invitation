@@ -168,7 +168,7 @@ return [
             'hook' => 'La postal mostraba el robo antes de que ocurriera.',
             'bullets' => [
                 '3 a 7 investigadores comparando una postal, una maqueta y una plaza real',
-                'Cinco sospechosos, tres testigos y una diseñadora de maquetas a quienes interrogar',
+                'Cinco sospechosos, tres testigos y una diseñadora de maquetas a interrogar',
                 '70 minutos con el expediente llegando en tiempo real',
             ],
             'cta' => 'Quiero este caso',

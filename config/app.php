@@ -213,6 +213,13 @@ return [
          */
         App\Modules\Platform\PlatformServiceProvider::class,
 
+        /*
+         * Express module: the fair demo (2-4 minute mini cases, no sign-up).
+         * Reads Platform's Ops cache and attribution; standalone otherwise.
+         * Quitar esta linea + borrar app/Modules/Express desactiva el modulo.
+         */
+        App\Modules\Express\ExpressServiceProvider::class,
+
     ],
 
     /*

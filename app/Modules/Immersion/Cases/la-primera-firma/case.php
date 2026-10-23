@@ -180,9 +180,9 @@ return [
         'ad' => [
             'hook' => 'La firma es de verdad. El cargo, todavía no.',
             'bullets' => [
-                '4 a 8 investigadores reconstruyendo una cronología repartida en fragmentos privados',
+                '4 a 8 investigadores reconstruyendo una cronología repartida en fragmentos',
                 'Seis sospechosos, tres testigos y un secretario jurídico a quienes interrogar',
-                '80 minutos con el expediente llegando en tiempo real: una venta radicada de madrugada y una agresión en el archivo',
+                '80 minutos de expediente en tiempo real: una venta de madrugada y una agresión',
             ],
             'cta' => 'Quiero este caso',
         ],

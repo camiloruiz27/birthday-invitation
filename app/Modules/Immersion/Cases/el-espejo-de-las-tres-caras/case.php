@@ -158,8 +158,8 @@ return [
         'ad' => [
             'hook' => 'Tres testigos sinceros describen a tres personas distintas. Ninguno miente.',
             'bullets' => [
-                '3 a 7 investigadores comparando un plano, tres vistas del laberinto y una ficha de paneles',
-                'Cinco sospechosos, tres testigos y la vigilante de la cabina de control a quienes interrogar',
+                '3 a 7 investigadores comparando un plano, tres vistas y una ficha de paneles',
+                'Cinco sospechosos, tres testigos y la vigilante de la cabina a interrogar',
                 '65 minutos con el expediente llegando en tiempo real',
             ],
             'cta' => 'Quiero este caso',

@@ -170,8 +170,8 @@ return [
         'ad' => [
             'hook' => 'La mercancía nunca estuvo en un lugar ilegal. Solo cambió de fecha en el papel equivocado.',
             'bullets' => [
-                '4 a 8 investigadores cruzando documentos, registros de movimiento y un fotograma de cámara',
-                'Siete sospechosos, tres testigos y dos fuentes técnicas, con solo tres reglas y cuatro zonas',
+                '4 a 8 investigadores cruzando documentos, registros y un fotograma de cámara',
+                'Siete sospechosos, tres testigos y dos fuentes técnicas a quienes interrogar',
                 '110 minutos con el expediente llegando en tiempo real',
             ],
             'cta' => 'Quiero este caso',

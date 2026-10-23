@@ -181,7 +181,7 @@ return [
         'ad' => [
             'hook' => 'El actor hizo todo bien. El operador también. Y aun así, alguien salió lastimado.',
             'bullets' => [
-                '3 a 7 investigadores comparando manuales, registros de briefing y fotos de la atracción',
+                '3 a 7 investigadores comparando manuales, registros y fotos de la atracción',
                 'Seis sospechosos, dos testigos y el encargado de prevención a quienes interrogar',
                 '75 minutos con el expediente llegando en tiempo real, con una grabación de radio',
             ],

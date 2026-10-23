@@ -125,7 +125,7 @@ return [
             jura que no sabía lo que decía. Nadie en la feria sabía lo que
             ella guardaba en silencio.
 
-            Tu equipo (2 a 6 investigadores, ideal 4) recibe el expediente en
+            Tu equipo (3 a 6 investigadores, ideal 4) recibe el expediente en
             tiempo real y podrá interrogar a cuatro sospechosos, dos testigos y
             a un encargado de acreditaciones durante 45 minutos, comparando
             fichas, listados, un mapa de puestos y un registro de materiales.
@@ -143,8 +143,8 @@ return [
         'ad' => [
             'hook' => 'La vidente no vio nada. Alguien más ya lo sabía todo.',
             'bullets' => [
-                '2 a 6 investigadores comparando fichas, listados, un mapa y un sobre sellado',
-                'Cuatro sospechosos, dos testigos y un encargado de acreditaciones a quienes interrogar',
+                '3 a 6 investigadores comparando fichas, listados, un mapa y un sobre sellado',
+                'Cuatro sospechosos, dos testigos y un encargado de acreditaciones a interrogar',
                 '45 minutos con el expediente llegando en tiempo real',
             ],
             'cta' => 'Quiero este caso',
@@ -152,7 +152,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 45,
-        'min_players' => 2,
+        'min_players' => 3,
         'max_players' => 6,
 
         'price_amount' => 49900,

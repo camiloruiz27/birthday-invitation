@@ -192,7 +192,7 @@ return [
             'hook' => 'Cinco nodos, cuatro rutas. Uno de los destinos nunca estuvo realmente ahí.',
             'bullets' => [
                 '4 a 8 investigadores con piezas privadas que solo encajan si las comparan',
-                'Siete sospechosos, tres testigos y dos fuentes de alcance limitado a quienes interrogar',
+                'Siete sospechosos, tres testigos y dos fuentes limitadas a quienes interrogar',
                 '110 minutos con el expediente llegando en tiempo real',
             ],
             'cta' => 'Quiero este caso',

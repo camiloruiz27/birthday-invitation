@@ -142,7 +142,7 @@ return [
             club, que está sentada a la misma mesa. El autor jura que ese final
             no es el suyo.
 
-            Tu equipo (2 a 6 investigadores, ideal 4) recibe el expediente en
+            Tu equipo (3 a 6 investigadores, ideal 4) recibe el expediente en
             tiempo real y podrá interrogar a cuatro sospechosos y a la
             presidenta, durante 35 minutos, con ocho piezas de evidencia: dos
             páginas del mismo cuento, la orden de impresión, un acta, una ficha,
@@ -161,7 +161,7 @@ return [
         'ad' => [
             'hook' => 'El cuento era de Nicolás. El párrafo que asustó a todos, no.',
             'bullets' => [
-                '2 a 6 investigadores comparando dos páginas del mismo cuento, palabra por palabra',
+                '3 a 6 investigadores comparando dos páginas del mismo cuento al detalle',
                 'Cuatro sospechosos y la presidenta del club a quienes interrogar',
                 '35 minutos, sin cifrados ni acertijos: solo lo que se puede leer y comparar',
             ],
@@ -170,7 +170,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 35,
-        'min_players' => 2,
+        'min_players' => 3,
         'max_players' => 6,
 
         'price_amount' => 39900,

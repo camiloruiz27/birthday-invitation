@@ -134,7 +134,7 @@ return [
             piezas lleva el logotipo de la marca rival del patrocinador
             exclusivo. El patrocinador amenaza con cancelar el contrato.
 
-            Tu equipo (2 a 5 investigadores, ideal 3) recibe el expediente en
+            Tu equipo (3 a 5 investigadores, ideal 3) recibe el expediente en
             tiempo real y podrá interrogar a tres sospechosos y a un testigo
             durante 25 minutos, comparando documentos: el confeti recuperado, la
             muestra aprobada, un pedido de imprenta y una cláusula de contrato.
@@ -151,7 +151,7 @@ return [
         'ad' => [
             'hook' => 'El confeti era plateado. La marca equivocada, también.',
             'bullets' => [
-                '2 a 5 investigadores comparando documentos: confeti, muestra aprobada, pedido y contrato',
+                '3 a 5 investigadores comparando confeti, muestra, pedido y contrato',
                 'Tres sospechosos y un testigo a quienes interrogar',
                 '25 minutos con el expediente llegando en tiempo real',
             ],
@@ -160,7 +160,7 @@ return [
 
         'difficulty' => 'medium',
         'duration_minutes' => 25,
-        'min_players' => 2,
+        'min_players' => 3,
         'max_players' => 5,
 
         'price_amount' => 29900,

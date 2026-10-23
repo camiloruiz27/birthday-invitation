@@ -1,0 +1,207 @@
+{
+  "schema": "misteriocode.express.author.v1",
+  "case_id": "el-apagon-que-no-existio",
+  "case_number": 3,
+  "title": "El apagón que no existió",
+  "tagline": "La imagen falló; el marcador no tenía por qué reiniciarse.",
+  "genre": "sabotaje competitivo",
+  "high_concept": {
+    "scenario": "Final universitaria de esports, marcador electrónico y consola de arbitraje.",
+    "incident": "En medio de la final la transmisión queda negra 43 segundos; al regresar, el marcador aparece reiniciado y cambia el resultado.",
+    "hook": "¿Cómo pudo un apagón borrar solo el resultado?"
+  },
+  "author_only": {
+    "truth": "Hubo una pérdida de señal de video, no un corte eléctrico. Leo, árbitro, utilizó su terminal para reiniciar manualmente el marcador durante los 43 segundos de pantalla negra. Buscaba favorecer al equipo Rojo donde compite su hermana Sara.",
+    "culprit_id": "leo",
+    "accusation": {
+      "who": "leo",
+      "how": "Solicitó un reinicio manual del marcador desde su terminal durante una pérdida de video.",
+      "why": "Favorecer al equipo Rojo, donde jugaba su hermana.",
+      "reconstruction": "La sala mantuvo energía; el registro técnico conserva el comando del árbitro y la inscripción confirma la relación familiar."
+    },
+    "deduction_nodes": [
+      "C1: No hubo apagón (E1+E2+E6).",
+      "C2: El 0–0 fue causado por RESET_SCORE manual (E3+E4+Óscar).",
+      "C3: Solo Leo tenía el permiso efectivo (E4+E6).",
+      "C4: Leo favorecía a su hermana (E5+Sara)."
+    ]
+  },
+  "characters": [
+    {
+      "id": "leo",
+      "name": "Leo Ríos",
+      "role": "árbitro principal",
+      "relation_to_incident": "Responsable de validar el marcador.",
+      "topics": [
+        {
+          "id": "reinicio",
+          "paraphrases": [
+            "¿Quién reinició el marcador?",
+            "¿Fue manual?",
+            "¿Qué pasó en la consola?"
+          ],
+          "response_exact": "El sistema recuperó estado cero después de la señal caída. Yo no pedí borrar un marcador válido.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "sara",
+          "paraphrases": [
+            "¿Conoces a Sara?",
+            "¿Tienes familiares compitiendo?"
+          ],
+          "response_exact": "Conozco a muchos estudiantes del torneo. Mi vida familiar no debería afectar la decisión de los árbitros.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "Permaneció en el puesto arbitral durante toda la incidencia.",
+      "secret": "No declaró parentesco con Sara.",
+      "lie": "«El marcador se reinició solo por el apagón».",
+      "knows": "El video se perdió, pero la consola siguió operativa.",
+      "believes": "Cree que se atribuirá todo a la señal.",
+      "does_not_know": "Ignora que la foto muestra luces encendidas.",
+      "tone": "autoritario, seguro"
+    },
+    {
+      "id": "oscar",
+      "name": "Óscar Pineda",
+      "role": "técnico de transmisión",
+      "relation_to_incident": "Operaba los cables de video del escenario.",
+      "topics": [
+        {
+          "id": "senial",
+          "paraphrases": [
+            "¿Hubo apagón o falla de señal?",
+            "¿Se cortó la luz?"
+          ],
+          "response_exact": "Perdimos la señal de salida de video. Las luces del escenario y la consola siguieron alimentadas.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "marcador",
+          "paraphrases": [
+            "¿La falla borra puntos?",
+            "¿Qué hace la consola?"
+          ],
+          "response_exact": "La caída de video no altera el marcador. Si quedó en cero, alguien ejecutó un reinicio o cargó un estado diferente.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "En consola de realización todo el incidente, registrado por un auxiliar.",
+      "secret": "Detectó una falla de HDMI y no la comunicó enseguida.",
+      "lie": "«Fue un apagón completo».",
+      "knows": "La salida de video falló; la red y la energía no.",
+      "believes": "Cree que reiniciar marcador no era necesario.",
+      "does_not_know": "Ignora el parentesco de Leo y Sara.",
+      "tone": "técnico, esquivo"
+    },
+    {
+      "id": "sara",
+      "name": "Sara Ríos",
+      "role": "capitana del equipo Rojo",
+      "relation_to_incident": "Su equipo se benefició del resultado reiniciado.",
+      "topics": [
+        {
+          "id": "parentesco",
+          "paraphrases": [
+            "¿Qué relación tienes con Leo?",
+            "¿Leo es tu hermano?"
+          ],
+          "response_exact": "Sí, somos hermanos. No lo dije porque pensé que era mejor mantener separada mi vida privada del torneo.",
+          "requires_unlock_second": 20
+        },
+        {
+          "id": "incidente",
+          "paraphrases": [
+            "¿Qué viste cuando se cayó la pantalla?",
+            "¿Cambiaste los puntos?"
+          ],
+          "response_exact": "La pantalla se fue a negro, pero las PC seguían encendidas. Yo seguí jugando cuando nos autorizaron.",
+          "requires_unlock_second": 20
+        }
+      ],
+      "opportunity_alibi": "En escenario, vista por árbitros auxiliares.",
+      "secret": "Leo es su hermano y ella pidió que no lo declararan.",
+      "lie": "«No sabía que Leo era árbitro titular».",
+      "knows": "Sabe que su equipo remontó tras un marcador a cero.",
+      "believes": "Cree que su hermano tomó una decisión arbitral legítima.",
+      "does_not_know": "Desconoce que hay un registro de comando manual.",
+      "tone": "competitiva, nerviosa"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "E1",
+      "unlock_second": 0,
+      "audience": "A",
+      "type": "photo",
+      "title": "Foto del público",
+      "content_exact": "18:42 | Pantalla principal negra, luces de escenario y computadores iluminados."
+    },
+    {
+      "id": "E2",
+      "unlock_second": 0,
+      "audience": "B",
+      "type": "screenshot",
+      "title": "Registro de realización",
+      "content_exact": "18:42:07 | VIDEO_OUT: LOST_SIGNAL. 18:42:50 | VIDEO_OUT: RECOVERED. POWER_LOSS: 0."
+    },
+    {
+      "id": "E3",
+      "unlock_second": 20,
+      "audience": "global",
+      "type": "document",
+      "title": "Acta parcial del encuentro",
+      "content_exact": "18:42:06 | Azul 3 – Rojo 2. 18:42:51 | Marcador 0 – 0. 19:02 | Rojo declarado vencedor."
+    },
+    {
+      "id": "E4",
+      "unlock_second": 70,
+      "audience": "A",
+      "type": "screenshot",
+      "title": "Registro del marcador",
+      "content_exact": "18:42:29 | Acción RESET_SCORE | Origen L-01 (terminal de árbitro) | Usuario leo.rios | Resultado 0–0."
+    },
+    {
+      "id": "E5",
+      "unlock_second": 70,
+      "audience": "B",
+      "type": "document",
+      "title": "Inscripción del equipo Rojo",
+      "content_exact": "Capitana Sara Ríos | Contacto familiar: Leo Ríos | Relación: hermano."
+    },
+    {
+      "id": "E6",
+      "unlock_second": 105,
+      "audience": "global",
+      "type": "document",
+      "title": "Auditoría de energía y permisos",
+      "content_exact": "18:40–18:45 | Energía ininterrumpida. Solo árbitro principal puede ejecutar RESET_SCORE. L-01 asignado a Leo Ríos."
+    }
+  ],
+  "accusation_ui": {
+    "who_options": [
+      {
+        "id": "leo",
+        "label": "Leo Ríos"
+      },
+      {
+        "id": "oscar",
+        "label": "Óscar Pineda"
+      },
+      {
+        "id": "sara",
+        "label": "Sara Ríos"
+      }
+    ],
+    "how_options": [
+      "Solicitó un reinicio manual del marcador desde su terminal durante una pérdida de video.",
+      "Desconectó la energía de la tarima y borró automáticamente los puntos.",
+      "Manipuló el marcador desde su PC de competición."
+    ],
+    "why_options": [
+      "Favorecer al equipo Rojo, donde jugaba su hermana.",
+      "Esconder su error con el cableado.",
+      "Ganar el torneo."
+    ]
+  }
+}
