@@ -247,6 +247,13 @@ export default function Review({
                 </InAppBrowserNotice>
 
                 <form onSubmit={confirmPurchase} className="mt-6 space-y-4">
+                    {final_amount > 0 && (
+                        <p className="text-xs leading-relaxed text-ink-muted">
+                            En el comprobante de Bold puede aparecer <strong className="font-medium text-ink">CRAmultimedia</strong>,
+                            empresa operadora de MisterioCode.
+                        </p>
+                    )}
+
                     {/* What Ley 1480 de 2011 (art. 50) wants the buyer told
                         before paying — payment, delivery and the withdrawal
                         right with its procedure — lives in the Terms

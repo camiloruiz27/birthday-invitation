@@ -138,6 +138,9 @@ export default function Terms({ legal, gamesPerCase }) {
                         pago, el Caso o los Créditos se acreditan de inmediato en su cuenta, por ser
                         contenido digital. Los comprobantes se envían a su correo.
                     </p>
+                    <p>
+                        En el comprobante o movimiento del pago puede aparecer como "CRAmultimedia", empresa operadora de MisterioCode.
+                    </p>
                 </>
             ),
         },
