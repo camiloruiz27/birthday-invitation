@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import Container from '../components/ui/Container';
 import Alert from '../components/ui/Alert';
@@ -18,18 +19,18 @@ const NAV = [
     { name: 'Créditos', route: 'credits' },
 ];
 
-function NavLink({ item, active, className = '' }) {
+function NavLink({ item, active, className = '', onClick }) {
     return (
         <Link
             href={route(item.route)}
             aria-current={active ? 'page' : undefined}
-            // min-h-11 and shrink-0: this is the app's primary navigation and
-            // it was a bare 20px-tall text link that could also be squeezed.
-            className={`inline-flex min-h-11 shrink-0 items-center text-sm transition-colors ${
+            onClick={onClick}
+            className={`relative inline-flex h-16 shrink-0 items-center px-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
                 active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'
             } ${className}`}
         >
             {item.name}
+            {active && <span aria-hidden="true" className="absolute inset-x-1 bottom-0 h-0.5 bg-accent" />}
         </Link>
     );
 }
@@ -72,8 +73,32 @@ export default function AppLayout({
     width = 'app',
     children,
 }) {
-    const { props } = usePage();
+    const { props, url } = usePage();
     const user = props.auth?.user;
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+    // Inertia keeps layouts mounted between visits. Close the drawer after a
+    // navigation so the next screen never arrives hidden behind an old menu.
+    useEffect(() => {
+        setMobileNavOpen(false);
+    }, [url]);
+
+    useEffect(() => {
+        if (!mobileNavOpen) return undefined;
+
+        const previousOverflow = document.body.style.overflow;
+        function closeOnEscape(event) {
+            if (event.key === 'Escape') setMobileNavOpen(false);
+        }
+
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', closeOnEscape);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [mobileNavOpen]);
     // `verification-link-sent` is a key the resend action flashes for the
     // confirmation page to word itself; here it is turned into a sentence
     // instead of being printed raw.
@@ -97,22 +122,20 @@ export default function AppLayout({
                 Saltar al contenido
             </a>
 
-            <header className="sticky top-0 z-10 border-b border-line bg-surface/95 backdrop-blur">
-                <Container width={width}>
-                    <div className="flex flex-wrap items-center gap-x-4 py-2 sm:h-16 sm:flex-nowrap sm:gap-6 sm:py-0">
-                        <Brand href={route('dashboard')} hideWordmarkOnMobile />
+            <header className="sticky top-0 z-[70] border-b border-line bg-surface/95 shadow-sm backdrop-blur">
+                {/* The header always uses the application width. Tying it to a
+                    narrow page (for example Profile's prose width) squeezed
+                    the navigation even on a large screen. */}
+                <Container width="app">
+                    <div className="flex h-16 items-center gap-6">
+                        <Brand href={route('dashboard')} hideWordmarkOnMobile onClick={() => setMobileNavOpen(false)} />
 
-                        {/* One <nav> in the DOM, not one per breakpoint, so
-                            there is a single "Principal" landmark. `order-last
-                            w-full` drops it onto its own scrollable line under
-                            the mark on a phone and returns it inline from sm
-                            up: four links (five for an admin) plus the mark
-                            plus the account menu measure well past 360px, and
-                            they used to put every signed-in page into a
-                            sideways scroll. */}
+                        {/* There can be six links for an administrator. Keep the
+                            full row for genuinely wide screens and use the
+                            reliable drawer pattern below everywhere else. */}
                         <nav
                             aria-label="Principal"
-                            className="no-scrollbar order-last -mx-4 flex w-full items-center gap-5 overflow-x-auto px-4 sm:order-0 sm:mx-0 sm:w-auto sm:flex-1 sm:overflow-visible sm:px-0"
+                            className="hidden min-w-0 flex-1 items-center gap-6 lg:flex"
                         >
                             {NAV.map((item) => (
                                 <NavLink
@@ -127,23 +150,123 @@ export default function AppLayout({
                                     <NavLink
                                         item={{ name: 'Admin', route: 'admin.dashboard' }}
                                         active={current === 'admin.dashboard'}
-                                        className="text-accent hover:text-accent-strong"
                                     />
                                     <NavLink
                                         item={{ name: 'Códigos', route: 'admin.codes' }}
                                         active={current === 'admin.codes'}
-                                        className="text-accent hover:text-accent-strong"
                                     />
                                 </>
                             )}
                         </nav>
 
-                        <div className="ml-auto shrink-0 sm:ml-0">
+                        <div className="ml-auto hidden shrink-0 lg:block">
                             {user && <UserMenu user={user} />}
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={() => setMobileNavOpen((open) => !open)}
+                            aria-expanded={mobileNavOpen}
+                            aria-controls="app-mobile-menu"
+                            aria-label={mobileNavOpen ? 'Cerrar menú' : 'Abrir menú'}
+                            className="ml-auto inline-flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-control text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
+                        >
+                            <span
+                                aria-hidden="true"
+                                className={`block h-px w-6 bg-current transition-transform duration-300 ${
+                                    mobileNavOpen ? 'translate-y-[7px] rotate-45' : ''
+                                }`}
+                            />
+                            <span
+                                aria-hidden="true"
+                                className={`block h-px w-6 bg-current transition-opacity duration-300 ${
+                                    mobileNavOpen ? 'opacity-0' : ''
+                                }`}
+                            />
+                            <span
+                                aria-hidden="true"
+                                className={`block h-px w-6 bg-current transition-transform duration-300 ${
+                                    mobileNavOpen ? '-translate-y-[7px] -rotate-45' : ''
+                                }`}
+                            />
+                        </button>
                     </div>
                 </Container>
             </header>
+
+            {/* The signed-in navigation follows the same full-screen mobile
+                pattern as the public site: a quiet, dedicated surface rather
+                than a short panel competing with the current page. */}
+            <div
+                id="app-mobile-menu"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menú principal"
+                aria-hidden={!mobileNavOpen}
+                className={`fixed inset-0 z-[60] flex items-center justify-center bg-surface/95 px-6 pt-20 backdrop-blur-xl transition-all duration-500 lg:hidden ${
+                    mobileNavOpen ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
+                }`}
+            >
+                <nav aria-label="Principal" className="flex w-full max-w-xs flex-col items-center gap-7 text-center">
+                    {NAV.map((item) => (
+                        <Link
+                            key={item.route}
+                            href={route(item.route)}
+                            aria-current={current === item.route ? 'page' : undefined}
+                            onClick={() => setMobileNavOpen(false)}
+                            className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                current === item.route ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                            }`}
+                        >
+                            {item.name}
+                        </Link>
+                    ))}
+
+                    {user?.is_admin && (
+                        <>
+                            <Link
+                                href={route('admin.dashboard')}
+                                aria-current={current === 'admin.dashboard' ? 'page' : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === 'admin.dashboard' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                }`}
+                            >
+                                Admin
+                            </Link>
+                            <Link
+                                href={route('admin.codes')}
+                                aria-current={current === 'admin.codes' ? 'page' : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === 'admin.codes' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                }`}
+                            >
+                                Códigos
+                            </Link>
+                        </>
+                    )}
+
+                    <span aria-hidden="true" className="h-px w-12 bg-line" />
+
+                    <Link
+                        href={route('profile.edit')}
+                        onClick={() => setMobileNavOpen(false)}
+                        className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                            current === 'profile' ? 'text-accent-strong' : 'text-ink'
+                        }`}
+                    >
+                        Tu perfil
+                    </Link>
+                    <button
+                        type="button"
+                        onClick={() => router.post(route('logout'))}
+                        className="text-base font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                        Salir
+                    </button>
+                </nav>
+            </div>
 
             <main id="main" className="flex-1 py-8">
                 <Container width={width}>

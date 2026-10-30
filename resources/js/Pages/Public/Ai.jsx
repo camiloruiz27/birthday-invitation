@@ -75,21 +75,6 @@ export default function Ai({ withAi, withoutAi }) {
                 </div>
             </Section>
 
-            <Section title="Qué pasa si la IA falla" width="prose">
-                <div className="space-y-4 text-base leading-relaxed text-ink-muted">
-                    <p>
-                        La partida no depende de ella. Si el servicio de IA no responde, el
-                        sospechoso da una respuesta neutra y la investigación sigue; si un audio
-                        no se puede generar, el correo llega igual sin la grabación.
-                    </p>
-                    <p>
-                        Un caso puede desactivar por completo las mecánicas con IA y seguir
-                        siendo jugable: la historia, la evidencia y los testimonios escritos no
-                        dependen de ningún modelo.
-                    </p>
-                </div>
-            </Section>
-
             <Section title="Lo que no hacemos" width="prose" tone="sunken">
                 <div className="space-y-4 text-base leading-relaxed text-ink-muted">
                     <p>

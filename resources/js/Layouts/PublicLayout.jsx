@@ -39,6 +39,26 @@ export default function PublicLayout({ current, bleed = false, children }) {
     // new page.
     useEffect(() => setMenuOpen(false), [url]);
 
+    // The mobile navigation is a full-screen layer, not a dropdown below the
+    // header. Keep the document still while it is open, just like a native
+    // menu, so the hero never scrolls underneath it.
+    useEffect(() => {
+        if (!menuOpen) return undefined;
+
+        const previousOverflow = document.body.style.overflow;
+        const closeOnEscape = (event) => {
+            if (event.key === 'Escape') setMenuOpen(false);
+        };
+
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', closeOnEscape);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [menuOpen]);
+
     // Transparent and tall at the top of the page, solid and compact once
     // scrolled — the header stops competing with a hero for attention, then
     // steps in as an anchored bar once there is real content behind it.
@@ -59,15 +79,15 @@ export default function PublicLayout({ current, bleed = false, children }) {
             </a>
 
             <header
-                className={`fixed top-0 z-20 w-full transition-all duration-500 ${
-                    scrolled
+                className={`fixed top-0 z-[70] w-full transition-all duration-500 ${
+                    menuOpen || scrolled
                         ? 'border-b border-line bg-surface/95 py-3 shadow-raised backdrop-blur-md'
                         : 'border-b border-transparent bg-transparent py-6'
                 }`}
             >
                 <Container width="wide">
                     <div className="flex h-10 items-center justify-between gap-6">
-                        <Brand />
+                        <Brand onClick={() => setMenuOpen(false)} />
 
                         <nav aria-label="Principal" className="hidden items-center gap-8 lg:flex">
                             {NAV.map((item) => (
@@ -112,70 +132,95 @@ export default function PublicLayout({ current, bleed = false, children }) {
                             onClick={() => setMenuOpen((value) => !value)}
                             aria-expanded={menuOpen}
                             aria-controls="public-menu"
-                            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-control text-ink-muted hover:text-ink lg:hidden"
+                            className="-mr-2 flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-control text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
                         >
                             <span className="sr-only">
                                 {menuOpen ? 'Cerrar menú' : 'Abrir menú'}
                             </span>
-                            <svg
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
+                            <span
                                 aria-hidden="true"
-                                className="h-5 w-5"
-                            >
-                                {menuOpen ? (
-                                    <path d="M6 6l12 12M18 6L6 18" />
-                                ) : (
-                                    <path d="M4 7h16M4 12h16M4 17h16" />
-                                )}
-                            </svg>
+                                className={`block h-px w-6 bg-current transition-transform duration-300 ${
+                                    menuOpen ? 'translate-y-[7px] rotate-45' : ''
+                                }`}
+                            />
+                            <span
+                                aria-hidden="true"
+                                className={`block h-px w-6 bg-current transition-opacity duration-300 ${
+                                    menuOpen ? 'opacity-0' : ''
+                                }`}
+                            />
+                            <span
+                                aria-hidden="true"
+                                className={`block h-px w-6 bg-current transition-transform duration-300 ${
+                                    menuOpen ? '-translate-y-[7px] -rotate-45' : ''
+                                }`}
+                            />
                         </button>
                     </div>
                 </Container>
-
-                {menuOpen && (
-                    <div id="public-menu" className="border-t border-line lg:hidden">
-                        <Container width="wide">
-                            <nav aria-label="Principal" className="flex flex-col py-2">
-                                {NAV.map((item) => (
-                                    <Link
-                                        key={item.route}
-                                        href={route(item.route)}
-                                        aria-current={current === item.route ? 'page' : undefined}
-                                        className={`flex min-h-12 items-center text-sm ${
-                                            current === item.route
-                                                ? 'font-medium text-ink'
-                                                : 'text-ink-muted'
-                                        }`}
-                                    >
-                                        {item.name}
-                                    </Link>
-                                ))}
-                            </nav>
-
-                            <div className="flex flex-col gap-2 border-t border-line py-4">
-                                {user ? (
-                                    <Button href={route('dashboard')} fullWidth>
-                                        Mi panel
-                                    </Button>
-                                ) : (
-                                    <>
-                                        <Button href={route('register')} fullWidth>
-                                            Crear cuenta
-                                        </Button>
-                                        <Button href={route('login')} variant="secondary" fullWidth>
-                                            Ingresar
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
-                        </Container>
-                    </div>
-                )}
             </header>
+
+            {/*
+                Mobile menu patterned after Island Residential: a separate,
+                full-viewport surface below the always-visible brand and close
+                control. It deliberately sits above the hero and cookie banner
+                instead of pushing a short dropdown over the page content.
+            */}
+            <div
+                id="public-menu"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Menú principal"
+                aria-hidden={!menuOpen}
+                className={`fixed inset-0 z-[60] flex items-center justify-center bg-surface/95 px-6 pt-20 backdrop-blur-xl transition-all duration-500 lg:hidden ${
+                    menuOpen ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
+                }`}
+            >
+                <nav aria-label="Principal" className="flex w-full max-w-xs flex-col items-center gap-8 text-center">
+                    {NAV.map((item) => (
+                        <Link
+                            key={item.route}
+                            href={route(item.route)}
+                            aria-current={current === item.route ? 'page' : undefined}
+                            onClick={() => setMenuOpen(false)}
+                            className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                current === item.route ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                            }`}
+                        >
+                            {item.name}
+                        </Link>
+                    ))}
+
+                    <span aria-hidden="true" className="h-px w-12 bg-line" />
+
+                    {user ? (
+                        <Link
+                            href={route('dashboard')}
+                            onClick={() => setMenuOpen(false)}
+                            className="text-base font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        >
+                            Mi panel
+                        </Link>
+                    ) : (
+                        <>
+                            <Link
+                                href={route('register')}
+                                onClick={() => setMenuOpen(false)}
+                                className="text-base font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            >
+                                Crear cuenta
+                            </Link>
+                            <Link
+                                href={route('login')}
+                                onClick={() => setMenuOpen(false)}
+                                className="text-base font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            >
+                                Ingresar
+                            </Link>
+                        </>
+                    )}
+                </nav>
+            </div>
 
             {/*
                 The header is `fixed`, so it never reserves space in normal

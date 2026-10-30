@@ -32,4 +32,8 @@ export const FAQ = [
         question: '¿Necesito preparar algo antes?',
         answer: 'Crear la partida y cargar los nombres y correos de tus jugadores. Nada más: el caso trae su propia línea de tiempo.',
     },
+    {
+        question: '¿Por qué puede aparecer CRAmultimedia en mi pago?',
+        answer: 'MisterioCode es la plataforma. CRAmultimedia es la empresa que la opera, por eso puede aparecer en el comprobante o movimiento de Bold.',
+    },
 ];
