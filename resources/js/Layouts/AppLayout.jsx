@@ -159,6 +159,10 @@ export default function AppLayout({
                                         item={{ name: 'Códigos', route: 'admin.codes' }}
                                         active={current === 'admin.codes'}
                                     />
+                                    <NavLink
+                                        item={{ name: 'Email marketing', route: 'admin.email-marketing' }}
+                                        active={current === 'admin.email-marketing'}
+                                    />
                                 </>
                             )}
                         </nav>
@@ -257,6 +261,16 @@ export default function AppLayout({
                                 }`}
                             >
                                 Códigos
+                            </Link>
+                            <Link
+                                href={route('admin.email-marketing')}
+                                aria-current={current === 'admin.email-marketing' ? 'page' : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === 'admin.email-marketing' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                }`}
+                            >
+                                Email marketing
                             </Link>
                         </>
                     )}

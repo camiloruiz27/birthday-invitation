@@ -3,6 +3,7 @@
 use App\Modules\Platform\Http\Controllers\AdLandingController;
 use App\Modules\Platform\Http\Controllers\AdminCasesController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
+use App\Modules\Platform\Http\Controllers\AdminEmailMarketingController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
@@ -186,6 +187,11 @@ Route::middleware('auth')->group(function () {
         Route::patch('/codigos/{promoCode}/activo', [AdminPromoCodesController::class, 'toggle'])
             ->whereNumber('promoCode')
             ->name('codes.toggle');
+        Route::get('/email-marketing', [AdminEmailMarketingController::class, 'index'])->name('email-marketing');
+        Route::get('/email-marketing/exportar', [AdminEmailMarketingController::class, 'export'])->name('email-marketing.export');
+        Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])
+            ->whereNumber('user')
+            ->name('email-marketing.exclusion');
     });
 
     // Where Bold sends the buyer back after checkout. The page itself polls

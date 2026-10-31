@@ -79,6 +79,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'terms_accepted_at' => 'datetime',
         'privacy_accepted_at' => 'datetime',
         'attribution' => 'array',
+        // A reversible administrative exclusion used only when preparing a
+        // marketing export. It does not affect transactional game mail.
+        'marketing_opted_out_at' => 'datetime',
     ];
 
     /**
