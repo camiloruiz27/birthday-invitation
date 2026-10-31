@@ -158,8 +158,8 @@ return [
         'price_amount' => 49900,
         'currency' => 'COP',
 
-        // Mantener en false hasta que las imágenes estén en
-        // public/immersion/la-feria-de-las-profecias/ (ver ASSET_PROMPTS.md).
+        // El despliegue deja el contenido disponible para el administrador;
+        // el lanzamiento comercial se controla desde Admin > Casos.
         'published' => false,
         'sort_order' => 21,
     ],

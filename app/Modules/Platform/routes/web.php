@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Platform\Http\Controllers\AdLandingController;
+use App\Modules\Platform\Http\Controllers\AdminCasesController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -177,6 +178,9 @@ Route::middleware('auth')->group(function () {
     // (php artisan platform:make-admin), never through a screen.
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/casos', [AdminCasesController::class, 'index'])->name('cases');
+        Route::patch('/casos/{mysteryCase}/publicacion', [AdminCasesController::class, 'toggle'])
+            ->name('cases.toggle');
         Route::get('/codigos', [AdminPromoCodesController::class, 'index'])->name('codes');
         Route::post('/codigos', [AdminPromoCodesController::class, 'store'])->name('codes.store');
         Route::patch('/codigos/{promoCode}/activo', [AdminPromoCodesController::class, 'toggle'])

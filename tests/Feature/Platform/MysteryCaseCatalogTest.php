@@ -12,7 +12,7 @@ class MysteryCaseCatalogTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_sync_publishes_the_installed_manifests_into_the_catalog(): void
+    public function test_sync_registers_installed_manifests_as_drafts(): void
     {
         $this->assertDatabaseCount('mystery_cases', 0);
 
@@ -28,18 +28,12 @@ class MysteryCaseCatalogTest extends TestCase
         $this->assertSame(89000, $case->price_amount);
         $this->assertSame('COP', $case->currency);
         $this->assertContains('interrogation', $case->mechanics);
-        $this->assertSame($this->manifestSaysPublished('steve-jacobs'), $case->isPublished());
-    }
+        $this->assertFalse($case->isPublished());
 
-    /**
-     * Whether the manifest in git puts the case on sale. Read from the
-     * manifest rather than assumed: publishing is a business decision that
-     * changes (steve-jacobs is unpublished at the moment) and these tests are
-     * about sync, not about what is for sale.
-     */
-    private function manifestSaysPublished(string $slug): bool
-    {
-        return (bool) app(CaseRegistry::class)->get($slug)->catalog()['published'];
+        // Some existing manifests still carry the old launch flag. A deploy
+        // must never turn that into a commercial decision automatically.
+        $this->assertTrue((bool) app(\App\Modules\Immersion\Cases\CaseRegistry::class)->get('archivo-nueve')->catalog()['published']);
+        $this->assertFalse(MysteryCase::firstWhere('slug', 'archivo-nueve')->isPublished());
     }
 
     public function test_sync_is_idempotent(): void
@@ -74,13 +68,13 @@ class MysteryCaseCatalogTest extends TestCase
         $this->assertNull($case->published_at);
     }
 
-    public function test_prices_flag_deliberately_reapplies_the_manifest(): void
+    public function test_prices_flag_reapplies_pricing_but_preserves_publication(): void
     {
         $this->artisan('platform:sync-cases')->assertSuccessful();
 
         MysteryCase::firstWhere('slug', 'steve-jacobs')->update([
             'price_amount' => 120000,
-            'published_at' => null,
+            'published_at' => now(),
         ]);
 
         $this->artisan('platform:sync-cases --prices')->assertSuccessful();
@@ -88,7 +82,7 @@ class MysteryCaseCatalogTest extends TestCase
         $case = MysteryCase::firstWhere('slug', 'steve-jacobs');
 
         $this->assertSame(89000, $case->price_amount);
-        $this->assertSame($this->manifestSaysPublished('steve-jacobs'), $case->isPublished());
+        $this->assertTrue($case->isPublished());
     }
 
     public function test_dry_run_writes_nothing(): void
