@@ -11,6 +11,7 @@ import { CaseFacts } from '../../components/public/CaseCard';
 import Icon from '../../lib/mechanicIcons';
 import { trackAd } from '../../lib/analytics';
 import { formatPrice, minorUnitValue } from '../../lib/format';
+import CaseTags from '../../components/public/CaseTags';
 
 function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
     return (
@@ -100,6 +101,8 @@ export default function CaseDetail({
                                     {mysteryCase.name}
                                 </h1>
                             </Reveal>
+
+                            <CaseTags mysteryCase={mysteryCase} className="mt-5" />
 
                             {mysteryCase.tagline && (
                                 <Reveal delay={0.2}>

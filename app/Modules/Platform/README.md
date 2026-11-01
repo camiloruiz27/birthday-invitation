@@ -32,6 +32,7 @@ catálogo como borradores. Es idempotente y corre en cada deploy.
 | `name`, `tagline`, `description`, `cover_path`, `difficulty`, `duration_minutes`, `min_players`, `max_players`, `mechanics`, `content_version` | El manifiesto (git) | **Se reescriben** siempre |
 | `price_amount`, `currency`, `sort_order` | La base de datos | **Se respetan**; solo se siembran al crear la fila |
 | `published_at` | Panel de administrador | Un caso nuevo siempre nace sin publicar; nunca lo modifica el sync |
+| `tags` | El manifiesto (git) | Se reescriben siempre; son etiquetas temáticas visibles para compradores |
 
 La razón de la asimetría: lanzar o retirar un caso de venta no debe requerir
 un deploy, y un deploy no debe deshacer esa decisión.

@@ -85,6 +85,7 @@ class CaseDefinition
 
         return [
             'tagline' => $catalog['tagline'] ?? null,
+            'tags' => array_values(array_filter((array) ($catalog['tags'] ?? []), 'is_string')),
             'description' => isset($catalog['description'])
                 ? trim((string) $catalog['description'])
                 : null,

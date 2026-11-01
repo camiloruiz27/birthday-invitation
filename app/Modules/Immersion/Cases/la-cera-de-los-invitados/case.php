@@ -150,6 +150,7 @@ return [
 
     'catalog' => [
         'tagline' => 'El altar estaba intacto. La cera, no.',
+        'tags' => ['halloween'],
 
         'description' => <<<'TXT'
             Atelier de Cera: un taller boutique de velas y su ceremonia privada

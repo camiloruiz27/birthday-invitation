@@ -8,6 +8,7 @@ import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
 import PurchaseCta from '../../components/public/PurchaseCta';
 import { CaseFacts } from '../../components/public/CaseCard';
+import CaseTags from '../../components/public/CaseTags';
 import { FAQ } from '../../components/public/faqItems';
 import { trackAd } from '../../lib/analytics';
 import { formatPrice, minorUnitValue } from '../../lib/format';
@@ -272,6 +273,7 @@ function CaseLanding({ mysteryCase, offer, owned, canPurchase, canSimulatePurcha
                         <p className="text-xs font-medium uppercase tracking-widest text-accent">
                             Misterio para resolver en equipo
                         </p>
+                        <CaseTags mysteryCase={mysteryCase} className="mt-3" />
                         <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-6xl">
                             {mysteryCase.name}
                         </h1>
@@ -397,6 +399,7 @@ function PickCard({ mysteryCase }) {
                 </div>
             )}
             <div className="flex flex-1 flex-col p-5">
+                <CaseTags mysteryCase={mysteryCase} className="mb-3" />
                 <h3 className="font-semibold text-ink">{mysteryCase.name}</h3>
                 {mysteryCase.tagline && <p className="mt-2 text-sm text-ink-muted">{mysteryCase.tagline}</p>}
                 <CaseFacts mysteryCase={mysteryCase} className="mt-4" />

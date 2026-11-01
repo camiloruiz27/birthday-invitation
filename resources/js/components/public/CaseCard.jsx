@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { formatPrice, formatDuration, formatPlayerRange } from '../../lib/format';
+import CaseTags from './CaseTags';
 
 export const DIFFICULTY_LABELS = {
     easy: 'Accesible',
@@ -49,6 +50,7 @@ export default function CaseCard({ mysteryCase }) {
             )}
 
             <div className="flex flex-1 flex-col p-5">
+                <CaseTags mysteryCase={mysteryCase} className="mb-3" />
                 <h3 className="font-semibold text-ink">{mysteryCase.name}</h3>
 
                 {mysteryCase.tagline && (

@@ -154,6 +154,7 @@ return [
 
     'catalog' => [
         'tagline' => 'El actor hizo todo bien. El operador también. Y aun así, alguien salió lastimado.',
+        'tags' => ['halloween'],
 
         'description' => <<<'TXT'
             La Cripta del Insomnio: una atracción inmersiva de horror con

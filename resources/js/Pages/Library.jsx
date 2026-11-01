@@ -8,6 +8,7 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
 import { CaseFacts } from '../components/public/CaseCard';
+import CaseTags from '../components/public/CaseTags';
 import TextLink from '../components/ui/TextLink';
 import QuotaMeter from '../components/app/QuotaMeter';
 import CaseDiscoveryControls from '../components/cases/CaseDiscoveryControls';
@@ -113,6 +114,7 @@ function LibraryCase({ mysteryCase, onView }) {
             )}
 
             <div className="flex min-w-0 flex-1 flex-col">
+                <CaseTags mysteryCase={mysteryCase} className="mb-2" />
                 <h2 className="text-lg font-semibold text-ink">{mysteryCase.name}</h2>
 
                 {mysteryCase.tagline && (

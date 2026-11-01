@@ -117,6 +117,7 @@ return [
 
     'catalog' => [
         'tagline' => 'La vidente no vio nada. Alguien más ya lo sabía todo.',
+        'tags' => ['halloween'],
 
         'description' => <<<'TXT'
             En la Feria del Velo, un mercado esotérico de temporada, una

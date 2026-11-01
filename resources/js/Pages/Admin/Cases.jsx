@@ -5,6 +5,7 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Card, { CardHeader } from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import CaseTags from '../../components/public/CaseTags';
 import { formatDateTime, formatPrice } from '../../lib/format';
 
 function saleStatus(mysteryCase) {
@@ -43,6 +44,7 @@ function CaseRow({ mysteryCase, updating, onToggle }) {
             <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate text-base font-semibold text-ink">{mysteryCase.name}</h2>
+                    <CaseTags mysteryCase={mysteryCase} />
                     <Badge tone={sale.tone}>{sale.label}</Badge>
                     <Badge tone={availability.tone}>{availability.label}</Badge>
                 </div>
