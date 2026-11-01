@@ -24,22 +24,27 @@ versionado en git). La tabla `mystery_cases` guarda solo lo que hay que
 consultar o cruzar: precio, estado de publicación y el resumen que ve el
 comprador.
 
-`php artisan platform:sync-cases` publica los manifiestos instalados en el
-catálogo. Es idempotente y corre en cada deploy.
+`php artisan platform:sync-cases` registra los manifiestos instalados en el
+catálogo como borradores. Es idempotente y corre en cada deploy.
 
 | Campos | Fuente de verdad | Al sincronizar |
 |---|---|---|
 | `name`, `tagline`, `description`, `cover_path`, `difficulty`, `duration_minutes`, `min_players`, `max_players`, `mechanics`, `content_version` | El manifiesto (git) | **Se reescriben** siempre |
-| `price_amount`, `currency`, `published_at`, `sort_order` | La base de datos | **Se respetan**; solo se siembran al crear la fila |
+| `price_amount`, `currency`, `sort_order` | La base de datos | **Se respetan**; solo se siembran al crear la fila |
+| `published_at` | Panel de administrador | Un caso nuevo siempre nace sin publicar; nunca lo modifica el sync |
 
-La razón de la asimetría: cambiar un precio o sacar un caso de venta no debe
-requerir un deploy, y un deploy no debe deshacer esa decisión.
+La razón de la asimetría: lanzar o retirar un caso de venta no debe requerir
+un deploy, y un deploy no debe deshacer esa decisión.
 
 ```bash
 php artisan platform:sync-cases              # uso normal (deploy)
 php artisan platform:sync-cases --dry-run    # ver qué cambiaría, sin escribir
-php artisan platform:sync-cases --prices     # reaplicar a propósito precio y publicación del manifiesto
+php artisan platform:sync-cases --prices     # reaplicar a propósito precio, moneda y orden del manifiesto
 ```
+
+Un administrador publica o retira un caso desde **Admin > Casos**. Publicar
+lo muestra en el catálogo, los anuncios y el checkout; retirarlo bloquea
+nuevas compras pero no afecta a quienes ya lo poseen ni a sus partidas.
 
 ## Precios
 
