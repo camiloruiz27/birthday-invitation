@@ -33,6 +33,7 @@ class LibraryController extends Controller
                 'slug' => $case->slug,
                 'name' => $case->name,
                 'tagline' => $case->tagline,
+                'tags' => array_values((array) $case->tags),
                 // For the "Ver el caso" modal: the library shows a case without
                 // sending the owner to the public page (which also 404s for a
                 // case that is theirs but not published).

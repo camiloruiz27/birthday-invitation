@@ -34,6 +34,10 @@ class MysteryCaseCatalogTest extends TestCase
         // must never turn that into a commercial decision automatically.
         $this->assertTrue((bool) app(\App\Modules\Immersion\Cases\CaseRegistry::class)->get('archivo-nueve')->catalog()['published']);
         $this->assertFalse(MysteryCase::firstWhere('slug', 'archivo-nueve')->isPublished());
+
+        $this->assertSame(['halloween'], MysteryCase::firstWhere('slug', 'la-feria-de-las-profecias')->tags);
+        $this->assertSame(['halloween'], MysteryCase::firstWhere('slug', 'la-palabra-de-seguridad')->tags);
+        $this->assertSame(['halloween'], MysteryCase::firstWhere('slug', 'la-cera-de-los-invitados')->tags);
     }
 
     public function test_sync_is_idempotent(): void

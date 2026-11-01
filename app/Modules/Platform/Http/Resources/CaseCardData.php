@@ -26,6 +26,7 @@ class CaseCardData
             'slug' => $case->slug,
             'name' => $case->name,
             'tagline' => $case->tagline,
+            'tags' => array_values((array) $case->tags),
             'cover_url' => $case->coverUrl(),
             'difficulty' => $case->difficulty,
             'duration_minutes' => $case->duration_minutes,

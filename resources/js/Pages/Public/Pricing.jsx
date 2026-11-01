@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import Section from '../../components/public/Section';
 import { CaseFacts } from '../../components/public/CaseCard';
+import CaseTags from '../../components/public/CaseTags';
 import { formatPrice } from '../../lib/format';
 
 const included = (gamesPerCase) => [
@@ -18,6 +19,7 @@ const included = (gamesPerCase) => [
 function CasePrice({ mysteryCase }) {
     return (
         <Card as="article" className="flex flex-col">
+            <CaseTags mysteryCase={mysteryCase} className="mb-3" />
             <h3 className="font-semibold text-ink">{mysteryCase.name}</h3>
 
             {mysteryCase.tagline && (

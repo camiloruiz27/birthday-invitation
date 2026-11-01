@@ -33,6 +33,7 @@ class MysteryCase extends Model
         'tagline',
         'description',
         'ad',
+        'tags',
         'cover_path',
         'difficulty',
         'duration_minutes',
@@ -49,6 +50,7 @@ class MysteryCase extends Model
     protected $casts = [
         'mechanics' => 'array',
         'ad' => 'array',
+        'tags' => 'array',
         'duration_minutes' => 'integer',
         'min_players' => 'integer',
         'max_players' => 'integer',

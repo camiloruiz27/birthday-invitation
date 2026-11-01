@@ -100,6 +100,7 @@ class SyncMysteryCases extends Command
             'description' => $catalog['description'],
             'cover_path' => $catalog['cover_path'],
             'ad' => $catalog['ad'],
+            'tags' => array_values(array_filter((array) ($catalog['tags'] ?? []), 'is_string')),
             'difficulty' => $catalog['difficulty'],
             'duration_minutes' => $catalog['duration_minutes'],
             'min_players' => $catalog['min_players'],

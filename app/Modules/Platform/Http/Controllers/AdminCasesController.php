@@ -24,6 +24,7 @@ class AdminCasesController extends Controller
                 'slug' => $case->slug,
                 'name' => $case->name,
                 'tagline' => $case->tagline,
+                'tags' => array_values((array) $case->tags),
                 'cover_url' => $case->coverUrl(),
                 'price_amount' => $case->price_amount,
                 'currency' => $case->currency,
