@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Link, router, usePage } from '@inertiajs/react';
-import Container from '../components/ui/Container';
-import Alert from '../components/ui/Alert';
-import Button from '../components/ui/Button';
-import UserMenu from '../components/ui/UserMenu';
-import Brand from '../components/ui/Brand';
+import { useEffect, useState } from "react";
+import { Link, router, usePage } from "@inertiajs/react";
+import Container from "../components/ui/Container";
+import Alert from "../components/ui/Alert";
+import Button from "../components/ui/Button";
+import UserMenu from "../components/ui/UserMenu";
+import Brand from "../components/ui/Brand";
 
 /**
  * Shell for the signed-in platform: the investigation agency's console.
@@ -13,24 +13,31 @@ import Brand from '../components/ui/Brand';
  * surfaced in one place rather than being remembered per page.
  */
 const NAV = [
-    { name: 'Panel', route: 'dashboard' },
-    { name: 'Biblioteca', route: 'library' },
-    { name: 'Partidas', route: 'immersion.gm.games.index' },
-    { name: 'Créditos', route: 'credits' },
+    { name: "Panel", route: "dashboard" },
+    { name: "Biblioteca", route: "library" },
+    { name: "Partidas", route: "immersion.gm.games.index" },
+    { name: "Créditos", route: "credits" },
 ];
 
-function NavLink({ item, active, className = '', onClick }) {
+function NavLink({ item, active, className = "", onClick }) {
     return (
         <Link
             href={route(item.route)}
-            aria-current={active ? 'page' : undefined}
+            aria-current={active ? "page" : undefined}
             onClick={onClick}
             className={`relative inline-flex h-16 shrink-0 items-center px-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
-                active ? 'font-medium text-ink' : 'text-ink-muted hover:text-ink'
+                active
+                    ? "font-medium text-ink"
+                    : "text-ink-muted hover:text-ink"
             } ${className}`}
         >
             {item.name}
-            {active && <span aria-hidden="true" className="absolute inset-x-1 bottom-0 h-0.5 bg-accent" />}
+            {active && (
+                <span
+                    aria-hidden="true"
+                    className="absolute inset-x-1 bottom-0 h-0.5 bg-accent"
+                />
+            )}
         </Link>
     );
 }
@@ -42,22 +49,94 @@ function NavLink({ item, active, className = '', onClick }) {
  * how to fix it — instead of discovering it at the moment it tries to start
  * a game.
  */
+const ADMIN_GROUPS = [
+    { name: "Juegos", items: [{ name: "Casos", route: "admin.cases" }] },
+    {
+        name: "Administraci\u00f3n",
+        items: [
+            { name: "Resumen", route: "admin.dashboard" },
+            { name: "Blog", route: "admin.blog.index" },
+        ],
+    },
+    {
+        name: "Mercadeo",
+        items: [
+            { name: "C\u00f3digos", route: "admin.codes" },
+            { name: "Email marketing", route: "admin.email-marketing" },
+        ],
+    },
+];
+
+function AdminGroupMenu({ group, current, open, onToggle, onNavigate }) {
+    const active = group.items.some((item) => item.route === current);
+
+    return (
+        <div className="relative h-16 shrink-0">
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={open}
+                aria-haspopup="menu"
+                className={`inline-flex h-16 items-center gap-1 px-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${active ? "font-medium text-ink" : "text-ink-muted hover:text-ink"}`}
+            >
+                {group.name}
+                <svg
+                    viewBox="0 0 16 16"
+                    aria-hidden="true"
+                    className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+                >
+                    <path
+                        d="m4 6 4 4 4-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </button>
+            {open && (
+                <div
+                    role="menu"
+                    className="absolute left-0 top-[calc(100%-0.35rem)] z-50 min-w-52 rounded-card border border-line bg-surface p-2 shadow-raised"
+                >
+                    {group.items.map((item) => (
+                        <Link
+                            key={item.route}
+                            href={route(item.route)}
+                            role="menuitem"
+                            onClick={onNavigate}
+                            className={`block rounded-control px-3 py-2.5 text-sm transition-colors ${current === item.route ? "bg-surface-sunken font-medium text-ink" : "text-ink-muted hover:bg-surface-sunken hover:text-ink"}`}
+                        >
+                            {item.name}
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function VerifyEmailNotice({ email }) {
     function resend() {
-        router.post(route('verification.send'), {}, { preserveScroll: true });
+        router.post(route("verification.send"), {}, { preserveScroll: true });
     }
 
     return (
         <Alert variant="warning">
             <p>
-                <span className="font-medium">Falta confirmar tu correo</span> ({email}). Lo necesitas para
-                crear partidas y enviar los enlaces a tus jugadores.
+                <span className="font-medium">Falta confirmar tu correo</span> (
+                {email}). Lo necesitas para crear partidas y enviar los enlaces
+                a tus jugadores.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Button variant="secondary" size="sm" onClick={resend}>
                     Reenviar el correo
                 </Button>
-                <Link href={route('profile.edit')} className="text-sm text-accent underline">
+                <Link
+                    href={route("profile.edit")}
+                    className="text-sm text-accent underline"
+                >
                     ¿Correo mal escrito? Corrígelo
                 </Link>
             </div>
@@ -70,17 +149,19 @@ export default function AppLayout({
     kicker,
     actions,
     current,
-    width = 'app',
+    width = "app",
     children,
 }) {
     const { props, url } = usePage();
     const user = props.auth?.user;
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [openAdminGroup, setOpenAdminGroup] = useState(null);
 
     // Inertia keeps layouts mounted between visits. Close the drawer after a
     // navigation so the next screen never arrives hidden behind an old menu.
     useEffect(() => {
         setMobileNavOpen(false);
+        setOpenAdminGroup(null);
     }, [url]);
 
     useEffect(() => {
@@ -88,15 +169,15 @@ export default function AppLayout({
 
         const previousOverflow = document.body.style.overflow;
         function closeOnEscape(event) {
-            if (event.key === 'Escape') setMobileNavOpen(false);
+            if (event.key === "Escape") setMobileNavOpen(false);
         }
 
-        document.body.style.overflow = 'hidden';
-        document.addEventListener('keydown', closeOnEscape);
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", closeOnEscape);
 
         return () => {
             document.body.style.overflow = previousOverflow;
-            document.removeEventListener('keydown', closeOnEscape);
+            document.removeEventListener("keydown", closeOnEscape);
         };
     }, [mobileNavOpen]);
     // `verification-link-sent` is a key the resend action flashes for the
@@ -104,8 +185,8 @@ export default function AppLayout({
     // instead of being printed raw.
     const rawStatus = props.flash?.status;
     const status =
-        rawStatus === 'verification-link-sent'
-            ? 'Listo, te enviamos el correo otra vez. Puede tardar un par de minutos.'
+        rawStatus === "verification-link-sent"
+            ? "Listo, te enviamos el correo otra vez. Puede tardar un par de minutos."
             : rawStatus;
     const unverified = Boolean(user) && user.email_verified === false;
     const errors = props.errors || {};
@@ -128,7 +209,11 @@ export default function AppLayout({
                     the navigation even on a large screen. */}
                 <Container width="app">
                     <div className="flex h-16 items-center gap-6">
-                        <Brand href={route('dashboard')} hideWordmarkOnMobile onClick={() => setMobileNavOpen(false)} />
+                        <Brand
+                            href={route("dashboard")}
+                            hideWordmarkOnMobile
+                            onClick={() => setMobileNavOpen(false)}
+                        />
 
                         {/* There can be six links for an administrator. Keep the
                             full row for genuinely wide screens and use the
@@ -145,23 +230,64 @@ export default function AppLayout({
                                 />
                             ))}
 
-                            {user?.is_admin && (
+                            {user?.is_admin &&
+                                ADMIN_GROUPS.map((group) => (
+                                    <AdminGroupMenu
+                                        key={group.name}
+                                        group={group}
+                                        current={current}
+                                        open={openAdminGroup === group.name}
+                                        onToggle={() =>
+                                            setOpenAdminGroup((value) =>
+                                                value === group.name
+                                                    ? null
+                                                    : group.name,
+                                            )
+                                        }
+                                        onNavigate={() =>
+                                            setOpenAdminGroup(null)
+                                        }
+                                    />
+                                ))}
+
+                            {false && (
                                 <>
                                     <NavLink
-                                        item={{ name: 'Admin', route: 'admin.dashboard' }}
-                                        active={current === 'admin.dashboard'}
+                                        item={{
+                                            name: "Admin",
+                                            route: "admin.dashboard",
+                                        }}
+                                        active={current === "admin.dashboard"}
                                     />
                                     <NavLink
-                                        item={{ name: 'Casos', route: 'admin.cases' }}
-                                        active={current === 'admin.cases'}
+                                        item={{
+                                            name: "Casos",
+                                            route: "admin.cases",
+                                        }}
+                                        active={current === "admin.cases"}
                                     />
                                     <NavLink
-                                        item={{ name: 'Códigos', route: 'admin.codes' }}
-                                        active={current === 'admin.codes'}
+                                        item={{
+                                            name: "Blog",
+                                            route: "admin.blog.index",
+                                        }}
+                                        active={current === "admin.blog.index"}
                                     />
                                     <NavLink
-                                        item={{ name: 'Email marketing', route: 'admin.email-marketing' }}
-                                        active={current === 'admin.email-marketing'}
+                                        item={{
+                                            name: "Códigos",
+                                            route: "admin.codes",
+                                        }}
+                                        active={current === "admin.codes"}
+                                    />
+                                    <NavLink
+                                        item={{
+                                            name: "Email marketing",
+                                            route: "admin.email-marketing",
+                                        }}
+                                        active={
+                                            current === "admin.email-marketing"
+                                        }
                                     />
                                 </>
                             )}
@@ -176,25 +302,31 @@ export default function AppLayout({
                             onClick={() => setMobileNavOpen((open) => !open)}
                             aria-expanded={mobileNavOpen}
                             aria-controls="app-mobile-menu"
-                            aria-label={mobileNavOpen ? 'Cerrar menú' : 'Abrir menú'}
+                            aria-label={
+                                mobileNavOpen ? "Cerrar menú" : "Abrir menú"
+                            }
                             className="ml-auto inline-flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-control text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
                         >
                             <span
                                 aria-hidden="true"
                                 className={`block h-px w-6 bg-current transition-transform duration-300 ${
-                                    mobileNavOpen ? 'translate-y-[7px] rotate-45' : ''
+                                    mobileNavOpen
+                                        ? "translate-y-[7px] rotate-45"
+                                        : ""
                                 }`}
                             />
                             <span
                                 aria-hidden="true"
                                 className={`block h-px w-6 bg-current transition-opacity duration-300 ${
-                                    mobileNavOpen ? 'opacity-0' : ''
+                                    mobileNavOpen ? "opacity-0" : ""
                                 }`}
                             />
                             <span
                                 aria-hidden="true"
                                 className={`block h-px w-6 bg-current transition-transform duration-300 ${
-                                    mobileNavOpen ? '-translate-y-[7px] -rotate-45' : ''
+                                    mobileNavOpen
+                                        ? "-translate-y-[7px] -rotate-45"
+                                        : ""
                                 }`}
                             />
                         </button>
@@ -212,18 +344,27 @@ export default function AppLayout({
                 aria-label="Menú principal"
                 aria-hidden={!mobileNavOpen}
                 className={`fixed inset-0 z-[60] flex items-center justify-center bg-surface/95 px-6 pt-20 backdrop-blur-xl transition-all duration-500 lg:hidden ${
-                    mobileNavOpen ? 'visible opacity-100' : 'invisible pointer-events-none opacity-0'
+                    mobileNavOpen
+                        ? "visible opacity-100"
+                        : "invisible pointer-events-none opacity-0"
                 }`}
             >
-                <nav aria-label="Principal" className="flex w-full max-w-xs flex-col items-center gap-7 text-center">
+                <nav
+                    aria-label="Principal"
+                    className="flex w-full max-w-xs flex-col items-center gap-7 text-center"
+                >
                     {NAV.map((item) => (
                         <Link
                             key={item.route}
                             href={route(item.route)}
-                            aria-current={current === item.route ? 'page' : undefined}
+                            aria-current={
+                                current === item.route ? "page" : undefined
+                            }
                             onClick={() => setMobileNavOpen(false)}
                             className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                                current === item.route ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                current === item.route
+                                    ? "text-accent-strong"
+                                    : "text-ink hover:text-accent-strong"
                             }`}
                         >
                             {item.name}
@@ -233,41 +374,81 @@ export default function AppLayout({
                     {user?.is_admin && (
                         <>
                             <Link
-                                href={route('admin.dashboard')}
-                                aria-current={current === 'admin.dashboard' ? 'page' : undefined}
+                                href={route("admin.dashboard")}
+                                aria-current={
+                                    current === "admin.dashboard"
+                                        ? "page"
+                                        : undefined
+                                }
                                 onClick={() => setMobileNavOpen(false)}
                                 className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                                    current === 'admin.dashboard' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                    current === "admin.dashboard"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
                                 }`}
                             >
                                 Admin
                             </Link>
                             <Link
-                                href={route('admin.cases')}
-                                aria-current={current === 'admin.cases' ? 'page' : undefined}
+                                href={route("admin.cases")}
+                                aria-current={
+                                    current === "admin.cases"
+                                        ? "page"
+                                        : undefined
+                                }
                                 onClick={() => setMobileNavOpen(false)}
                                 className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                                    current === 'admin.cases' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                    current === "admin.cases"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
                                 }`}
                             >
                                 Casos
                             </Link>
                             <Link
-                                href={route('admin.codes')}
-                                aria-current={current === 'admin.codes' ? 'page' : undefined}
+                                href={route("admin.blog.index")}
+                                aria-current={
+                                    current === "admin.blog.index"
+                                        ? "page"
+                                        : undefined
+                                }
                                 onClick={() => setMobileNavOpen(false)}
                                 className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                                    current === 'admin.codes' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                    current === "admin.blog.index"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Blog
+                            </Link>
+                            <Link
+                                href={route("admin.codes")}
+                                aria-current={
+                                    current === "admin.codes"
+                                        ? "page"
+                                        : undefined
+                                }
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.codes"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
                                 }`}
                             >
                                 Códigos
                             </Link>
                             <Link
-                                href={route('admin.email-marketing')}
-                                aria-current={current === 'admin.email-marketing' ? 'page' : undefined}
+                                href={route("admin.email-marketing")}
+                                aria-current={
+                                    current === "admin.email-marketing"
+                                        ? "page"
+                                        : undefined
+                                }
                                 onClick={() => setMobileNavOpen(false)}
                                 className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                                    current === 'admin.email-marketing' ? 'text-accent-strong' : 'text-ink hover:text-accent-strong'
+                                    current === "admin.email-marketing"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
                                 }`}
                             >
                                 Email marketing
@@ -278,17 +459,19 @@ export default function AppLayout({
                     <span aria-hidden="true" className="h-px w-12 bg-line" />
 
                     <Link
-                        href={route('profile.edit')}
+                        href={route("profile.edit")}
                         onClick={() => setMobileNavOpen(false)}
                         className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                            current === 'profile' ? 'text-accent-strong' : 'text-ink'
+                            current === "profile"
+                                ? "text-accent-strong"
+                                : "text-ink"
                         }`}
                     >
                         Tu perfil
                     </Link>
                     <button
                         type="button"
-                        onClick={() => router.post(route('logout'))}
+                        onClick={() => router.post(route("logout"))}
                         className="text-base font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:text-accent-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
                         Salir
@@ -315,7 +498,9 @@ export default function AppLayout({
                         </div>
 
                         {actions && (
-                            <div className="flex flex-wrap items-center gap-2">{actions}</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {actions}
+                            </div>
                         )}
                     </div>
 
@@ -325,7 +510,13 @@ export default function AppLayout({
 
                     {errorList.length > 0 && (
                         <Alert variant="error" title="Revisa lo siguiente">
-                            <ul className={errorList.length > 1 ? 'list-inside list-disc' : ''}>
+                            <ul
+                                className={
+                                    errorList.length > 1
+                                        ? "list-inside list-disc"
+                                        : ""
+                                }
+                            >
                                 {errorList.map((message, index) => (
                                     <li key={index}>{message}</li>
                                 ))}

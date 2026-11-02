@@ -1,0 +1,133 @@
+import { Head, Link } from "@inertiajs/react";
+import PublicLayout from "../../Layouts/PublicLayout";
+import Container from "../../components/ui/Container";
+import Badge from "../../components/ui/Badge";
+import Button from "../../components/ui/Button";
+import BlogCard, { formatBlogDate } from "../../components/blog/BlogCard";
+
+export default function BlogShow({ post, related }) {
+    const url = typeof window === "undefined" ? "" : window.location.href;
+    return (
+        <PublicLayout current="blog.index">
+            <Head title={post.title} />
+            <Container width="prose" className="py-10 sm:py-16">
+                <nav
+                    aria-label="Migas de pan"
+                    className="text-sm text-ink-muted"
+                >
+                    <Link href={route("home")} className="hover:text-ink">
+                        Inicio
+                    </Link>{" "}
+                    <span aria-hidden="true">/</span>{" "}
+                    <Link href={route("blog.index")} className="hover:text-ink">
+                        Blog
+                    </Link>
+                    {post.category && (
+                        <>
+                            {" "}
+                            <span aria-hidden="true">/</span>{" "}
+                            <Link
+                                href={route(
+                                    "blog.category",
+                                    post.category.slug,
+                                )}
+                                className="hover:text-ink"
+                            >
+                                {post.category.name}
+                            </Link>
+                        </>
+                    )}
+                </nav>
+                <header className="mt-8">
+                    {post.category && (
+                        <Badge tone="accent">{post.category.name}</Badge>
+                    )}
+                    <h1 className="mt-4 font-display text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-6xl">
+                        {post.title}
+                    </h1>
+                    <p className="mt-5 text-xl leading-relaxed text-ink-muted">
+                        {post.excerpt}
+                    </p>
+                    <div className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-sm text-ink-muted">
+                        <span>Por {post.author.name}</span>
+                        <time dateTime={post.published_at}>
+                            Publicado {formatBlogDate(post.published_at)}
+                        </time>
+                        {post.updated_at !== post.published_at && (
+                            <time dateTime={post.updated_at}>
+                                Actualizado {formatBlogDate(post.updated_at)}
+                            </time>
+                        )}
+                    </div>
+                </header>
+                {post.cover_url && (
+                    <img
+                        src={post.cover_url}
+                        alt={post.cover_alt || ""}
+                        className="mt-10 w-full rounded-card border border-line object-cover"
+                    />
+                )}
+            </Container>
+            <Container width="prose">
+                <article
+                    className="blog-prose text-ink-muted"
+                    dangerouslySetInnerHTML={{ __html: post.content_html }}
+                />
+                <div className="mt-10 border-y border-line py-6">
+                    <p className="text-sm font-medium text-ink">
+                        {"Comparte este art\u00edculo"}
+                    </p>
+                    <a
+                        className="mt-2 inline-block text-sm text-accent underline"
+                        target="_blank"
+                        rel="noreferrer"
+                        href={`https://wa.me/?text=${encodeURIComponent(`${post.title} ${url}`)}`}
+                    >
+                        Compartir por WhatsApp
+                    </a>
+                </div>
+                {post.tags.length > 0 && (
+                    <div className="mt-6 flex flex-wrap gap-2">
+                        {post.tags.map((tag) => (
+                            <Link
+                                key={tag.slug}
+                                href={route("blog.tag", tag.slug)}
+                                className="text-sm text-accent underline"
+                            >
+                                #{tag.name}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+                <aside className="mt-12 rounded-card border border-line bg-surface-sunken p-6 sm:p-8">
+                    <p className="font-display text-2xl font-semibold text-ink">
+                        {"\u00bfListos para resolver un caso?"}
+                    </p>
+                    <p className="mt-2 text-ink-muted">
+                        {
+                            "Elijan un misterio, re\u00fananse y convi\u00e9rtanse en el equipo investigador."
+                        }
+                    </p>
+                    <Button href={route("cases.index")} className="mt-5">
+                        Ver casos
+                    </Button>
+                </aside>
+            </Container>
+            {related.length > 0 && (
+                <Container
+                    width="wide"
+                    className="mt-16 border-t border-line py-12"
+                >
+                    <h2 className="font-display text-3xl font-semibold text-ink">
+                        Sigue explorando
+                    </h2>
+                    <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {related.map((item) => (
+                            <BlogCard key={item.slug} post={item} />
+                        ))}
+                    </div>
+                </Container>
+            )}
+        </PublicLayout>
+    );
+}

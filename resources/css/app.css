@@ -1,5 +1,25 @@
 @import "tailwindcss";
 
+/* Public article output is sanitized on the server. Scope editorial styling
+   so the rich-text document cannot alter any other product interface. */
+.blog-prose {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+}
+
+.blog-prose > * + * { margin-top: 1.5rem; }
+.blog-prose h2, .blog-prose h3, .blog-prose h4 { color: var(--color-ink); font-family: var(--font-display); font-weight: 600; line-height: 1.2; }
+.blog-prose h2 { margin-top: 3rem; font-size: 1.875rem; }
+.blog-prose h3 { margin-top: 2.25rem; font-size: 1.5rem; }
+.blog-prose h4 { margin-top: 2rem; font-size: 1.25rem; }
+.blog-prose a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 0.2em; }
+.blog-prose ul, .blog-prose ol { padding-left: 1.5rem; }
+.blog-prose ul { list-style: disc; }
+.blog-prose ol { list-style: decimal; }
+.blog-prose blockquote { border-left: 3px solid var(--color-accent); padding-left: 1rem; color: var(--color-ink); font-style: italic; }
+.blog-prose img { width: 100%; border: 1px solid var(--color-line); border-radius: var(--radius-card); }
+.blog-prose figcaption { margin-top: 0.5rem; color: var(--color-ink-muted); font-size: 0.875rem; }
+
 /*
 |------------------------------------------------------------------------------
 | Design tokens

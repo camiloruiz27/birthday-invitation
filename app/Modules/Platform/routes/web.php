@@ -2,6 +2,8 @@
 
 use App\Modules\Platform\Http\Controllers\AdLandingController;
 use App\Modules\Platform\Http\Controllers\AdminCasesController;
+use App\Modules\Platform\Http\Controllers\AdminBlogController;
+use App\Modules\Platform\Http\Controllers\AdminBlogTaxonomyController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminEmailMarketingController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
@@ -11,6 +13,8 @@ use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
 use App\Modules\Platform\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Modules\Platform\Http\Controllers\Auth\RegisteredUserController;
 use App\Modules\Platform\Http\Controllers\CatalogController;
+use App\Modules\Platform\Http\Controllers\BlogController;
+use App\Modules\Platform\Http\Controllers\BlogFeedController;
 use App\Modules\Platform\Http\Controllers\CheckoutController;
 use App\Modules\Platform\Http\Controllers\CreditsController;
 use App\Modules\Platform\Http\Controllers\CronTriggerController;
@@ -42,6 +46,16 @@ Route::get('/casos/{slug}', [CatalogController::class, 'show'])->name('cases.sho
 Route::get('/mecanicas', [CatalogController::class, 'mechanics'])->name('mechanics');
 Route::get('/inteligencia-artificial', [CatalogController::class, 'ai'])->name('ai');
 Route::get('/precios', [CatalogController::class, 'pricing'])->name('pricing');
+
+// Editorial content lives under the same domain as the product. The archive
+// routes must come before /blog/{slug}, otherwise "categoria" would be read
+// as an article slug.
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/categoria/{slug}', [BlogController::class, 'category'])->name('blog.category');
+Route::get('/blog/etiqueta/{slug}', [BlogController::class, 'tag'])->name('blog.tag');
+Route::get('/sitemap.xml', [BlogFeedController::class, 'sitemap'])->name('blog.sitemap');
+Route::get('/blog/rss.xml', [BlogFeedController::class, 'rss'])->name('blog.rss');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 
 // What paid ads point at: /jugar/{slug} for one case, /jugar for the platform
 // as a whole. A short, stable path on purpose — it is printed into campaigns.
@@ -192,6 +206,17 @@ Route::middleware('auth')->group(function () {
         Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])
             ->whereNumber('user')
             ->name('email-marketing.exclusion');
+
+        Route::get('/blog', [AdminBlogController::class, 'index'])->name('blog.index');
+        Route::get('/blog/nuevo', [AdminBlogController::class, 'create'])->name('blog.create');
+        Route::post('/blog', [AdminBlogController::class, 'store'])->name('blog.store');
+        Route::get('/blog/categorias-y-etiquetas', [AdminBlogTaxonomyController::class, 'index'])->name('blog.taxonomies');
+        Route::post('/blog/categorias', [AdminBlogTaxonomyController::class, 'storeCategory'])->name('blog.categories.store');
+        Route::post('/blog/etiquetas', [AdminBlogTaxonomyController::class, 'storeTag'])->name('blog.tags.store');
+        Route::post('/blog/imagenes', [AdminBlogController::class, 'uploadImage'])->name('blog.images.store');
+        Route::get('/blog/{blogPost}/vista-previa', [AdminBlogController::class, 'preview'])->name('blog.preview');
+        Route::get('/blog/{blogPost}/editar', [AdminBlogController::class, 'edit'])->name('blog.edit');
+        Route::put('/blog/{blogPost}', [AdminBlogController::class, 'update'])->name('blog.update');
     });
 
     // Where Bold sends the buyer back after checkout. The page itself polls

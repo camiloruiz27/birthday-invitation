@@ -14,6 +14,10 @@ const NAV = [
     { name: 'Precios', route: 'pricing' },
 ];
 
+// Blog is intentionally discoverable from the footer, without competing with
+// the product journey in the primary navigation.
+const FOOTER_NAV = [...NAV, { name: 'Blog', route: 'blog.index' }];
+
 const LEGAL = [
     { name: 'Política de Privacidad', route: 'privacy' },
     { name: 'Términos y Condiciones', route: 'terms' },
@@ -251,7 +255,7 @@ export default function PublicLayout({ current, bleed = false, children }) {
                         </div>
 
                         <nav aria-label="Pie de página" className="flex flex-col gap-2.5">
-                            {NAV.map((item) => (
+                            {FOOTER_NAV.map((item) => (
                                 <Link
                                     key={item.route}
                                     href={route(item.route)}

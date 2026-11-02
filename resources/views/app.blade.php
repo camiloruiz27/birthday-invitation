@@ -88,6 +88,14 @@
     <meta name="twitter:description" content="{{ $shareDescription }}">
     <meta name="twitter:image" content="{{ $shareImage }}">
 
+    @if (request()->is('blog*'))
+        <link rel="alternate" type="application/rss+xml" title="MisterioCode &#8212; Blog" href="{{ route('blog.rss') }}">
+    @endif
+
+    @foreach (($seo['schema'] ?? []) as $schema)
+        <script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
+    @endforeach
+
     @if (config('platform.analytics.ga_measurement_id') || config('platform.analytics.clarity_project_id'))
         {{-- Google Analytics 4 and Microsoft Clarity are NOT loaded here. This
              tag only hands the ids to resources/js/lib/consent.js, which
