@@ -11,12 +11,15 @@ const NAV = [
     { name: 'Casos', route: 'cases.index' },
     { name: 'Mecánicas', route: 'mechanics' },
     { name: 'Inteligencia artificial', route: 'ai' },
-    { name: 'Precios', route: 'pricing' },
 ];
 
 // Blog is intentionally discoverable from the footer, without competing with
 // the product journey in the primary navigation.
-const FOOTER_NAV = [...NAV, { name: 'Blog', route: 'blog.index' }];
+const FOOTER_NAV = [
+    ...NAV,
+    { name: 'Precios', route: 'pricing' },
+    { name: 'Blog', route: 'blog.index' },
+];
 
 const LEGAL = [
     { name: 'Política de Privacidad', route: 'privacy' },
