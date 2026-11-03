@@ -7,6 +7,7 @@ use App\Modules\Platform\Http\Controllers\AdminBlogTaxonomyController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminEmailMarketingController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
+use App\Modules\Platform\Http\Controllers\AdminRatingsController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
@@ -26,6 +27,9 @@ use App\Modules\Platform\Http\Controllers\MarketController;
 use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
 use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
+use App\Modules\Platform\Http\Controllers\ReferralController;
+use App\Modules\Platform\Http\Controllers\ReferralLinkController;
+use App\Modules\Platform\Http\Controllers\AdminReferralsController;
 use App\Modules\Platform\Http\Controllers\RedeemCodeController;
 use App\Modules\Platform\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +50,9 @@ Route::get('/casos/{slug}', [CatalogController::class, 'show'])->name('cases.sho
 Route::get('/mecanicas', [CatalogController::class, 'mechanics'])->name('mechanics');
 Route::get('/inteligencia-artificial', [CatalogController::class, 'ai'])->name('ai');
 Route::get('/precios', [CatalogController::class, 'pricing'])->name('pricing');
+Route::get('/r/{code}', ReferralLinkController::class)
+    ->where('code', '[A-Za-z0-9_-]+')
+    ->name('referrals.visit');
 
 // Editorial content lives under the same domain as the product. The archive
 // routes must come before /blog/{slug}, otherwise "categoria" would be read
@@ -136,6 +143,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/panel', DashboardController::class)->name('dashboard');
     Route::get('/biblioteca', LibraryController::class)->name('library');
+    Route::get('/referidos', ReferralController::class)->name('referrals');
 
     // The AI credit wallet: the balance and the ledger. Buying more is below.
     Route::get('/creditos', [CreditsController::class, 'index'])->name('credits');
@@ -194,6 +202,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/casos', [AdminCasesController::class, 'index'])->name('cases');
+        Route::get('/valoraciones', AdminRatingsController::class)->name('ratings');
         Route::patch('/casos/{mysteryCase}/publicacion', [AdminCasesController::class, 'toggle'])
             ->name('cases.toggle');
         Route::get('/codigos', [AdminPromoCodesController::class, 'index'])->name('codes');
@@ -201,6 +210,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('/codigos/{promoCode}/activo', [AdminPromoCodesController::class, 'toggle'])
             ->whereNumber('promoCode')
             ->name('codes.toggle');
+        Route::get('/referidos', [AdminReferralsController::class, 'index'])->name('referrals');
+        Route::patch('/referidos/codigos/{referralCode}/activo', [AdminReferralsController::class, 'toggle'])
+            ->whereNumber('referralCode')
+            ->name('referrals.toggle');
         Route::get('/email-marketing', [AdminEmailMarketingController::class, 'index'])->name('email-marketing');
         Route::get('/email-marketing/exportar', [AdminEmailMarketingController::class, 'export'])->name('email-marketing.export');
         Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])

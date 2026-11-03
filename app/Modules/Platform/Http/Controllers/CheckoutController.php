@@ -11,6 +11,7 @@ use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
+use App\Modules\Platform\Support\ReferralProgram;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -39,7 +40,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CheckoutController extends Controller
 {
-    public function review(Request $request, string $slug, RedeemPromoCode $promos): InertiaResponse
+    public function review(Request $request, string $slug, RedeemPromoCode $promos, ReferralProgram $referrals): InertiaResponse
     {
         abort_unless(config('platform.payments.enabled'), 404);
 
@@ -55,11 +56,22 @@ class CheckoutController extends Controller
         // The code typed or linked on this very URL wins; otherwise the one
         // that came with the ad click, remembered across registering and
         // confirming the email (see Attribution).
+        if ($request->boolean('clear_referral')) {
+            $request->session()->forget(ReferralProgram::SESSION_KEY);
+        }
+
         $promoCode = $request->query('promo_code');
+        $fromStoredReferral = false;
         $fromAdLink = ! $promoCode;
 
         if ($fromAdLink) {
-            $promoCode = Attribution::pendingPromo($request, $request->user());
+            if ($request->filled('ref')) {
+                $referrals->remember($request, (string) $request->query('ref'));
+            }
+
+            $promoCode = $referrals->pending($request);
+            $fromStoredReferral = $promoCode !== null;
+            $promoCode ??= Attribution::pendingPromo($request, $request->user());
         }
 
         $finalAmount = $case->price_amount;
@@ -69,20 +81,30 @@ class CheckoutController extends Controller
         $isGift = false;
         $giftCredits = null;
         $percentOff = null;
+        $isReferral = false;
 
         if ($promoCode) {
             try {
                 // The case goes along so a gift covering it is accepted here
                 // as a 100% discount instead of being sent to /canjear.
-                $preview = $promos->preview($request->user(), $promoCode, $case->price_amount, $case);
-                $finalAmount = $preview->discountedAmount;
-                $discountAmount = $case->price_amount - $finalAmount;
-                $percentOff = QuoteBuilder::percentOff($preview->promoCode);
-                $isGift = $preview->promoCode->isGift();
-                $giftCredits = $isGift ? $preview->promoCode->grants_credits : null;
+                if ($referrals->hasCode($promoCode)) {
+                    $preview = $referrals->preview($request->user(), $promoCode, $case->price_amount);
+                    $finalAmount = $preview->discountedAmount;
+                    $discountAmount = $case->price_amount - $finalAmount;
+                    $percentOff = $preview->recipientDiscountPercent;
+                    $promoCode = $preview->referralCode->code;
+                    $isReferral = true;
+                } else {
+                    $preview = $promos->preview($request->user(), $promoCode, $case->price_amount, $case);
+                    $finalAmount = $preview->discountedAmount;
+                    $discountAmount = $case->price_amount - $finalAmount;
+                    $percentOff = QuoteBuilder::percentOff($preview->promoCode);
+                    $isGift = $preview->promoCode->isGift();
+                    $giftCredits = $isGift ? $preview->promoCode->grants_credits : null;
+                    $promoCode = $preview->promoCode->code;
+                }
                 // The stored, normalized code — not whatever case the buyer
                 // happened to type it in, or paste from a mixed-case URL.
-                $promoCode = $preview->promoCode->code;
             } catch (PromoCodeException $exception) {
                 $promoError = $exception->getMessage();
                 // Carries the code so /canjear opens with it already typed.
@@ -92,7 +114,9 @@ class CheckoutController extends Controller
 
                 // A remembered code that no longer works is told once, not
                 // on every purchase screen from now on.
-                if ($fromAdLink) {
+                if ($fromStoredReferral) {
+                    $referrals->consumePending($request, $promoCode);
+                } elseif ($fromAdLink) {
                     Attribution::consumePromo($request, $request->user(), $promoCode);
                 }
 
@@ -115,6 +139,7 @@ class CheckoutController extends Controller
             'discount_amount' => $discountAmount === null ? null : $quote->discount,
             'final_amount' => $quote->total,
             'is_gift' => $isGift,
+            'is_referral' => $isReferral,
             'gift_credits' => $giftCredits,
             'promo_error' => $promoError,
             'promo_redirect' => $promoRedirect,

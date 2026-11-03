@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AccusationScoreboard;
+use App\Modules\Immersion\Support\PlayerRatingData;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -61,6 +62,7 @@ class SolutionController extends Controller
 
             'correctCount' => count(array_filter($board, fn ($row) => $row['correct'] === true)),
             'revealedBy' => $game->ending_revealed_by,
+            'rating' => fn () => PlayerRatingData::for($player),
 
             // Their own epilogue, and only their own: it answers what THIS
             // person wrote, and reading someone else's would be reading their

@@ -32,6 +32,18 @@ export function CaseFacts({ mysteryCase, className = '' }) {
     );
 }
 
+export function CaseRating({ rating, className = '' }) {
+    if (!rating) return null;
+
+    return (
+        <p className={`inline-flex items-center gap-1.5 text-sm text-ink-muted ${className}`}>
+            <span aria-hidden="true" className="text-accent">★</span>
+            <span className="tabular font-medium text-ink">{Number(rating.average).toFixed(1).replace('.', ',')}</span>
+            <span>{rating.count === 1 ? '1 valoración' : `${rating.count} valoraciones`}</span>
+        </p>
+    );
+}
+
 export default function CaseCard({ mysteryCase }) {
     return (
         <Link
@@ -58,6 +70,7 @@ export default function CaseCard({ mysteryCase }) {
                 )}
 
                 <CaseFacts mysteryCase={mysteryCase} className="mt-4" />
+                <CaseRating rating={mysteryCase.rating} className="mt-3" />
 
                 <div className="mt-5 flex items-baseline justify-between gap-3 border-t border-line pt-4">
                     <span className="font-semibold text-ink">

@@ -150,6 +150,11 @@ class Game extends Model
         return $this->hasMany(Player::class);
     }
 
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(CaseRating::class);
+    }
+
     public function timelineEvents(): HasMany
     {
         return $this->hasMany(TimelineEvent::class)->orderBy('trigger_offset_minutes');

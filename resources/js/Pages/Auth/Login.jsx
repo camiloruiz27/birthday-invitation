@@ -29,8 +29,10 @@ export default function Login({ case: caseSlug = null }) {
 
     return (
         <AuthLayout
-            title="Ingresar"
-            description="Accede a tus casos y a tus partidas."
+            immersive
+            eyebrow="Acceso confidencial"
+            title="Tu archivo te espera."
+            description="Ingresa para continuar tus casos y reunir a tu equipo."
             footer={
                 <>
                     ¿No tienes cuenta?{' '}
@@ -40,7 +42,9 @@ export default function Login({ case: caseSlug = null }) {
                 </>
             }
         >
-            <Head title="Ingresar" />
+            <Head title="Ingresar">
+                <meta name="robots" content="noindex, nofollow" />
+            </Head>
 
             <form onSubmit={submit} className="space-y-5">
                 {/* The credentials failure arrives on `email` but is about the

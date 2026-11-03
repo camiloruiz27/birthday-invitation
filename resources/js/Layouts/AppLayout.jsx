@@ -15,6 +15,7 @@ import Brand from "../components/ui/Brand";
 const NAV = [
     { name: "Panel", route: "dashboard" },
     { name: "Biblioteca", route: "library" },
+    { name: "Referidos", route: "referrals" },
     { name: "Partidas", route: "immersion.gm.games.index" },
     { name: "Créditos", route: "credits" },
 ];
@@ -50,7 +51,13 @@ function NavLink({ item, active, className = "", onClick }) {
  * a game.
  */
 const ADMIN_GROUPS = [
-    { name: "Juegos", items: [{ name: "Casos", route: "admin.cases" }] },
+    {
+        name: "Juegos",
+        items: [
+            { name: "Casos", route: "admin.cases" },
+            { name: "Valoraciones", route: "admin.ratings" },
+        ],
+    },
     {
         name: "Administraci\u00f3n",
         items: [
@@ -62,6 +69,7 @@ const ADMIN_GROUPS = [
         name: "Mercadeo",
         items: [
             { name: "C\u00f3digos", route: "admin.codes" },
+            { name: "Referidos", route: "admin.referrals" },
             { name: "Email marketing", route: "admin.email-marketing" },
         ],
     },
@@ -289,6 +297,13 @@ export default function AppLayout({
                                             current === "admin.email-marketing"
                                         }
                                     />
+                                    <NavLink
+                                        item={{
+                                            name: "Referidos",
+                                            route: "admin.referrals",
+                                        }}
+                                        active={current === "admin.referrals"}
+                                    />
                                 </>
                             )}
                         </nav>
@@ -422,6 +437,18 @@ export default function AppLayout({
                                 Blog
                             </Link>
                             <Link
+                                href={route("admin.ratings")}
+                                aria-current={current === "admin.ratings" ? "page" : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.ratings"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Valoraciones
+                            </Link>
+                            <Link
                                 href={route("admin.codes")}
                                 aria-current={
                                     current === "admin.codes"
@@ -452,6 +479,22 @@ export default function AppLayout({
                                 }`}
                             >
                                 Email marketing
+                            </Link>
+                            <Link
+                                href={route("admin.referrals")}
+                                aria-current={
+                                    current === "admin.referrals"
+                                        ? "page"
+                                        : undefined
+                                }
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.referrals"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Referidos
                             </Link>
                         </>
                     )}

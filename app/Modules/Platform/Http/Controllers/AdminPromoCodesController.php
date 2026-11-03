@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Platform\Actions\CreatePromoCodes;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\PromoCode;
+use App\Modules\Platform\Models\ReferralCode;
 use App\Modules\Platform\Support\PromoCodeMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,7 +53,11 @@ class AdminPromoCodesController extends Controller
             'mode' => ['required', Rule::in(['single', 'batch'])],
             // Same alphabet Attribution accepts from a campaign link, so
             // every code created here can also travel inside one.
-            'code' => ['required_if:mode,single', 'nullable', 'string', 'max:60', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('promo_codes', 'code')],
+            'code' => ['required_if:mode,single', 'nullable', 'string', 'max:60', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('promo_codes', 'code'), function ($attribute, $value, $fail) {
+                if (ReferralCode::where('code', $value)->exists()) {
+                    $fail('Ya existe un código de referido con ese nombre.');
+                }
+            }],
             'prefix' => ['required_if:mode,batch', 'nullable', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/'],
             'count' => ['required_if:mode,batch', 'nullable', 'integer', 'min:1', 'max:'.CreatePromoCodes::MAX_BATCH],
             'kind' => ['required', Rule::in(['discount', 'gift'])],

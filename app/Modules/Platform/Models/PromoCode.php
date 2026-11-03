@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -45,6 +46,7 @@ class PromoCode extends Model
         'active',
         'expires_at',
         'applies_to',
+        'assigned_user_id',
         'note',
     ];
 
@@ -62,6 +64,12 @@ class PromoCode extends Model
     public function redemptions(): HasMany
     {
         return $this->hasMany(PromoCodeRedemption::class);
+    }
+
+    /** The only account allowed to use a private referral-reward coupon. */
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'assigned_user_id');
     }
 
     public function isGift(): bool

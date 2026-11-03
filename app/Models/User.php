@@ -5,10 +5,12 @@ namespace App\Models;
 use App\Modules\Immersion\Models\Game;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Models\ReferralCode;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -99,6 +101,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function games(): HasMany
     {
         return $this->hasMany(Game::class);
+    }
+
+    public function referralCode(): HasOne
+    {
+        return $this->hasOne(ReferralCode::class);
     }
 
     /**

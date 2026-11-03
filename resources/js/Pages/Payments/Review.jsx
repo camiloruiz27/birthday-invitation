@@ -33,6 +33,7 @@ export default function Review({
     discount_amount,
     final_amount,
     is_gift,
+    is_referral,
     gift_credits,
     promo_error,
     promo_redirect,
@@ -93,7 +94,9 @@ export default function Review({
         // explicitly instead.
         router.get(
             reviewUrl(),
-            isCase ? {} : { package: package_id },
+            isCase
+                ? (is_referral ? { clear_referral: 1 } : {})
+                : { package: package_id },
             { preserveScroll: true, preserveState: true }
         );
     }
@@ -138,7 +141,7 @@ export default function Review({
                     {codeApplied && (
                         <div className="flex items-baseline justify-between">
                             <dt className="text-ink-muted">
-                                {is_gift ? `Regalo ${promo_code}` : `Código ${promo_code}`}
+                                {is_gift ? `Regalo ${promo_code}` : is_referral ? 'Descuento por referido' : `Código ${promo_code}`}
                             </dt>
                             <dd className="tabular text-success-strong">
                                 -{formatPrice(discount_amount, currency)}
@@ -189,7 +192,7 @@ export default function Review({
                                     id="promo_code"
                                     label={
                                         isCase
-                                            ? '¿Tienes un código de descuento o de regalo?'
+                                            ? '¿Tienes un código de descuento o referido?'
                                             : '¿Tienes un código de descuento?'
                                     }
                                     value={codeForm.data.promo_code}
