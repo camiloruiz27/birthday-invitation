@@ -50,7 +50,13 @@ function NavLink({ item, active, className = "", onClick }) {
  * a game.
  */
 const ADMIN_GROUPS = [
-    { name: "Juegos", items: [{ name: "Casos", route: "admin.cases" }] },
+    {
+        name: "Juegos",
+        items: [
+            { name: "Casos", route: "admin.cases" },
+            { name: "Valoraciones", route: "admin.ratings" },
+        ],
+    },
     {
         name: "Administraci\u00f3n",
         items: [
@@ -420,6 +426,18 @@ export default function AppLayout({
                                 }`}
                             >
                                 Blog
+                            </Link>
+                            <Link
+                                href={route("admin.ratings")}
+                                aria-current={current === "admin.ratings" ? "page" : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.ratings"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Valoraciones
                             </Link>
                             <Link
                                 href={route("admin.codes")}

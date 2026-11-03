@@ -5,6 +5,7 @@ import Card from '../../components/ui/Card';
 import Tabs from '../../components/ui/Tabs';
 import CaseDocument from '../../components/player/CaseDocument';
 import GalleryGrid from '../../components/player/GalleryGrid';
+import CaseRating from '../../components/player/CaseRating';
 import usePoll from '../../hooks/usePoll';
 import useSessionState from '../../hooks/useSessionState';
 
@@ -166,6 +167,7 @@ export default function Solution({
     epilogue,
     maxScore,
     questions = [],
+    rating,
 }) {
     const you = scoreboard.find((row) => row.is_you);
     const total = scoreboard.length;
@@ -232,6 +234,8 @@ export default function Solution({
             )}
 
             {epilogue && <Epilogue epilogue={epilogue} />}
+
+            <CaseRating playerToken={player.access_token} rating={rating} />
 
             {solution.key_evidence?.length > 0 && (
                 <Card as="section" className="mt-5">

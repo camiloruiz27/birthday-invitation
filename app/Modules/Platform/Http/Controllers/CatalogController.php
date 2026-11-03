@@ -8,6 +8,7 @@ use App\Modules\Platform\Http\Resources\CaseCardData;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Support\Mechanics;
 use App\Modules\Platform\Support\PublishedCases;
+use App\Modules\Immersion\Support\CaseRatingSummary;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,13 +17,16 @@ class CatalogController extends Controller
 {
     public function index(): Response
     {
+        $published = PublishedCases::all();
+        $ratings = CaseRatingSummary::forCases($published->pluck('slug'));
+
         return Inertia::render('Public/Catalog', [
             // Searching and filtering happen in the browser (see
             // lib/caseDiscovery.js), so the page carries the whole published
             // list plus the text a search looks through. The list is cached
             // and the visitor never asks the server again for a filter.
-            'cases' => fn () => PublishedCases::all()
-                ->map(fn (MysteryCase $case) => CaseCardData::summary($case) + [
+            'cases' => fn () => $published
+                ->map(fn (MysteryCase $case) => CaseCardData::summary($case, $ratings->get($case->slug)) + [
                     'search' => trim($case->tagline.' '.$case->description),
                     'published_at' => $case->published_at?->toIso8601String(),
                 ])
@@ -35,9 +39,10 @@ class CatalogController extends Controller
         // Route model binding would also serve unpublished rows; the catalog
         // must only ever show what is actually on sale.
         $case = PublishedCases::find($slug) ?? abort(404);
+        $rating = CaseRatingSummary::forCases([$case->slug])->get($case->slug);
 
         return Inertia::render('Public/CaseDetail', [
-            'case' => CaseCardData::detail($case),
+            'case' => CaseCardData::detail($case, $rating),
             'owned' => (bool) $request->user()?->ownsCase($case),
             'canPurchase' => (bool) config('platform.payments.enabled'),
             'canSimulatePurchase' => (bool) config('platform.simulated_checkout'),

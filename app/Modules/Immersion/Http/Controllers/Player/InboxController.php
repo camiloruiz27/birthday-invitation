@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\EarlyRelease;
 use App\Modules\Immersion\Support\GameSnapshot;
+use App\Modules\Immersion\Support\PlayerRatingData;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -15,11 +16,12 @@ class InboxController extends Controller
 {
     public function show(Player $player): InertiaResponse
     {
-        $case = $player->game->caseDefinition();
+        $game = $player->game;
+        $case = $game->caseDefinition();
 
         return Inertia::render('Player/Inbox', [
             'player' => $player->revealCredentials(),
-            'game' => $player->game->forPlayerView(),
+            'game' => $game->forPlayerView(),
             'case' => [
                 'name' => $case->name(),
                 'code' => $case->code(),
@@ -29,6 +31,12 @@ class InboxController extends Controller
             // many of the table have pressed it. Lazy, so it is only read when the
             // page loads or reloads on a change, never by the stamp poll.
             'readiness' => fn () => EarlyRelease::state($player),
+            // Usually the rating card lives on the solution screen. The inbox
+            // owns the fallback when a finished case has no written solution,
+            // or when it was closed before the ending was published.
+            'rating' => fn () => (! $case->hasSolution() || ! $game->endingRevealed())
+                ? PlayerRatingData::for($player)
+                : null,
             'items' => fn () => GameSnapshot::enabled()
                 ? $this->itemsFromSnapshot($player)
                 : $player->inboxEvents()->map(function ($event) use ($case) {

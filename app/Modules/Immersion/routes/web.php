@@ -2,6 +2,7 @@
 
 use App\Modules\Immersion\Http\Controllers\GameMaster\GameMasterController;
 use App\Modules\Immersion\Http\Controllers\Player\AccusationController;
+use App\Modules\Immersion\Http\Controllers\Player\CaseRatingController;
 use App\Modules\Immersion\Http\Controllers\Player\EnvelopeReadyController;
 use App\Modules\Immersion\Http\Controllers\Player\InboxController;
 use App\Modules\Immersion\Http\Controllers\Player\InterrogationController;
@@ -153,6 +154,9 @@ Route::prefix('jugador/{player}')->name('immersion.player.')->group(function () 
         ->name('envelope.ready');
     Route::get('/acusacion', [AccusationController::class, 'show'])->name('accusation');
     Route::post('/acusacion', [AccusationController::class, 'store'])->name('accusation.store');
+    Route::post('/valoracion', [CaseRatingController::class, 'store'])
+        ->middleware('throttle:10,1,case-rating')
+        ->name('rating.store');
 
     // Refuses with 403 until the ending is revealed; see SolutionController.
     Route::get('/solucion', [SolutionController::class, 'show'])->name('solution');

@@ -7,6 +7,7 @@ use App\Modules\Platform\Http\Controllers\AdminBlogTaxonomyController;
 use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminEmailMarketingController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
+use App\Modules\Platform\Http\Controllers\AdminRatingsController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
@@ -194,6 +195,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(EnsureAdmin::class)->prefix('admin')->name('admin.')->group(function () {
         Route::get('/', AdminDashboardController::class)->name('dashboard');
         Route::get('/casos', [AdminCasesController::class, 'index'])->name('cases');
+        Route::get('/valoraciones', AdminRatingsController::class)->name('ratings');
         Route::patch('/casos/{mysteryCase}/publicacion', [AdminCasesController::class, 'toggle'])
             ->name('cases.toggle');
         Route::get('/codigos', [AdminPromoCodesController::class, 'index'])->name('codes');

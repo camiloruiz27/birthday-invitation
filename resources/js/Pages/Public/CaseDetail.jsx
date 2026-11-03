@@ -7,7 +7,7 @@ import PurchaseCta from '../../components/public/PurchaseCta';
 import Badge from '../../components/ui/Badge';
 import Reveal from '../../components/ui/Reveal';
 import Section from '../../components/public/Section';
-import { CaseFacts } from '../../components/public/CaseCard';
+import { CaseFacts, CaseRating } from '../../components/public/CaseCard';
 import Icon from '../../lib/mechanicIcons';
 import { trackAd } from '../../lib/analytics';
 import { formatPrice, minorUnitValue } from '../../lib/format';
@@ -111,6 +111,7 @@ export default function CaseDetail({
                             )}
 
                             <CaseFacts mysteryCase={mysteryCase} className="mt-6" />
+                            <CaseRating rating={mysteryCase.rating} className="mt-3" />
 
                             {mysteryCase.cover_url && (
                                 <img

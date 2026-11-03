@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
@@ -165,6 +166,11 @@ class Player extends Model
     public function accusation(): HasOne
     {
         return $this->hasOne(Accusation::class);
+    }
+
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(CaseRating::class);
     }
 
     public function inboxEvents()

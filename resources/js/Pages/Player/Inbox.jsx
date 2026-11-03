@@ -4,6 +4,7 @@ import PlayerLayout from '../../Layouts/PlayerLayout';
 import EmptyState from '../../components/ui/EmptyState';
 import InboxItem, { EnvelopeRow } from '../../components/player/InboxItem';
 import ReadyBar from '../../components/player/ReadyBar';
+import CaseRating from '../../components/player/CaseRating';
 import usePoll from '../../hooks/usePoll';
 import { INBOX_READ_EVENT } from '../../hooks/usePlayerNotices';
 
@@ -54,7 +55,7 @@ function readEnvelopes(gameId) {
     }
 }
 
-export default function Inbox({ player, game, items, readiness, case: mysteryCase }) {
+export default function Inbox({ player, game, items, readiness, rating, case: mysteryCase }) {
     // New envelopes arrive on the server's clock, so the inbox refreshes
     // itself while the player is reading. 'readiness' is who has said they
     // read everything so far (see ReadyBar).
@@ -127,6 +128,8 @@ export default function Inbox({ player, game, items, readiness, case: mysteryCas
             <Head title={`Bandeja de ${player.name}`} />
 
             <ReadyBar player={player} readiness={readiness} />
+
+            <CaseRating playerToken={player.access_token} rating={rating} />
 
             {items.length === 0 ? (
                 <div data-tour="inbox-main">

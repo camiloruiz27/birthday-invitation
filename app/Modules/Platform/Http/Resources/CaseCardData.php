@@ -20,7 +20,7 @@ class CaseCardData
      *
      * @return array<string, mixed>
      */
-    public static function summary(MysteryCase $case): array
+    public static function summary(MysteryCase $case, ?array $rating = null): array
     {
         return [
             'slug' => $case->slug,
@@ -36,6 +36,7 @@ class CaseCardData
             // it), so what a card shows is what checkout charges.
             ...QuoteBuilder::make()->display((int) $case->price_amount),
             'mechanics' => Mechanics::describe((array) $case->mechanics),
+            'rating' => $rating,
         ];
     }
 
@@ -95,9 +96,9 @@ class CaseCardData
      *
      * @return array<string, mixed>
      */
-    public static function detail(MysteryCase $case): array
+    public static function detail(MysteryCase $case, ?array $rating = null): array
     {
-        return self::summary($case) + [
+        return self::summary($case, $rating) + [
             'description' => $case->description,
             'uses_ai' => collect(Mechanics::describe((array) $case->mechanics))
                 ->contains(fn (array $mechanic) => $mechanic['ai']),
