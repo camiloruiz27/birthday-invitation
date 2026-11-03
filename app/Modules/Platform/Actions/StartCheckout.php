@@ -14,6 +14,7 @@ use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use App\Modules\Platform\Support\Market;
+use App\Modules\Platform\Support\ReferralProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -38,6 +39,7 @@ class StartCheckout
         private AdEvents $ads,
         private Request $request,
         private QuoteBuilder $quotes,
+        private ReferralProgram $referrals,
     ) {
     }
 
@@ -70,6 +72,7 @@ class StartCheckout
     private function create(User $user, array $attributes, ?string $promoCode, ?MysteryCase $case = null): Order
     {
         $redemption = null;
+        $referralDiscount = null;
 
         // Every price in the catalog is COP and every code is applied to it
         // there; an international buyer's USD price is derived from the
@@ -81,6 +84,11 @@ class StartCheckout
         $attributes['list_amount'] = $attributes['amount'];
 
         if ($promoCode) {
+            if ($case && $this->referrals->hasCode($promoCode)) {
+                $referralDiscount = $this->referrals->claim($user, $promoCode, $attributes['amount']);
+                $attributes['amount'] = $referralDiscount->discountedAmount;
+                $attributes['discount_amount'] = $attributes['list_amount'] - $attributes['amount'];
+            } else {
             // Computed and claimed BEFORE the Order exists — Bold needs the
             // already-discounted amount. If the checkout below never
             // completes, the redemption is released so a capped code does
@@ -89,11 +97,12 @@ class StartCheckout
             // $case lets a gift covering this very case count as a 100%
             // discount on it (see RedeemPromoCode::applyDiscount); a credit
             // package passes none, so a gift there is still turned away.
-            $discount = $this->promos->applyDiscount($user, $promoCode, $attributes['amount'], $case);
-            $attributes['amount'] = $discount->amount;
-            $attributes['discount_amount'] = $attributes['list_amount'] - $discount->amount;
-            $attributes['promo_code_id'] = $discount->redemption->promo_code_id;
-            $redemption = $discount->redemption;
+                $discount = $this->promos->applyDiscount($user, $promoCode, $attributes['amount'], $case);
+                $attributes['amount'] = $discount->amount;
+                $attributes['discount_amount'] = $attributes['list_amount'] - $discount->amount;
+                $attributes['promo_code_id'] = $discount->redemption->promo_code_id;
+                $redemption = $discount->redemption;
+            }
         }
 
         // The market is only ever read from the request here, never taken from
@@ -102,7 +111,7 @@ class StartCheckout
             $listCop,
             $attributes['amount'],
             Market::fromRequest($this->request),
-            QuoteBuilder::percentOff($redemption?->promoCode),
+            $referralDiscount?->recipientDiscountPercent ?? QuoteBuilder::percentOff($redemption?->promoCode),
         );
 
         if ($quote->market === Market::INTL) {
@@ -139,6 +148,10 @@ class StartCheckout
             $redemption->update(['order_id' => $order->id]);
         }
 
+        if ($referralDiscount) {
+            $this->referrals->attachToOrder($referralDiscount, $user, $order);
+        }
+
         // They got where they were going; confirming their email later must
         // not drop them back on this checkout.
         Attribution::consumeIntent($this->request, $user);
@@ -165,6 +178,10 @@ class StartCheckout
                 $this->promos->release($redemption);
             }
 
+            if ($referralDiscount) {
+                $this->referrals->cancelFor($order);
+            }
+
             throw $exception;
         }
 
@@ -175,6 +192,10 @@ class StartCheckout
 
         if ($redemption) {
             $this->forgetUsedPromo($user, $redemption->promoCode);
+        }
+
+        if ($referralDiscount) {
+            $this->referrals->consumePending($this->request, $referralDiscount->referralCode->code);
         }
 
         return $order;

@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Actions;
 
 use App\Modules\Platform\Models\PromoCode;
+use App\Modules\Platform\Models\ReferralCode;
 
 /**
  * The single writer of promo codes — the console commands and the admin
@@ -62,6 +63,9 @@ class CreatePromoCodes
         // campaign's batch a second time can never collide with the first.
         $seen = array_flip(
             PromoCode::where('code', 'like', "{$prefix}-%")->pluck('code')->all()
+        );
+        $seen += array_flip(
+            ReferralCode::where('code', 'like', "{$prefix}-%")->pluck('code')->all()
         );
 
         $codes = [];

@@ -8,6 +8,7 @@ use App\Modules\Platform\Ads\AdEvents;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\Order;
 use App\Modules\Platform\Payments\PaymentWebhookEvent;
+use App\Modules\Platform\Support\ReferralProgram;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -30,6 +31,7 @@ class SettleOrder
         private AiCredits $credits,
         private RedeemPromoCode $promos,
         private AdEvents $ads,
+        private ReferralProgram $referrals,
     ) {
     }
 
@@ -62,6 +64,10 @@ class SettleOrder
         // earlier delivery (webhook or a previous reconcile) — the
         // exactly-once guarantee. Nothing left to do.
         if ($updated !== 1) {
+            if ($order->fresh()->isApproved()) {
+                $this->referrals->approveFor($order);
+            }
+
             return;
         }
 
@@ -69,6 +75,7 @@ class SettleOrder
 
         if ($order->type === Order::TYPE_CASE) {
             $this->access->grant($order->user, $order->mysteryCase, Entitlement::SOURCE_PURCHASE);
+            $this->referrals->activateFromOrder($order);
         } else {
             $this->credits->grant(
                 $order->user,
@@ -82,6 +89,7 @@ class SettleOrder
         // never allowed to get in the way of delivering it (AdEvents
         // swallows its own failures).
         $this->ads->purchase($order);
+        $this->referrals->approveFor($order);
     }
 
     /**
@@ -106,6 +114,7 @@ class SettleOrder
 
         if ($updated === 1) {
             $this->promos->releaseForOrder($order);
+            $this->referrals->cancelFor($order);
         }
     }
 
@@ -125,6 +134,7 @@ class SettleOrder
             ]);
 
         if ($updated === 1) {
+            $this->referrals->voidFor($order);
             Log::warning('platform_payment_voided_needs_review', ['order_id' => $order->id]);
         }
     }

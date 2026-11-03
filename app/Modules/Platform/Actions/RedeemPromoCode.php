@@ -410,6 +410,13 @@ class RedeemPromoCode
             throw new PromoCodeException(self::UNUSABLE);
         }
 
+        // A referral reward is intentionally useful only to the person who
+        // earned it. Keep the generic answer so this cannot become a way to
+        // probe private coupons that belong to another account.
+        if ($promo->assigned_user_id !== null && (int) $promo->assigned_user_id !== (int) $user->id) {
+            throw new PromoCodeException(self::UNUSABLE);
+        }
+
         if ($promo->max_redemptions_per_user !== null) {
             $usedByThisUser = PromoCodeRedemption::where('promo_code_id', $promo->id)
                 ->where('user_id', $user->id)

@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Console\Commands;
 use App\Modules\Platform\Actions\CreatePromoCodes;
 use App\Modules\Platform\Console\Commands\Concerns\ResolvesPromoCodeGrant;
 use App\Modules\Platform\Models\PromoCode;
+use App\Modules\Platform\Models\ReferralCode;
 use Illuminate\Console\Command;
 
 /**
@@ -49,7 +50,7 @@ class CreatePromoCode extends Command
             return self::FAILURE;
         }
 
-        if (PromoCode::where('code', $code)->exists()) {
+        if (PromoCode::where('code', $code)->exists() || ReferralCode::where('code', $code)->exists()) {
             $this->error("Ya existe un código \"{$code}\".");
 
             return self::FAILURE;
