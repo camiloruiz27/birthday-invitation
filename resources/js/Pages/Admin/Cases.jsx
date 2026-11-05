@@ -45,6 +45,7 @@ function CaseRow({ mysteryCase, updating, onToggle }) {
                 <div className="flex flex-wrap items-center gap-2">
                     <h2 className="truncate text-base font-semibold text-ink">{mysteryCase.name}</h2>
                     <CaseTags mysteryCase={mysteryCase} />
+                    {mysteryCase.is_free && <Badge tone="success">Gratis</Badge>}
                     <Badge tone={sale.tone}>{sale.label}</Badge>
                     <Badge tone={availability.tone}>{availability.label}</Badge>
                 </div>
@@ -52,7 +53,7 @@ function CaseRow({ mysteryCase, updating, onToggle }) {
                 <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-subtle">
                     <div>
                         <dt className="sr-only">Precio</dt>
-                        <dd>{formatPrice(mysteryCase.price_amount, mysteryCase.currency)}</dd>
+                        <dd>{mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)}</dd>
                     </div>
                     <div>
                         <dt className="sr-only">Orden</dt>

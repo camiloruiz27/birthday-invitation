@@ -29,9 +29,9 @@ function CasePrice({ mysteryCase }) {
             <CaseFacts mysteryCase={mysteryCase} className="mt-4" />
 
             <p className="mt-6 text-2xl font-semibold text-ink">
-                {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                {mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
             </p>
-            <p className="mt-1 text-sm text-ink-muted">Pago único</p>
+            <p className="mt-1 text-sm text-ink-muted">{mysteryCase.is_free ? 'Sin pago' : 'Pago único'}</p>
 
             <Button
                 href={route('cases.show', mysteryCase.slug)}

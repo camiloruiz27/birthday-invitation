@@ -123,7 +123,7 @@ function LibraryCase({ mysteryCase, onView }) {
 
                 <CaseFacts mysteryCase={mysteryCase} className="mt-3" />
                 <p className="mt-2 text-sm text-ink-muted">
-                    Precio actual: {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                    {mysteryCase.is_free ? 'Acceso gratuito' : `Precio actual: ${formatPrice(mysteryCase.price_amount, mysteryCase.currency)}`}
                 </p>
 
                 {!mysteryCase.playable ? (

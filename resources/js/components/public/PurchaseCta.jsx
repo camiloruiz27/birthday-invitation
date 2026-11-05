@@ -28,11 +28,11 @@ export default function PurchaseCta({
 }) {
     const { auth } = usePage().props;
     const { post, processing } = useForm({});
+    const isFree = mysteryCase.is_free;
 
-    // The simulated stand-in acquires immediately — there is nothing to
-    // confirm about a purchase that costs nothing. A real purchase goes to
-    // the review screen first (see Payments/Review), never straight here.
-    function acquireSimulated() {
+    // Free and simulated acquisitions happen here. A paid case always goes
+    // through its review screen first, never straight to Bold.
+    function acquireDirectly() {
         post(route('cases.acquire', mysteryCase.slug));
     }
 
@@ -61,7 +61,7 @@ export default function PurchaseCta({
                     fullWidth
                     className={className}
                 >
-                    {guestLabel}
+                    {isFree ? 'Crear cuenta para jugar gratis' : guestLabel}
                 </Button>
                 <p className="flex min-h-11 flex-wrap items-center justify-center gap-x-1.5 text-center text-sm text-ink-muted">
                     ¿Ya tienes cuenta?{' '}
@@ -75,6 +75,14 @@ export default function PurchaseCta({
                     </Link>
                 </p>
             </>
+        );
+    }
+
+    if (isFree) {
+        return (
+            <Button onClick={acquireDirectly} loading={processing} size={size} fullWidth className={className}>
+                {processing ? 'Añadiendo…' : 'Añadir gratis a mi biblioteca'}
+            </Button>
         );
     }
 
@@ -94,7 +102,7 @@ export default function PurchaseCta({
     if (canSimulatePurchase) {
         return (
             <>
-                <Button onClick={acquireSimulated} loading={processing} size={size} fullWidth className={className}>
+                <Button onClick={acquireDirectly} loading={processing} size={size} fullWidth className={className}>
                     {processing ? 'Añadiendo…' : 'Añadir a mi biblioteca'}
                 </Button>
                 {/* Never let a simulated acquisition look like a real

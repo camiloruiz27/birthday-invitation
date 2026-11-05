@@ -180,15 +180,15 @@ function StickyBar({ visible, children }) {
 function CaseLanding({ mysteryCase, offer, owned, canPurchase, canSimulatePurchase, gamesPerCase }) {
     const heroCta = useRef(null);
     const showBar = useScrolledPast(heroCta);
-    const price = formatPrice(mysteryCase.price_amount, mysteryCase.currency);
+    const price = mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency);
     const { ad } = mysteryCase;
     // Only when it really changes the price here; the strip shows either way.
-    const discounted = offer && offer.final_amount !== null && offer.final_amount < mysteryCase.price_amount;
+    const discounted = !mysteryCase.is_free && offer && offer.final_amount !== null && offer.final_amount < mysteryCase.price_amount;
 
     // The button is where the person decides, so it carries the offer too.
     // (The bar pinned to the bottom of a phone keeps the plain label: the
     // struck price beside it already says it.)
-    let ctaLabel = `${ad.cta} →`;
+    let ctaLabel = mysteryCase.is_free ? 'Jugar gratis →' : `${ad.cta} →`;
 
     if (discounted) {
         if (offer.kind === 'percent') {
@@ -405,14 +405,14 @@ function PickCard({ mysteryCase }) {
                 <CaseFacts mysteryCase={mysteryCase} className="mt-4" />
                 <div className="mt-5 flex items-baseline justify-between gap-3 border-t border-line pt-4">
                     <span className="font-semibold text-ink">
-                        {mysteryCase.offer_amount != null && mysteryCase.offer_amount < mysteryCase.price_amount ? (
+                        {!mysteryCase.is_free && mysteryCase.offer_amount != null && mysteryCase.offer_amount < mysteryCase.price_amount ? (
                             <OfferPrice
                                 price={formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
                                 finalAmount={mysteryCase.offer_amount}
                                 currency={mysteryCase.currency}
                             />
                         ) : (
-                            formatPrice(mysteryCase.price_amount, mysteryCase.currency)
+                            mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)
                         )}
                     </span>
                     <span className="text-sm text-accent group-hover:text-accent-strong">Quiero este →</span>

@@ -1,0 +1,5 @@
+# Parte afectada
+
+**Equipo de la startup Vista Clara y confianza de los inversores**
+
+Durante una presentación para obtener USD 50,000 de inversión, la aplicación Vista Clara muestra datos de prueba internos en la pantalla. Se culpa a la última publicación del desarrollador. Sin embargo, el equipo conserva un registro de versiones. Investigad quién cambió la demo, mediante qué acción y con qué propósito.

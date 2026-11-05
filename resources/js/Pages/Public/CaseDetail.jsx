@@ -17,10 +17,10 @@ function PurchasePanel({ mysteryCase, owned, canPurchase, canSimulatePurchase, g
     return (
         <Card className="lg:sticky lg:top-24">
             <p className="text-2xl font-semibold text-ink">
-                {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                {mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
             </p>
             <p className="mt-1 text-sm text-ink-muted">
-                Pago único. Acceso permanente, hasta {gamesPerCase} partidas.
+                {mysteryCase.is_free ? 'Sin pago. Acceso permanente.' : 'Pago único.'} Hasta {gamesPerCase} partidas.
             </p>
 
             <div className="mt-6">
@@ -103,6 +103,7 @@ export default function CaseDetail({
                             </Reveal>
 
                             <CaseTags mysteryCase={mysteryCase} className="mt-5" />
+                            {mysteryCase.is_free && <Badge tone="success" className="mt-3">Gratis</Badge>}
 
                             {mysteryCase.tagline && (
                                 <Reveal delay={0.2}>

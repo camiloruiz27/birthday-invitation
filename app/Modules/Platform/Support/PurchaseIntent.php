@@ -33,13 +33,15 @@ final class PurchaseIntent
             return null;
         }
 
-        if (! MysteryCase::published()->where('slug', $slug)->exists()) {
+        $case = MysteryCase::published()->where('slug', $slug)->first();
+
+        if (! $case) {
             return null;
         }
 
         $request->session()->put(
             'url.intended',
-            config('platform.payments.enabled')
+            config('platform.payments.enabled') && ! $case->isFree()
                 ? route('cases.checkout.review', $slug)
                 : route('cases.show', $slug)
         );

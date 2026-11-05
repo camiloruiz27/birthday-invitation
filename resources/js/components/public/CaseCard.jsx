@@ -74,7 +74,7 @@ export default function CaseCard({ mysteryCase }) {
 
                 <div className="mt-5 flex items-baseline justify-between gap-3 border-t border-line pt-4">
                     <span className="font-semibold text-ink">
-                        {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                        {mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
                     </span>
                     <span className="text-sm text-accent group-hover:text-accent-strong">
                         Ver el caso →

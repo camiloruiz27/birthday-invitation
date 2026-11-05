@@ -28,6 +28,7 @@ class AdminCasesController extends Controller
                 'cover_url' => $case->coverUrl(),
                 'price_amount' => $case->price_amount,
                 'currency' => $case->currency,
+                'is_free' => $case->isFree(),
                 'sort_order' => $case->sort_order,
                 'published' => $case->isPublished(),
                 'published_at' => $case->published_at?->toIso8601String(),
