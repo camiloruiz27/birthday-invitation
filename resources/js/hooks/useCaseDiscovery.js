@@ -28,6 +28,7 @@ export default function useCaseDiscovery(items, area) {
         area,
         {
             mechanics: options.mechanics.map((mechanic) => mechanic.slug),
+            tags: options.tags,
             maxPlayers: Math.max(1, ...options.players),
         }
     ));

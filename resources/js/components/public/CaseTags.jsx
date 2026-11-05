@@ -4,10 +4,12 @@ export const CASE_TAG_LABELS = {
     halloween: 'Halloween',
 };
 
-export default function CaseTags({ mysteryCase, className = '' }) {
+export default function CaseTags({ mysteryCase, className = '', limit = null }) {
     const tags = (mysteryCase.tags ?? [])
+        .filter((tag) => !/^ideal\s*:/i.test(String(tag)))
         .map((tag) => CASE_TAG_LABELS[tag] ?? tag)
-        .filter(Boolean);
+        .filter(Boolean)
+        .slice(0, limit ?? undefined);
 
     if (tags.length === 0) return null;
 

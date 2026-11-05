@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Console\Commands;
 use App\Modules\Immersion\Cases\CaseDefinition;
 use App\Modules\Immersion\Cases\CaseRegistry;
 use App\Modules\Platform\Models\MysteryCase;
+use App\Modules\Platform\Support\CaseTagTaxonomy;
 use Illuminate\Console\Command;
 
 /**
@@ -100,7 +101,7 @@ class SyncMysteryCases extends Command
             'description' => $catalog['description'],
             'cover_path' => $catalog['cover_path'],
             'ad' => $catalog['ad'],
-            'tags' => array_values(array_filter((array) ($catalog['tags'] ?? []), 'is_string')),
+            'tags' => CaseTagTaxonomy::for($case->slug, (array) ($catalog['tags'] ?? [])),
             'difficulty' => $catalog['difficulty'],
             'duration_minutes' => $catalog['duration_minutes'],
             'min_players' => $catalog['min_players'],

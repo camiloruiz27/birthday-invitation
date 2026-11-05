@@ -93,6 +93,19 @@ export default function CaseDiscoveryControls({ discovery }) {
                         </div>
                     </fieldset>
 
+                    {options.tags.length > 0 && (
+                        <fieldset>
+                            <legend className="text-sm font-medium text-ink">Temas y ambiente</legend>
+                            <div className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1">
+                                {options.tags.map((tag) => (
+                                    <CheckOption key={tag} id={`${area}-tag-${encodeURIComponent(tag)}`} checked={filters.tags.includes(tag)} onChange={() => update({ tags: toggle(filters.tags, tag) })}>
+                                        {tag}
+                                    </CheckOption>
+                                ))}
+                            </div>
+                        </fieldset>
+                    )}
+
                     <div className="space-y-4">
                         {options.players.length > 0 && (
                             <label className="block">
@@ -148,6 +161,7 @@ export default function CaseDiscoveryControls({ discovery }) {
                     {count === 1 ? '1 caso encontrado' : `${count} casos encontrados`}
                 </p>
                 {filters.q.trim() && <Chip onRemove={() => update({ q: '' })}>“{filters.q.trim()}”</Chip>}
+                {filters.tags.map((tag) => <Chip key={tag} onRemove={() => update({ tags: filters.tags.filter((item) => item !== tag) })}>{tag}</Chip>)}
                 {filters.difficulty.map((value) => <Chip key={value} onRemove={() => update({ difficulty: filters.difficulty.filter((item) => item !== value) })}>{difficultyNames[value]}</Chip>)}
                 {filters.players && <Chip onRemove={() => update({ players: null })}>{filters.players} {filters.players === 1 ? 'jugador' : 'jugadores'}</Chip>}
                 {filters.duration && <Chip onRemove={() => update({ duration: null })}>{durationNames[filters.duration]}</Chip>}

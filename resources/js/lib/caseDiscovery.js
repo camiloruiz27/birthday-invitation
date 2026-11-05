@@ -52,6 +52,7 @@ export function defaultSort(area) {
 export function emptyFilters(area) {
     return {
         q: '',
+        tags: [],
         difficulty: [],
         players: null,
         duration: null,
@@ -89,11 +90,12 @@ function priceText(value) {
  * The filters a query string describes. Anything unknown or malformed is
  * dropped instead of failing, so an old shared link still opens the page.
  */
-export function parseFilters(search, area, { mechanics = [], maxPlayers = 12 } = {}) {
+export function parseFilters(search, area, { mechanics = [], tags = [], maxPlayers = 12 } = {}) {
     const params = new URLSearchParams(search);
     const filters = emptyFilters(area);
 
     filters.q = (params.get('q') ?? '').trim().slice(0, 120);
+    filters.tags = list(params, 'tags', tags);
     filters.difficulty = list(params, 'difficulty', DIFFICULTIES.map((item) => item.value));
     filters.mechanics = list(params, 'mechanics', mechanics);
     filters.ai = ['1', 'true'].includes(params.get('ai') ?? '');
@@ -118,6 +120,7 @@ export function toQuery(filters, area) {
     const params = new URLSearchParams();
 
     if (filters.q.trim()) params.set('q', filters.q.trim());
+    if (filters.tags.length) params.set('tags', filters.tags.join(','));
     if (filters.difficulty.length) params.set('difficulty', filters.difficulty.join(','));
     if (filters.players) params.set('players', String(filters.players));
     if (filters.duration) params.set('duration', filters.duration);
@@ -139,7 +142,7 @@ export function priceRangeError(filters) {
 
 export function isActive(filters) {
     return Boolean(
-        filters.q.trim() || filters.difficulty.length || filters.players || filters.duration ||
+        filters.q.trim() || filters.tags.length || filters.difficulty.length || filters.players || filters.duration ||
         filters.mechanics.length || filters.ai || filters.priceMin !== '' || filters.priceMax !== ''
     );
 }
@@ -166,6 +169,7 @@ export function indexCases(items) {
         position,
         text: normalise([item.name, item.tagline, item.description, item.search].filter(Boolean).join(' ')),
         name: normalise(item.name),
+        tags: (item.tags ?? []).filter((tag) => !/^ideal\s*:/i.test(String(tag))),
         mechanics: (item.mechanics ?? []).map((mechanic) => mechanic.slug),
         ai: (item.mechanics ?? []).some((mechanic) => mechanic.ai),
         price: priceValue(item),
@@ -176,17 +180,20 @@ export function indexCases(items) {
 /** The values the controls offer, taken from the cases themselves. */
 export function optionsFor(items) {
     const mechanics = new Map();
+    const tags = new Set();
     let minPlayers = Infinity;
     let maxPlayers = 0;
 
     for (const item of items) {
         for (const mechanic of item.mechanics ?? []) mechanics.set(mechanic.slug, mechanic.name);
+        for (const tag of item.tags ?? []) if (!/^ideal\s*:/i.test(String(tag))) tags.add(tag);
         if (item.min_players) minPlayers = Math.min(minPlayers, item.min_players);
         if (item.max_players) maxPlayers = Math.max(maxPlayers, item.max_players);
     }
 
     return {
         mechanics: [...mechanics].map(([slug, name]) => ({ slug, name })),
+        tags: [...tags].sort(COLLATOR.compare),
         players: Number.isFinite(minPlayers) && maxPlayers >= minPlayers
             ? Array.from({ length: maxPlayers - minPlayers + 1 }, (_, index) => minPlayers + index)
             : [],
@@ -223,6 +230,7 @@ const SORT_FIELDS = {
 
 function matches(entry, filters, terms, usePrice) {
     if (terms.some((term) => !entry.text.includes(term))) return false;
+    if (filters.tags.length && !filters.tags.some((tag) => entry.tags.includes(tag))) return false;
     if (filters.difficulty.length && !filters.difficulty.includes(entry.item.difficulty)) return false;
 
     if (filters.players) {
