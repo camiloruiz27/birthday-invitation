@@ -3,6 +3,7 @@
 namespace Tests\Feature\Platform;
 
 use App\Models\User;
+use App\Modules\Platform\Mail\AccountPasswordResetMail;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -274,7 +275,7 @@ class AuthenticationTest extends TestCase
      * phishing — and the safe reaction, deleting it, locks the buyer out.
      * Same reasoning as the verification mail; this one is easier to lose.
      */
-    public function test_the_password_reset_mail_is_in_spanish_and_signed_as_the_platform(): void
+    public function test_the_password_reset_mail_uses_the_branded_security_template(): void
     {
         Notification::fake();
 
@@ -284,12 +285,19 @@ class AuthenticationTest extends TestCase
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
             $mail = $notification->toMail($user);
-            $body = implode(' ', array_merge($mail->introLines, $mail->outroLines));
 
-            return $mail->subject === 'Restablece tu contraseña — MisterioCode'
-                && $mail->salutation === 'MisterioCode'
-                && str_contains($body, 'contraseña')
-                && ! str_contains($body, 'password');
+            $this->assertInstanceOf(AccountPasswordResetMail::class, $mail);
+            $mail->assertSeeInHtml('Acceso protegido')
+                ->assertSeeInHtml('Restablecer mi acceso')
+                ->assertSeeInHtml('cid:')
+                ->assertSeeInText('Este enlace seguro vence en 60 minutos.')
+                ->assertSeeInText($mail->resetUrl)
+                ->assertHasSubject('Restablece el acceso a tu expediente');
+
+            $this->assertStringContainsString($notification->token, $mail->resetUrl);
+            $this->assertStringContainsString('email=gm%40example.com', $mail->resetUrl);
+
+            return true;
         });
     }
 

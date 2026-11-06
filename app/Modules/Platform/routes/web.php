@@ -22,6 +22,8 @@ use App\Modules\Platform\Http\Controllers\CreditsController;
 use App\Modules\Platform\Http\Controllers\CronTriggerController;
 use App\Modules\Platform\Http\Controllers\DashboardController;
 use App\Modules\Platform\Http\Controllers\LandingController;
+use App\Modules\Platform\Http\Controllers\LandingCampaignEventController;
+use App\Modules\Platform\Http\Controllers\AdminLandingCampaignController;
 use App\Modules\Platform\Http\Controllers\LegalController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\MarketController;
@@ -69,6 +71,10 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 // as a whole. A short, stable path on purpose — it is printed into campaigns.
 Route::get('/jugar', [AdLandingController::class, 'platform'])->name('ads.platform');
 Route::get('/jugar/{slug}', [AdLandingController::class, 'show'])->name('ads.case');
+Route::post('/campanas/{landingCampaign}/eventos', [LandingCampaignEventController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->whereNumber('landingCampaign')
+    ->name('landing-campaigns.events');
 
 // Legal documents: Ley 1581 de 2012 (data policy), Ley 1480 de 2011 (terms of
 // an online sale) and the cookie policy the consent banner points to.
@@ -211,6 +217,14 @@ Route::middleware('auth')->group(function () {
         Route::patch('/codigos/{promoCode}/activo', [AdminPromoCodesController::class, 'toggle'])
             ->whereNumber('promoCode')
             ->name('codes.toggle');
+        Route::delete('/codigos/{promoCode}', [AdminPromoCodesController::class, 'destroy'])
+            ->whereNumber('promoCode')
+            ->name('codes.destroy');
+        Route::get('/campanas-de-landing', [AdminLandingCampaignController::class, 'index'])->name('landing-campaigns');
+        Route::post('/campanas-de-landing', [AdminLandingCampaignController::class, 'store'])->name('landing-campaigns.store');
+        Route::put('/campanas-de-landing/{landingCampaign}', [AdminLandingCampaignController::class, 'update'])->whereNumber('landingCampaign')->name('landing-campaigns.update');
+        Route::patch('/campanas-de-landing/{landingCampaign}/activa', [AdminLandingCampaignController::class, 'toggle'])->whereNumber('landingCampaign')->name('landing-campaigns.toggle');
+        Route::delete('/campanas-de-landing/{landingCampaign}', [AdminLandingCampaignController::class, 'destroy'])->whereNumber('landingCampaign')->name('landing-campaigns.destroy');
         Route::get('/referidos', [AdminReferralsController::class, 'index'])->name('referrals');
         Route::patch('/referidos/codigos/{referralCode}/activo', [AdminReferralsController::class, 'toggle'])
             ->whereNumber('referralCode')

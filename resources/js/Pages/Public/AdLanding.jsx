@@ -12,6 +12,7 @@ import CaseTags from '../../components/public/CaseTags';
 import { FAQ } from '../../components/public/faqItems';
 import { trackAd } from '../../lib/analytics';
 import { formatPrice, minorUnitValue } from '../../lib/format';
+import { InterrogationSample } from './Landing';
 
 /**
  * The page paid ads land on, in two modes (AdLandingController):
@@ -107,6 +108,148 @@ function OfferPrice({ price, finalAmount, currency, className = '' }) {
             <span className="text-base text-ink-subtle line-through">{price}</span>
             <span>{finalAmount === 0 ? 'Gratis' : formatPrice(finalAmount, currency)}</span>
         </span>
+    );
+}
+
+function campaignEvent(campaignId, event, mysteryCase, playerToken = null) {
+    if (!campaignId || typeof window === 'undefined') return;
+
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    fetch(route('landing-campaigns.events', campaignId), {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'X-CSRF-TOKEN': token } : {}) },
+        body: JSON.stringify({ event, case_slug: mysteryCase?.slug, ...(playerToken ? { player_token: playerToken } : {}) }),
+    }).catch(() => {});
+}
+
+function campaignTarget(mysteryCase, auth) {
+    if (!auth?.user) return route('register', { case: mysteryCase.slug });
+    if (mysteryCase.is_free) return route('cases.show', mysteryCase.slug);
+
+    return route('cases.checkout.review', mysteryCase.slug);
+}
+
+function CampaignCaseCard({ mysteryCase, offer, campaignId, compact = false }) {
+    const { auth } = usePage().props;
+    const paid = !mysteryCase.is_free;
+    const label = paid
+        ? offer?.kind === 'percent' ? `Obtener con ${offer.value}% →` : 'Obtener con descuento →'
+        : 'Jugar gratis →';
+    const listPrice = formatPrice(mysteryCase.price_amount, mysteryCase.currency);
+    const finalPrice = mysteryCase.offer_amount !== null
+        ? formatPrice(mysteryCase.offer_amount, mysteryCase.currency)
+        : listPrice;
+
+    return (
+        <Link
+            href={campaignTarget(mysteryCase, auth)}
+            onClick={() => campaignEvent(campaignId, paid ? 'paid_click' : 'free_click', mysteryCase)}
+            className={`group flex flex-col overflow-hidden rounded-card border border-line bg-surface-raised transition hover:border-accent ${compact ? '' : 'sm:flex-row'}`}
+        >
+            {mysteryCase.landing_cover_url && (
+                <img src={mysteryCase.landing_cover_url} alt="" loading="lazy" className={`${compact ? 'aspect-[3/2] w-full' : 'aspect-[4/3] w-full sm:w-2/5'} object-cover`} />
+            )}
+            <div className="flex min-w-0 flex-1 flex-col p-5">
+                <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${paid ? 'bg-paper text-paper-ink' : 'bg-accent-dim text-accent-strong'}`}>
+                        {paid ? (offer?.kind === 'percent' ? `-${offer.value}%` : 'Descuento') : 'GRATIS'}
+                    </span>
+                    {mysteryCase.recommended && <span className="rounded-full border border-accent px-2.5 py-1 text-xs font-semibold text-accent">RECOMENDADO PARA EMPEZAR</span>}
+                </div>
+                <h3 className="mt-3 font-display text-2xl font-semibold leading-tight text-ink">{mysteryCase.name}</h3>
+                {mysteryCase.tagline && <p className="mt-2 text-sm leading-relaxed text-ink-muted">{mysteryCase.tagline}</p>}
+                <CaseFacts mysteryCase={mysteryCase} className="mt-4 text-ink" difficultyLabels={{ easy: 'Accesible', medium: 'Intermedio', hard: 'Reto avanzado' }} />
+                {mysteryCase.rating && <p className="mt-3 text-sm text-ink-muted"><span className="text-accent">★</span> {Number(mysteryCase.rating.average).toFixed(1).replace('.', ',')} · {mysteryCase.rating.count} valoraciones</p>}
+                {paid ? (
+                    <>
+                        <p className="mt-5 text-2xl font-semibold text-ink">
+                            <span className="mr-2 text-base font-normal text-ink-subtle line-through">{listPrice}</span>{finalPrice}
+                        </p>
+                        {mysteryCase.price_per_person && <p className="mt-1 text-xs text-ink-muted">{formatPrice(mysteryCase.price_per_person, mysteryCase.currency)} por persona si juegan {mysteryCase.max_players}</p>}
+                    </>
+                ) : (
+                    <p className="mt-5 text-lg font-semibold text-ink">Sin pago. Acceso permanente.</p>
+                )}
+                <span className="mt-5 inline-flex min-h-11 items-center justify-center rounded-control bg-accent px-4 text-sm font-semibold text-surface transition-colors group-hover:bg-accent-strong">
+                    {label}
+                </span>
+            </div>
+        </Link>
+    );
+}
+
+function OfferCountdown({ expiresAt }) {
+    const [remaining, setRemaining] = useState(null);
+
+    useEffect(() => {
+        if (!expiresAt) return undefined;
+        const update = () => {
+            const seconds = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+            setRemaining(seconds);
+        };
+        update();
+        const timer = window.setInterval(update, 60000);
+        return () => window.clearInterval(timer);
+    }, [expiresAt]);
+
+    if (!expiresAt || remaining === null) return null;
+    const days = Math.floor(remaining / 86400);
+    const hours = Math.floor((remaining % 86400) / 3600);
+    return <span className="font-medium">Termina en {days > 0 ? `${days} d ${hours} h` : `${hours} h`}</span>;
+}
+
+function CampaignLanding({ campaign, offer }) {
+    const { auth } = usePage().props;
+    const recommended = campaign.recommended;
+    const otherPaid = campaign.paid.filter((mysteryCase) => mysteryCase.slug !== recommended.slug);
+    const heroTarget = campaignTarget(recommended, auth);
+    const discount = offer?.kind === 'percent' ? `${offer.value}%` : 'un descuento especial';
+
+    return (
+        <AdLayout brandHref={route('ads.platform')}>
+            <Head title={`${discount} en casos completos — MisterioCode`} />
+            <div className="bg-accent px-4 py-2 text-center text-xs font-semibold text-surface sm:text-sm">
+                Código aplicado ✓ · {discount} en casos completos {offer?.expires_at ? <><span className="mx-1">·</span><OfferCountdown expiresAt={offer.expires_at} /></> : null}
+            </div>
+            <header className="border-b border-line bg-surface">
+                <Container width="wide" className="py-9 sm:py-14">
+                    <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+                        <div>
+                            <p className="case-stamp text-xs text-accent-strong">{campaign.eyebrow || 'MISTERIO EN EQUIPO'}</p>
+                            <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.04] tracking-tight text-ink sm:text-6xl">
+                                {campaign.headline || 'Un caso sin resolver. Tu equipo. El reloj corriendo.'}
+                            </h1>
+                            <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-muted">
+                                {campaign.description || 'Un expediente que llega en tiempo real, sospechosos a quienes interrogar y una decisión final. Compra una vez, juega con todo tu equipo.'}
+                            </p>
+                            <Link href={heroTarget} onClick={() => campaignEvent(campaign.id, 'paid_click', recommended)} className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-control bg-accent px-5 text-base font-semibold text-surface transition-colors hover:bg-accent-strong sm:w-auto">
+                                {offer?.kind === 'percent' ? `Obtener con ${offer.value}% →` : 'Obtener con descuento →'}
+                            </Link>
+                            <p className="mt-3 text-sm text-ink-muted">Crea tu cuenta para guardar el caso y jugarlo cuando quieras. Sin tarjeta antes de pagar.</p>
+                        </div>
+                        <CampaignCaseCard mysteryCase={recommended} offer={offer} campaignId={campaign.id} />
+                    </div>
+                </Container>
+            </header>
+
+            <Section kicker="ELIGE TU CASO" title={`Tres misterios con ${discount} de descuento`} description="Pago único. El caso queda en tu biblioteca para que organices tus partidas cuando quieras.">
+                <div className="grid gap-5 lg:grid-cols-2">
+                    {otherPaid.map((mysteryCase) => <CampaignCaseCard key={mysteryCase.slug} mysteryCase={mysteryCase} offer={offer} campaignId={campaign.id} compact />)}
+                </div>
+            </Section>
+
+            <Section kicker="ASÍ SE INTERROGA" title="No es un misterio que solo se lee" tone="sunken">
+                <div className="grid gap-8 lg:grid-cols-2 lg:items-center"><InterrogationSample /><p className="text-base leading-relaxed text-ink-muted">Cada integrante recibe su propio material, elige a quién preguntar y compara lo que descubrió con el resto del equipo. La respuesta no está escrita de antemano: la investigación se construye entre todos.</p></div>
+            </Section>
+
+            {campaign.free.length > 0 && <Section kicker="¿QUIERES CONOCER LA EXPERIENCIA ANTES?" title="También puedes probar un caso corto gratis" description="Los gratuitos no necesitan código. Son una alternativa, no una prueba limitada.">
+                <div className="grid gap-5 sm:grid-cols-2">{campaign.free.map((mysteryCase) => <CampaignCaseCard key={mysteryCase.slug} mysteryCase={mysteryCase} offer={null} campaignId={campaign.id} compact />)}</div>
+            </Section>}
+
+            <MiniFaq />
+        </AdLayout>
     );
 }
 
@@ -422,7 +565,8 @@ function PickCard({ mysteryCase }) {
     );
 }
 
-function PlatformLanding({ featured, offer, canPurchase }) {
+function PlatformLanding({ featured, offer, canPurchase, campaign }) {
+    if (campaign) return <CampaignLanding campaign={campaign} offer={offer} />;
     const { auth } = usePage().props;
     const heroCta = useRef(null);
     const showBar = useScrolledPast(heroCta);
@@ -540,6 +684,7 @@ export default function AdLanding({
     canPurchase = false,
     canSimulatePurchase = false,
     gamesPerCase,
+    campaign = null,
 }) {
     if (mode === 'case' && mysteryCase) {
         return (
@@ -554,5 +699,5 @@ export default function AdLanding({
         );
     }
 
-    return <PlatformLanding featured={featured} offer={offer} canPurchase={canPurchase} />;
+    return <PlatformLanding featured={featured} offer={offer} canPurchase={canPurchase} campaign={campaign} />;
 }

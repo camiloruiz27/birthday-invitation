@@ -76,7 +76,7 @@ function CaseClock() {
  * line of testimony has no place on a public page, since it would spoil an
  * actual case before anyone bought it.
  */
-function InterrogationSample() {
+export function InterrogationSample() {
     return (
         <div className="overflow-hidden border-2 border-paper-ink bg-paper-raised font-case">
             <div className="flex items-center justify-between bg-paper-ink px-4 py-2.5 text-paper">

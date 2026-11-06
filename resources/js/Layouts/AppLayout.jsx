@@ -69,6 +69,7 @@ const ADMIN_GROUPS = [
         name: "Mercadeo",
         items: [
             { name: "C\u00f3digos", route: "admin.codes" },
+            { name: "Campañas", route: "admin.landing-campaigns" },
             { name: "Referidos", route: "admin.referrals" },
             { name: "Email marketing", route: "admin.email-marketing" },
             { name: "Casos Express", route: "admin.express" },
@@ -216,8 +217,8 @@ export default function AppLayout({
                 {/* The header always uses the application width. Tying it to a
                     narrow page (for example Profile's prose width) squeezed
                     the navigation even on a large screen. */}
-                <Container width="wide" className="max-w-[90rem]">
-                    <div className="flex h-16 items-center gap-4 2xl:gap-6">
+                <Container width="app">
+                    <div className="flex h-16 items-center gap-6">
                         <Brand
                             href={route("dashboard")}
                             hideWordmarkOnMobile
@@ -229,7 +230,7 @@ export default function AppLayout({
                             reliable drawer pattern below everywhere else. */}
                         <nav
                             aria-label="Principal"
-                            className="hidden min-w-0 flex-1 items-center gap-4 2xl:flex 2xl:gap-5"
+                            className="hidden min-w-0 flex-1 items-center gap-6 lg:flex"
                         >
                             {NAV.map((item) => (
                                 <NavLink
@@ -309,7 +310,7 @@ export default function AppLayout({
                             )}
                         </nav>
 
-                        <div className="ml-auto hidden shrink-0 2xl:block">
+                        <div className="ml-auto hidden shrink-0 lg:block">
                             {user && <UserMenu user={user} />}
                         </div>
 
@@ -321,7 +322,7 @@ export default function AppLayout({
                             aria-label={
                                 mobileNavOpen ? "Cerrar menú" : "Abrir menú"
                             }
-                            className="ml-auto inline-flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-control text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent 2xl:hidden"
+                            className="ml-auto inline-flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-control text-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:hidden"
                         >
                             <span
                                 aria-hidden="true"
@@ -359,7 +360,7 @@ export default function AppLayout({
                 aria-modal="true"
                 aria-label="Menú principal"
                 aria-hidden={!mobileNavOpen}
-                className={`fixed inset-0 z-[60] flex items-center justify-center bg-surface/95 px-6 pt-20 backdrop-blur-xl transition-all duration-500 2xl:hidden ${
+                className={`fixed inset-0 z-[60] flex items-center justify-center bg-surface/95 px-6 pt-20 backdrop-blur-xl transition-all duration-500 lg:hidden ${
                     mobileNavOpen
                         ? "visible opacity-100"
                         : "invisible pointer-events-none opacity-0"
@@ -367,7 +368,7 @@ export default function AppLayout({
             >
                 <nav
                     aria-label="Principal"
-                    className="flex max-h-[calc(100dvh-6rem)] w-full max-w-xs flex-col items-center gap-5 overflow-y-auto py-6 text-center"
+                    className="flex w-full max-w-xs flex-col items-center gap-7 text-center"
                 >
                     {NAV.map((item) => (
                         <Link
@@ -464,6 +465,18 @@ export default function AppLayout({
                                 }`}
                             >
                                 Códigos
+                            </Link>
+                            <Link
+                                href={route("admin.landing-campaigns")}
+                                aria-current={current === "admin.landing-campaigns" ? "page" : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.landing-campaigns"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Campañas
                             </Link>
                             <Link
                                 href={route("admin.email-marketing")}

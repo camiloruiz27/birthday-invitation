@@ -9,11 +9,11 @@ export const DIFFICULTY_LABELS = {
 };
 
 /** Duration · players · difficulty, the three things a buyer checks first. */
-export function CaseFacts({ mysteryCase, className = '' }) {
+export function CaseFacts({ mysteryCase, className = '', difficultyLabels = DIFFICULTY_LABELS }) {
     const facts = [
         formatDuration(mysteryCase.duration_minutes),
         formatPlayerRange(mysteryCase.min_players, mysteryCase.max_players),
-        DIFFICULTY_LABELS[mysteryCase.difficulty] || mysteryCase.difficulty,
+        difficultyLabels[mysteryCase.difficulty] || mysteryCase.difficulty,
     ].filter(Boolean);
 
     return (

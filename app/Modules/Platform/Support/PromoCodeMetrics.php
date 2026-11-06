@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Support;
 
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Models\LandingCampaign;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\PromoCodeRedemption;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,11 @@ class PromoCodeMetrics
             )
             ->get()
             ->keyBy('promo_code_id');
+        $anyOrders = Order::query()->whereNotNull('promo_code_id')->select('promo_code_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('promo_code_id')->pluck('total', 'promo_code_id');
+        $redemptions = PromoCodeRedemption::query()->select('promo_code_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('promo_code_id')->pluck('total', 'promo_code_id');
+        $campaignCodes = LandingCampaign::query()->pluck('promo_code_id')->flip();
 
         return PromoCode::query()
             ->orderByDesc('id')
@@ -94,6 +100,12 @@ class PromoCodeMetrics
                 'discounted' => (int) ($money[$promo->id]->discounted ?? 0),
                 'collected' => (int) ($money[$promo->id]->collected ?? 0),
                 'note' => $promo->note,
+                // A paused, unused code is configuration and can be cleaned
+                // up. Anything with commercial history stays immutable.
+                'deletable' => ! $promo->active
+                    && ! isset($anyOrders[$promo->id])
+                    && ! isset($redemptions[$promo->id])
+                    && ! isset($campaignCodes[$promo->id]),
                 'created_at' => $promo->created_at,
             ])
             ->all();

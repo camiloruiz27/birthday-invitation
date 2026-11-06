@@ -7,6 +7,7 @@ use App\Modules\Platform\Ads\AdEvents;
 use App\Modules\Platform\Models\Entitlement;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Support\LandingCampaigns;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use LogicException;
@@ -21,6 +22,7 @@ class ClaimFreeCase
     public function __construct(
         private GrantCaseAccess $access,
         private Request $request,
+        private LandingCampaigns $campaigns,
     ) {
     }
 
@@ -37,6 +39,8 @@ class ClaimFreeCase
                 return null;
             }
 
+            $campaign = $this->campaigns->campaignForFreeClaim($this->request, $user);
+
             $order = Order::create([
                 'user_id' => $user->id,
                 'type' => Order::TYPE_CASE,
@@ -47,6 +51,7 @@ class ClaimFreeCase
                 'currency' => $case->currency,
                 'status' => Order::STATUS_APPROVED,
                 'provider' => 'free',
+                'landing_campaign_id' => $campaign?->id,
                 'reference' => strtoupper(bin2hex(random_bytes(12))),
                 'paid_at' => now(),
             ] + AdEvents::orderContext($this->request, $user));
