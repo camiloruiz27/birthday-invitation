@@ -8,6 +8,7 @@ use App\Modules\Platform\Http\Controllers\AdminDashboardController;
 use App\Modules\Platform\Http\Controllers\AdminEmailMarketingController;
 use App\Modules\Platform\Http\Controllers\AdminPromoCodesController;
 use App\Modules\Platform\Http\Controllers\AdminRatingsController;
+use App\Modules\Express\Http\Controllers\AdminExpressController;
 use App\Modules\Platform\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Platform\Http\Controllers\Auth\EmailVerificationController;
 use App\Modules\Platform\Http\Controllers\Auth\NewPasswordController;
@@ -219,6 +220,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])
             ->whereNumber('user')
             ->name('email-marketing.exclusion');
+        Route::get('/express', [AdminExpressController::class, 'index'])->name('express');
+        Route::patch('/express/{event}/promocion', [AdminExpressController::class, 'update'])
+            ->where('event', '[a-z0-9-]+')
+            ->name('express.update');
 
         Route::get('/blog', [AdminBlogController::class, 'index'])->name('blog.index');
         Route::get('/blog/nuevo', [AdminBlogController::class, 'create'])->name('blog.create');

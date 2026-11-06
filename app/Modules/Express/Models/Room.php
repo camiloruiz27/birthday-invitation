@@ -24,13 +24,15 @@ class Room extends Model
 
     protected $fillable = [
         'code', 'event_slug', 'case_slug', 'status', 'gm_player_id',
-        'started_at_ms', 'revealed_at', 'next_room_id',
+        'started_at_ms', 'revealed_at', 'next_room_id', 'promo_code',
+        'utm_medium', 'utm_campaign', 'cta_path', 'campaign_snapshotted',
     ];
 
     protected $casts = [
         'started_at_ms' => 'integer',
         'rev' => 'integer',
         'revealed_at' => 'datetime',
+        'campaign_snapshotted' => 'boolean',
     ];
 
     public function players(): HasMany
@@ -51,5 +53,10 @@ class Room extends Model
     public function accusations(): HasMany
     {
         return $this->hasMany(Accusation::class, 'room_id');
+    }
+
+    public function ctaClicks(): HasMany
+    {
+        return $this->hasMany(CtaClick::class, 'room_id');
     }
 }

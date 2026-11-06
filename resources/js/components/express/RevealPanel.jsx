@@ -249,7 +249,7 @@ function NextRound({ state, act }) {
     );
 }
 
-function CtaCard({ cta, state }) {
+function CtaCard({ cta, state, token }) {
     const [copied, setCopied] = useState(false);
 
     if (!cta?.url) return null;
@@ -266,6 +266,14 @@ function CtaCard({ cta, state }) {
             case_slug: state.room?.case?.slug ?? '',
             event_slug: state.room?.event?.slug ?? '',
         });
+
+        // This route has no session or CSRF dependency. keepalive lets the
+        // write finish even while the browser opens the external catalog.
+        fetch(route('express.cta.track', token), {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            keepalive: true,
+        }).catch(() => {});
     }
 
     return (
@@ -304,7 +312,7 @@ function CtaCard({ cta, state }) {
     );
 }
 
-export default function RevealPanel({ state, act }) {
+export default function RevealPanel({ state, act, token }) {
     const reveal = state.reveal;
 
     if (!reveal) return null;
@@ -322,7 +330,7 @@ export default function RevealPanel({ state, act }) {
             <Ranking ranking={reveal.ranking} />
             <Solution solution={reveal.solution} />
             <NextRound state={state} act={act} />
-            <CtaCard cta={reveal.cta} state={state} />
+            <CtaCard cta={reveal.cta} state={state} token={token} />
         </div>
     );
 }

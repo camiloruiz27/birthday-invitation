@@ -69,6 +69,11 @@ final class RoomService
                 'event_slug' => $event['slug'],
                 'case_slug' => $caseSlug,
                 'status' => Room::LOBBY,
+                'promo_code' => $event['promo_code'],
+                'utm_medium' => $event['utm_medium'],
+                'utm_campaign' => $event['utm_campaign'],
+                'cta_path' => $event['cta_path'],
+                'campaign_snapshotted' => true,
             ]);
 
             $player = $this->seat($room, $nickname, $this->captureLead($event['slug'], $nickname, $contact, $request), true);
@@ -510,6 +515,11 @@ final class RoomService
                 'event_slug' => $current->event_slug,
                 'case_slug' => $slug,
                 'status' => Room::LOBBY,
+                'promo_code' => $event['promo_code'],
+                'utm_medium' => $event['utm_medium'],
+                'utm_campaign' => $event['utm_campaign'],
+                'cta_path' => $event['cta_path'],
+                'campaign_snapshotted' => true,
             ]);
 
             // The one who asked hosts the new round, keeping their contact.

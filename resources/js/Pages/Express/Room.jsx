@@ -261,7 +261,7 @@ export default function Room({ state: initialState, token }) {
     } else if (status === 'reveal' && state.reveal) {
         content = (
             <ExpressContainer className="py-6">
-                <RevealPanel state={state} act={act} />
+                <RevealPanel state={state} act={act} token={token} />
             </ExpressContainer>
         );
     } else if (status === 'expired') {

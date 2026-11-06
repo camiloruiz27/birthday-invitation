@@ -5,6 +5,7 @@ namespace Tests\Feature\Express;
 use App\Modules\Express\Support\ExpressEvents;
 use App\Modules\Platform\Support\Attribution;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 
@@ -14,6 +15,8 @@ use Tests\TestCase;
  */
 class ExpressEventConfigTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function tearDown(): void
     {
         Carbon::setTestNow();

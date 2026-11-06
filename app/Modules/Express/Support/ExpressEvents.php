@@ -3,6 +3,7 @@
 namespace App\Modules\Express\Support;
 
 use Carbon\Carbon;
+use App\Modules\Express\Models\EventSetting;
 use Illuminate\Http\Request;
 
 /**
@@ -32,15 +33,30 @@ final class ExpressEvents
             return null;
         }
 
+        $override = EventSetting::forEvent($slug);
+        $value = static function (string $key, mixed $fallback) use ($override): mixed {
+            return $override !== null && array_key_exists($key, $override) && $override[$key] !== null
+                ? $override[$key]
+                : $fallback;
+        };
+        $endsAt = $override !== null && ! empty($override['ends_at_overridden'])
+            ? ($override['ends_at'] ?? null)
+            : ($event['ends_at'] ?? null);
+
         return [
             'slug' => $slug,
-            'name' => (string) ($event['name'] ?? $slug),
-            'tagline' => (string) ($event['tagline'] ?? ''),
-            'active' => (bool) ($event['active'] ?? true),
-            'ends_at' => ! empty($event['ends_at']) ? Carbon::parse($event['ends_at'], self::TIMEZONE) : null,
-            'promo_code' => ! empty($event['promo_code']) ? (string) $event['promo_code'] : null,
+            'name' => (string) $value('display_name', $event['name'] ?? $slug),
+            'tagline' => (string) $value('tagline', $event['tagline'] ?? ''),
+            'landing_title' => (string) $value('landing_title', 'Resuelvan un caso en 5 minutos.'),
+            'landing_emphasis' => (string) $value('landing_emphasis', 'Cada celular ve pistas distintas.'),
+            'closed_title' => (string) $value('closed_title', 'Por ahora no hay partidas abiertas'),
+            'closed_reason' => $value('closed_reason', null),
+            'active' => (bool) $value('active', $event['active'] ?? true),
+            'ends_at' => ! empty($endsAt) ? Carbon::parse($endsAt, self::TIMEZONE) : null,
+            'promo_code' => $value('promo_code', ! empty($event['promo_code']) ? (string) $event['promo_code'] : null),
             'promo_note' => ! empty($event['promo_note']) ? (string) $event['promo_note'] : null,
-            'utm_campaign' => (string) ($event['utm_campaign'] ?? 'express_'.$slug),
+            'utm_medium' => (string) $value('utm_medium', $slug),
+            'utm_campaign' => (string) $value('utm_campaign', $event['utm_campaign'] ?? 'express_'.$slug),
             'case_slugs' => isset($event['case_slugs']) && is_array($event['case_slugs']) ? array_values($event['case_slugs']) : null,
             'cta_path' => (string) ($event['cta_path'] ?? '/jugar'),
         ];
@@ -81,11 +97,11 @@ final class ExpressEvents
     public static function status(array $event): array
     {
         if (! config('express.enabled') || ! $event['active']) {
-            return ['open' => false, 'reason' => 'Esta demostración no está disponible por ahora.'];
+            return ['open' => false, 'reason' => $event['closed_reason'] ?: 'Esta demostración no está disponible por ahora.'];
         }
 
         if ($event['ends_at'] !== null && now()->greaterThan($event['ends_at'])) {
-            return ['open' => false, 'reason' => 'La feria ya terminó. ¡Gracias por jugar!'];
+            return ['open' => false, 'reason' => $event['closed_reason'] ?: 'La feria ya terminó. ¡Gracias por jugar!'];
         }
 
         return ['open' => true, 'reason' => null];
@@ -119,7 +135,7 @@ final class ExpressEvents
         $query = array_filter([
             'promo_code' => $event['promo_code'],
             'utm_source' => 'express',
-            'utm_medium' => $event['slug'],
+            'utm_medium' => $event['utm_medium'],
             'utm_campaign' => $event['utm_campaign'],
         ]);
 
