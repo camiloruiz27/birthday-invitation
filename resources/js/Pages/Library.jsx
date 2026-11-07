@@ -114,7 +114,7 @@ function LibraryCase({ mysteryCase, onView }) {
             )}
 
             <div className="flex min-w-0 flex-1 flex-col">
-                <CaseTags mysteryCase={mysteryCase} className="mb-2" />
+                <CaseTags mysteryCase={mysteryCase} className="mb-2" limit={3} />
                 <h2 className="text-lg font-semibold text-ink">{mysteryCase.name}</h2>
 
                 {mysteryCase.tagline && (
@@ -123,7 +123,7 @@ function LibraryCase({ mysteryCase, onView }) {
 
                 <CaseFacts mysteryCase={mysteryCase} className="mt-3" />
                 <p className="mt-2 text-sm text-ink-muted">
-                    Precio actual: {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                    {mysteryCase.is_free ? 'Acceso gratuito' : `Precio actual: ${formatPrice(mysteryCase.price_amount, mysteryCase.currency)}`}
                 </p>
 
                 {!mysteryCase.playable ? (

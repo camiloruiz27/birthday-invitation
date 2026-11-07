@@ -19,3 +19,8 @@ Route::get('express/s/{token}/estado', [StateController::class, 'show'])
     ->where('token', '[0-9a-fA-F-]{36}')
     ->middleware('throttle:express-state')
     ->name('express.state');
+
+Route::post('express/s/{token}/cta', [StateController::class, 'trackCta'])
+    ->where('token', '[0-9a-fA-F-]{36}')
+    ->middleware('throttle:express-act')
+    ->name('express.cta.track');

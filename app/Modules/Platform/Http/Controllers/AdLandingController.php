@@ -12,6 +12,8 @@ use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use App\Modules\Platform\Support\Market;
 use App\Modules\Platform\Support\Mechanics;
+use App\Modules\Platform\Support\LandingCampaigns;
+use App\Modules\Platform\Models\LandingCampaignEvent;
 use App\Modules\Platform\Support\PublishedCases;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,20 +35,30 @@ use Inertia\Response;
  */
 class AdLandingController extends Controller
 {
-    public function platform(Request $request, RedeemPromoCode $promos): Response
+    public function platform(Request $request, RedeemPromoCode $promos, LandingCampaigns $campaigns): Response
     {
         // The code that came with the ad (or an earlier click), if it is
         // something worth showing: an ad that promises a discount has to keep
         // the promise on the page it lands on, not only at the checkout.
         $code = Attribution::pendingPromo($request, $request->user());
-        $offer = $this->inMarket($request, $code ? $promos->landingOffer($request->user(), $code) : null);
+        $rawOffer = $code ? $promos->landingOffer($request->user(), $code) : null;
+        $offer = $this->inMarket($request, $rawOffer);
+        $campaign = $rawOffer ? $campaigns->forOffer($rawOffer) : null;
+        $campaignPayload = $campaign ? $campaigns->publicPayload($campaign, $rawOffer, $request, $request->user()) : null;
+        if ($campaign && $campaignPayload) {
+            $campaigns->track($request, $campaign, LandingCampaignEvent::VIEW);
+        }
         $promo = $offer ? PromoCode::where('code', $offer['code'])->first() : null;
         $quotes = QuoteBuilder::make();
 
         return Inertia::render('Public/AdLanding', [
             'mode' => 'platform',
             'case' => null,
-            'offer' => $offer,
+            // Campaign cards quote each selected case individually, including
+            // fixed discounts for an international visitor. Keep the raw offer
+            // for its truthful code/expiry banner in that mode.
+            'offer' => $campaignPayload ? $rawOffer : $offer,
+            'campaign' => $campaignPayload,
             'featured' => fn () => PublishedCases::all(3)
                 // thumb_url: the web-sized cover. summary() carries the
                 // original 1.5-2 MB art, which three cards must not download.

@@ -9,11 +9,11 @@ export const DIFFICULTY_LABELS = {
 };
 
 /** Duration · players · difficulty, the three things a buyer checks first. */
-export function CaseFacts({ mysteryCase, className = '' }) {
+export function CaseFacts({ mysteryCase, className = '', difficultyLabels = DIFFICULTY_LABELS }) {
     const facts = [
         formatDuration(mysteryCase.duration_minutes),
         formatPlayerRange(mysteryCase.min_players, mysteryCase.max_players),
-        DIFFICULTY_LABELS[mysteryCase.difficulty] || mysteryCase.difficulty,
+        difficultyLabels[mysteryCase.difficulty] || mysteryCase.difficulty,
     ].filter(Boolean);
 
     return (
@@ -74,7 +74,7 @@ export default function CaseCard({ mysteryCase }) {
 
                 <div className="mt-5 flex items-baseline justify-between gap-3 border-t border-line pt-4">
                     <span className="font-semibold text-ink">
-                        {formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
+                        {mysteryCase.is_free ? 'Gratis' : formatPrice(mysteryCase.price_amount, mysteryCase.currency)}
                     </span>
                     <span className="text-sm text-accent group-hover:text-accent-strong">
                         Ver el caso →

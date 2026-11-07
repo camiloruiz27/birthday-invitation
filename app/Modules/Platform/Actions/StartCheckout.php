@@ -45,6 +45,10 @@ class StartCheckout
 
     public function forCase(User $user, MysteryCase $case, ?string $promoCode = null): Order
     {
+        if ($case->isFree()) {
+            throw new \LogicException('A free case must not start a paid checkout.');
+        }
+
         return $this->create($user, [
             'user_id' => $user->id,
             'type' => Order::TYPE_CASE,

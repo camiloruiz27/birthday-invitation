@@ -21,6 +21,8 @@ class Entitlement extends Model
 
     public const SOURCE_PROMO = 'promo';
 
+    public const SOURCE_FREE = 'free';
+
     protected $fillable = [
         'user_id',
         'mystery_case_id',

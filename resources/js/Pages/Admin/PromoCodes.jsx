@@ -70,11 +70,19 @@ function toggleCode(promo) {
     router.patch(route('admin.codes.toggle', promo.id), {}, { preserveScroll: true });
 }
 
+function deleteCode(promo) {
+    if (!window.confirm(`¿Eliminar el código ${promo.code}? Esta acción no se puede deshacer.`)) return;
+    router.delete(route('admin.codes.destroy', promo.id), { preserveScroll: true });
+}
+
 function ToggleButton({ promo }) {
     return (
-        <Button variant="ghost" size="sm" onClick={() => toggleCode(promo)}>
-            {promo.active ? 'Desactivar' : 'Activar'}
-        </Button>
+        <span className="inline-flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => toggleCode(promo)}>
+                {promo.active ? 'Desactivar' : 'Activar'}
+            </Button>
+            {!promo.active && promo.deletable && <Button variant="ghost" size="sm" className="text-danger-strong" onClick={() => deleteCode(promo)}>Eliminar</Button>}
+        </span>
     );
 }
 

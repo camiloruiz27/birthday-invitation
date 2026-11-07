@@ -249,6 +249,21 @@ class AdminPromoCodesManageTest extends TestCase
         $this->assertTrue($promo->fresh()->active);
     }
 
+    public function test_an_unused_paused_code_can_be_deleted_but_an_active_one_cannot(): void
+    {
+        $promo = PromoCode::create(['code' => 'LIMPIAR', 'discount_type' => 'percent', 'discount_value' => 10]);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->delete(route('admin.codes.destroy', $promo))
+            ->assertSessionHasErrors('code');
+        $this->assertDatabaseHas('promo_codes', ['id' => $promo->id]);
+
+        $this->actingAs($admin)->patch(route('admin.codes.toggle', $promo));
+        $this->actingAs($admin)->delete(route('admin.codes.destroy', $promo));
+
+        $this->assertDatabaseMissing('promo_codes', ['id' => $promo->id]);
+    }
+
     public function test_the_screen_reports_expiry_scope_and_what_each_code_has_cost(): void
     {
         $user = $this->userWithoutAccess();

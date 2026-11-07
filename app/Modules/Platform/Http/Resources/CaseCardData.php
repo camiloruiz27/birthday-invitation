@@ -32,6 +32,7 @@ class CaseCardData
             'duration_minutes' => $case->duration_minutes,
             'min_players' => $case->min_players,
             'max_players' => $case->max_players,
+            'is_free' => $case->isFree(),
             // The price in the visitor's own market (COP, or USD derived from
             // it), so what a card shows is what checkout charges.
             ...QuoteBuilder::make()->display((int) $case->price_amount),
@@ -86,7 +87,9 @@ class CaseCardData
             $bullets[] = "{$case->duration_minutes} minutos con el expediente llegando en tiempo real";
         }
 
-        $bullets[] = 'Pago único: el caso es tuyo para siempre';
+        $bullets[] = $case->isFree()
+            ? 'Gratis: añádelo a tu biblioteca y será tuyo para siempre'
+            : 'Pago único: el caso es tuyo para siempre';
 
         return array_slice($bullets, 0, 3);
     }

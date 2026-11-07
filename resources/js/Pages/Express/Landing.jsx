@@ -11,10 +11,10 @@ const STEPS = [
 ];
 
 /** What a closed event says: the server's own reason if it gave one. */
-function Closed({ reason }) {
+function Closed({ title, reason }) {
     return (
         <Card as="section" className="mt-8 text-center">
-            <h2 className="font-display text-xl font-semibold text-ink">Por ahora no hay partidas abiertas</h2>
+            <h2 className="font-display text-xl font-semibold text-ink">{title}</h2>
             <p className="mt-2 text-sm text-ink-muted">
                 {reason || 'La demo no está disponible en este momento. Pásate de nuevo por el stand en un rato.'}
             </p>
@@ -83,8 +83,8 @@ export default function Landing({ event, enabled = true, closed_reason: closedRe
                 {event?.name && <p className="case-stamp text-[10px] text-accent">{event.name}</p>}
 
                 <h1 className="mt-2 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-5xl">
-                    Resuelvan un caso en 5 minutos.{' '}
-                    <span className="text-ink-muted">Cada celular ve pistas distintas.</span>
+                    {event?.landing_title}{' '}
+                    {event?.landing_emphasis && <span className="text-ink-muted">{event.landing_emphasis}</span>}
                 </h1>
 
                 {event?.tagline && <p className="mt-4 text-base leading-relaxed text-ink-muted">{event.tagline}</p>}
@@ -117,7 +117,7 @@ export default function Landing({ event, enabled = true, closed_reason: closedRe
                         </section>
                     </>
                 ) : (
-                    <Closed reason={closedReason} />
+                    <Closed title={event?.closed_title || 'Por ahora no hay partidas abiertas'} reason={closedReason} />
                 )}
             </ExpressContainer>
         </ExpressLayout>

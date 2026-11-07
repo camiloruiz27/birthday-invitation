@@ -3,6 +3,7 @@
 namespace App\Modules\Platform\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Platform\Actions\ClaimFreeCase;
 use App\Modules\Platform\Actions\GrantCaseAccess;
 use App\Modules\Platform\Actions\RedeemPromoCode;
 use App\Modules\Platform\Actions\StartCheckout;
@@ -12,6 +13,7 @@ use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Pricing\QuoteBuilder;
 use App\Modules\Platform\Support\Attribution;
 use App\Modules\Platform\Support\ReferralProgram;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -40,11 +42,15 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CheckoutController extends Controller
 {
-    public function review(Request $request, string $slug, RedeemPromoCode $promos, ReferralProgram $referrals): InertiaResponse
+    public function review(Request $request, string $slug, RedeemPromoCode $promos, ReferralProgram $referrals): InertiaResponse|RedirectResponse
     {
         abort_unless(config('platform.payments.enabled'), 404);
 
         $case = MysteryCase::published()->where('slug', $slug)->firstOrFail();
+
+        if ($case->isFree()) {
+            return redirect()->route('cases.show', $case->slug);
+        }
 
         if ($request->user()->ownsCase($case)) {
             return Inertia::render('Payments/Review', [
@@ -146,7 +152,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function store(Request $request, string $slug, GrantCaseAccess $access, StartCheckout $checkout): Response
+    public function store(Request $request, string $slug, ClaimFreeCase $freeCases, GrantCaseAccess $access, StartCheckout $checkout): Response
     {
         $case = MysteryCase::published()->where('slug', $slug)->firstOrFail();
 
@@ -154,6 +160,20 @@ class CheckoutController extends Controller
             return redirect()
                 ->route('cases.show', $case->slug)
                 ->with('status', 'Ya tienes este caso en tu biblioteca.');
+        }
+
+        if ($case->isFree()) {
+            if ($request->filled('promo_code')) {
+                throw ValidationException::withMessages([
+                    'promo_code' => 'Este caso ya es gratuito y no acepta códigos.',
+                ]);
+            }
+
+            $freeCases->claim($request->user(), $case);
+
+            return redirect()
+                ->route('library')
+                ->with('status', "\"{$case->name}\" fue añadido gratis a tu biblioteca. Ya puedes crear una partida.");
         }
 
         if (config('platform.payments.enabled')) {

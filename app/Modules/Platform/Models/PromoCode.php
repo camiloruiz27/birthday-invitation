@@ -5,6 +5,7 @@ namespace App\Modules\Platform\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A redeemable code: either a GIFT (grants_case_slug and/or grants_credits
@@ -70,6 +71,11 @@ class PromoCode extends Model
     public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'assigned_user_id');
+    }
+
+    public function landingCampaign(): HasOne
+    {
+        return $this->hasOne(LandingCampaign::class);
     }
 
     public function isGift(): bool

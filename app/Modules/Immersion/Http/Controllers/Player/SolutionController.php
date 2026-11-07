@@ -7,6 +7,8 @@ use App\Modules\Immersion\Models\Game;
 use App\Modules\Immersion\Models\Player;
 use App\Modules\Immersion\Support\AccusationScoreboard;
 use App\Modules\Immersion\Support\PlayerRatingData;
+use App\Modules\Platform\Actions\RedeemPromoCode;
+use App\Modules\Platform\Support\LandingCampaigns;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,7 +22,7 @@ use Inertia\Response;
  */
 class SolutionController extends Controller
 {
-    public function show(Player $player, AccusationScoreboard $scoreboard): Response
+    public function show(Player $player, AccusationScoreboard $scoreboard, LandingCampaigns $campaigns, RedeemPromoCode $promos): Response
     {
         $game = $player->game;
         $case = $game->caseDefinition();
@@ -63,6 +65,10 @@ class SolutionController extends Controller
             'correctCount' => count(array_filter($board, fn ($row) => $row['correct'] === true)),
             'revealedBy' => $game->ending_revealed_by,
             'rating' => fn () => PlayerRatingData::for($player),
+            // A commercial recommendation is deliberately separate from the
+            // game and its score. It is available to every player through
+            // their own link, but never contains another player's data.
+            'nextOffer' => fn () => $campaigns->finalOfferFor($player, $promos),
 
             // Their own epilogue, and only their own: it answers what THIS
             // person wrote, and reading someone else's would be reading their

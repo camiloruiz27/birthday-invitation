@@ -58,6 +58,7 @@ class Order extends Model
         'list_amount',
         'discount_amount',
         'promo_code_id',
+        'landing_campaign_id',
         // Campaign the buyer arrived from, and what a server-side conversion
         // event needs once the browser is gone. See the migration.
         'attribution',
@@ -103,6 +104,11 @@ class Order extends Model
     public function promoCode(): BelongsTo
     {
         return $this->belongsTo(PromoCode::class);
+    }
+
+    public function landingCampaign(): BelongsTo
+    {
+        return $this->belongsTo(LandingCampaign::class);
     }
 
     public function mysteryCase(): BelongsTo

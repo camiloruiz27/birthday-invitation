@@ -28,6 +28,12 @@ final class PublicState
         /** @var ExpressCase $case */
         $case = app(ExpressCaseRegistry::class)->find($snapshot['case_slug']);
         $event = ExpressEvents::find($snapshot['event_slug']) ?? ExpressEvents::find(null);
+        if (! empty($snapshot['campaign_snapshotted'])) {
+            $event['promo_code'] = $snapshot['promo_code'] ?? null;
+            $event['utm_medium'] = $snapshot['utm_medium'] ?? '';
+            $event['utm_campaign'] = $snapshot['utm_campaign'] ?? '';
+            $event['cta_path'] = $snapshot['cta_path'] ?: $event['cta_path'];
+        }
         $schedule = (array) config('express.schedule');
         $assets = $case->assets();
 

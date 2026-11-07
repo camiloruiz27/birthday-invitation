@@ -3,6 +3,7 @@
 namespace Tests\Feature\Platform;
 
 use App\Models\User;
+use App\Modules\Platform\Mail\AccountVerificationMail;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -42,6 +43,45 @@ class EmailVerificationTest extends TestCase
         ]);
 
         Notification::assertSentTo(User::firstWhere('email', 'nueva@example.com'), VerifyEmail::class);
+    }
+
+    public function test_the_verification_mail_uses_the_branded_template_and_keeps_the_signed_url(): void
+    {
+        Notification::fake();
+        $user = $this->unverified();
+
+        $user->sendEmailVerificationNotification();
+
+        Notification::assertSentTo($user, VerifyEmail::class, function (VerifyEmail $notification) use ($user) {
+            $mail = $notification->toMail($user);
+
+            $this->assertInstanceOf(AccountVerificationMail::class, $mail);
+            $mail->assertSeeInHtml('Acceso confidencial')
+                ->assertSeeInHtml('Tu investigación empieza aquí')
+                ->assertSeeInHtml('Confirmar y continuar')
+                ->assertSeeInHtml('cid:')
+                ->assertSeeInText('Tu investigación empieza aquí')
+                ->assertSeeInText('Este enlace seguro vence en 60 minutos.')
+                ->assertSeeInText($mail->verificationUrl)
+                ->assertHasSubject('Tu expediente está listo — confirma tu correo');
+
+            $this->assertStringContainsString('expires=', $mail->verificationUrl);
+            $this->assertStringContainsString('signature=', $mail->verificationUrl);
+
+            return true;
+        });
+    }
+
+    public function test_the_verification_mail_escapes_a_name_with_html_characters(): void
+    {
+        $mail = new AccountVerificationMail(
+            name: '<Camilo & Equipo>',
+            verificationUrl: 'https://misteriocode.test/verificar-correo?signature=segura',
+            expiresInMinutes: 60,
+        );
+
+        $mail->assertSeeInHtml('&lt;Camilo &amp; Equipo&gt;')
+            ->assertDontSeeInHtml('<Camilo & Equipo>');
     }
 
     /**

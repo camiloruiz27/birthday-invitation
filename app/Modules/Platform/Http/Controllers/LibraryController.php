@@ -43,6 +43,7 @@ class LibraryController extends Controller
                 'duration_minutes' => $case->duration_minutes,
                 'min_players' => $case->min_players,
                 'max_players' => $case->max_players,
+                'is_free' => $case->isFree(),
                 'mechanics' => Mechanics::describe((array) $case->mechanics),
                 'acquired_at' => $case->acquired_at ? Carbon::parse($case->acquired_at)->toIso8601String() : null,
                 // Today's price in the owner's market, not what they paid: it

@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import PlayerLayout from '../../Layouts/PlayerLayout';
 import Badge from '../../components/ui/Badge';
 import Card from '../../components/ui/Card';
@@ -8,6 +8,42 @@ import GalleryGrid from '../../components/player/GalleryGrid';
 import CaseRating from '../../components/player/CaseRating';
 import usePoll from '../../hooks/usePoll';
 import useSessionState from '../../hooks/useSessionState';
+import { formatDuration, formatPlayerRange, formatPrice } from '../../lib/format';
+
+function NextOffer({ offer, playerToken }) {
+    if (!offer?.case) return null;
+    const mysteryCase = offer.case;
+    const discounted = offer.kind === 'campaign' && mysteryCase.offer_amount != null;
+    const href = offer.kind === 'campaign'
+        ? route('ads.platform', { promo_code: offer.code })
+        : route('cases.show', mysteryCase.slug);
+    const button = discounted && offer.offer_kind === 'percent'
+        ? `Obtener con ${offer.value}% →`
+        : offer.kind === 'campaign' ? 'Ver mi descuento →' : 'Ver casos completos →';
+
+    function track() {
+        if (offer.kind !== 'campaign') return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        fetch(route('landing-campaigns.events', offer.campaign_id), {
+            method: 'POST', credentials: 'same-origin', keepalive: true,
+            headers: { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}) },
+            body: JSON.stringify({ event: 'post_free_click', case_slug: mysteryCase.slug, player_token: playerToken }),
+        }).catch(() => {});
+    }
+
+    return <Card as="section" className="mt-5 border-accent bg-surface-raised">
+        <p className="case-stamp text-[10px] text-accent-strong">CASO RESUELTO</p>
+        <h2 className="mt-2 font-display text-2xl font-semibold leading-tight text-ink">¿Cuál investigarán después?</h2>
+        <p className="mt-2 text-sm leading-relaxed text-ink-muted">{offer.kind === 'campaign' ? 'Tu siguiente caso completo ya tiene el descuento aplicado al continuar.' : 'Tu mesa ya sabe cómo investigar. Descubre el siguiente misterio.'}</p>
+        <div className="mt-5 rounded-card border border-line bg-surface p-4">
+            <p className="font-semibold text-ink">{mysteryCase.name}</p>
+            <p className="mt-1 text-sm text-ink-muted">{formatDuration(mysteryCase.duration_minutes)} · {formatPlayerRange(mysteryCase.min_players, mysteryCase.max_players)}</p>
+            {discounted && <p className="mt-3 text-xl font-semibold text-ink"><span className="mr-2 text-sm font-normal text-ink-subtle line-through">{formatPrice(mysteryCase.price_amount, mysteryCase.currency)}</span>{formatPrice(mysteryCase.offer_amount, mysteryCase.currency)}</p>}
+        </div>
+        <Link href={href} onClick={track} className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-accent px-4 font-semibold text-surface hover:bg-accent-strong">{button}</Link>
+        {offer.kind === 'campaign' && offer.expires_at && <p className="mt-3 text-center text-xs text-ink-muted">El descuento se aplicará automáticamente al continuar hasta {new Date(offer.expires_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.</p>}
+    </Card>;
+}
 
 function Verdict({ correct }) {
     if (correct === null) {
@@ -168,6 +204,7 @@ export default function Solution({
     maxScore,
     questions = [],
     rating,
+    nextOffer = null,
 }) {
     const you = scoreboard.find((row) => row.is_you);
     const total = scoreboard.length;
@@ -236,6 +273,8 @@ export default function Solution({
             {epilogue && <Epilogue epilogue={epilogue} />}
 
             <CaseRating playerToken={player.access_token} rating={rating} />
+
+            <NextOffer offer={nextOffer} playerToken={player.access_token} />
 
             {solution.key_evidence?.length > 0 && (
                 <Card as="section" className="mt-5">

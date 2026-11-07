@@ -19,6 +19,8 @@ use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SendCronDiagnosticMail;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Console\Commands\UpdateGeoIpDatabase;
+use App\Modules\Platform\Mail\AccountPasswordResetMail;
+use App\Modules\Platform\Mail\AccountVerificationMail;
 use App\Modules\Platform\Payments\BoldPaymentProvider;
 use App\Modules\Platform\Payments\Contracts\PaymentProvider;
 use App\Modules\Platform\Pricing\QuoteBuilder;
@@ -32,7 +34,6 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -132,14 +133,13 @@ class PlatformServiceProvider extends ServiceProvider
     private function registerVerificationMail(): void
     {
         VerifyEmail::toMailUsing(function (object $notifiable, string $url) {
-            return (new MailMessage)
-                ->subject('Confirma tu correo — MisterioCode')
-                ->greeting("Hola, {$notifiable->name}")
-                ->line('Confirma que esta dirección es tuya para poder adquirir casos y canjear códigos.')
-                ->action('Confirmar mi correo', $url)
-                ->line('El enlace caduca en 60 minutos.')
-                ->line('Si no creaste esta cuenta, puedes ignorar este mensaje: no se hará nada.')
-                ->salutation('MisterioCode');
+            return (new AccountVerificationMail(
+                name: (string) $notifiable->name,
+                verificationUrl: $url,
+                // VerifyEmail builds its signed link using this exact
+                // configuration and Laravel's 60-minute fallback.
+                expiresInMinutes: max(1, (int) config('auth.verification.expire', 60)),
+            ))->to($notifiable->getEmailForVerification(), (string) $notifiable->name);
         });
     }
 
@@ -161,19 +161,14 @@ class PlatformServiceProvider extends ServiceProvider
     private function registerPasswordResetMail(): void
     {
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
-            $minutes = config('auth.passwords.users.expire');
-
-            return (new MailMessage)
-                ->subject('Restablece tu contraseña — MisterioCode')
-                ->greeting("Hola, {$notifiable->name}")
-                ->line('Recibimos una solicitud para cambiar la contraseña de tu cuenta.')
-                ->action('Elegir una contraseña nueva', route('password.reset', [
+            return (new AccountPasswordResetMail(
+                name: (string) $notifiable->name,
+                resetUrl: route('password.reset', [
                     'token' => $token,
                     'email' => $notifiable->getEmailForPasswordReset(),
-                ]))
-                ->line("El enlace caduca en {$minutes} minutos.")
-                ->line('Si no fuiste tú, puedes ignorar este mensaje: tu contraseña actual sigue funcionando y no se hará ningún cambio.')
-                ->salutation('MisterioCode');
+                ]),
+                expiresInMinutes: max(1, (int) config('auth.passwords.users.expire', 60)),
+            ))->to($notifiable->getEmailForPasswordReset(), (string) $notifiable->name);
         });
     }
 

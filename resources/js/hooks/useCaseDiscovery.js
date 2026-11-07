@@ -7,7 +7,6 @@ import {
     isActive,
     optionsFor,
     parseFilters,
-    priceRangeError,
     toQuery,
 } from '../lib/caseDiscovery';
 
@@ -27,7 +26,7 @@ export default function useCaseDiscovery(items, area) {
         url.includes('?') ? url.slice(url.indexOf('?') + 1) : '',
         area,
         {
-            mechanics: options.mechanics.map((mechanic) => mechanic.slug),
+            tags: options.tags,
             maxPlayers: Math.max(1, ...options.players),
         }
     ));
@@ -68,6 +67,5 @@ export default function useCaseDiscovery(items, area) {
         options,
         results,
         active: isActive(filters),
-        priceError: priceRangeError(filters),
     };
 }

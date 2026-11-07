@@ -69,8 +69,10 @@ const ADMIN_GROUPS = [
         name: "Mercadeo",
         items: [
             { name: "C\u00f3digos", route: "admin.codes" },
+            { name: "Campañas", route: "admin.landing-campaigns" },
             { name: "Referidos", route: "admin.referrals" },
             { name: "Email marketing", route: "admin.email-marketing" },
+            { name: "Casos Express", route: "admin.express" },
         ],
     },
 ];
@@ -465,6 +467,18 @@ export default function AppLayout({
                                 Códigos
                             </Link>
                             <Link
+                                href={route("admin.landing-campaigns")}
+                                aria-current={current === "admin.landing-campaigns" ? "page" : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.landing-campaigns"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Campañas
+                            </Link>
+                            <Link
                                 href={route("admin.email-marketing")}
                                 aria-current={
                                     current === "admin.email-marketing"
@@ -495,6 +509,18 @@ export default function AppLayout({
                                 }`}
                             >
                                 Referidos
+                            </Link>
+                            <Link
+                                href={route("admin.express")}
+                                aria-current={current === "admin.express" ? "page" : undefined}
+                                onClick={() => setMobileNavOpen(false)}
+                                className={`text-base font-semibold uppercase tracking-[0.18em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                                    current === "admin.express"
+                                        ? "text-accent-strong"
+                                        : "text-ink hover:text-accent-strong"
+                                }`}
+                            >
+                                Casos Express
                             </Link>
                         </>
                     )}

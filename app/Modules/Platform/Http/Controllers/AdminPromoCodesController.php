@@ -7,6 +7,9 @@ use App\Modules\Platform\Actions\CreatePromoCodes;
 use App\Modules\Platform\Models\MysteryCase;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Models\ReferralCode;
+use App\Modules\Platform\Models\LandingCampaign;
+use App\Modules\Platform\Models\Order;
+use App\Modules\Platform\Models\PromoCodeRedemption;
 use App\Modules\Platform\Support\PromoCodeMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -138,6 +141,27 @@ class AdminPromoCodesController extends Controller
             'status',
             $promoCode->active ? "Código {$promoCode->code} activado." : "Código {$promoCode->code} desactivado."
         );
+    }
+
+    /** Remove only paused configuration that has never affected a customer. */
+    public function destroy(PromoCode $promoCode): RedirectResponse
+    {
+        if ($promoCode->active) {
+            return back()->withErrors(['code' => 'Pausa el código antes de eliminarlo.']);
+        }
+
+        $hasHistory = PromoCodeRedemption::where('promo_code_id', $promoCode->id)->exists()
+            || Order::where('promo_code_id', $promoCode->id)->exists()
+            || LandingCampaign::where('promo_code_id', $promoCode->id)->exists();
+
+        if ($hasHistory) {
+            return back()->withErrors(['code' => 'Este código tiene historial o una campaña vinculada y no se puede eliminar.']);
+        }
+
+        $code = $promoCode->code;
+        $promoCode->delete();
+
+        return back()->with('status', "Código {$code} eliminado.");
     }
 
     /**
