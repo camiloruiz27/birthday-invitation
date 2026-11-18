@@ -46,11 +46,14 @@ return [
     // the proof of what they accepted and when.
     // 1.1 (2026-10-09): advertising measurement (TikTok and Meta pixels and
     // server-side events) added to the privacy and cookies texts.
-    'privacy_version' => env('LEGAL_PRIVACY_VERSION', '1.1'),
+    // 1.2 (2026-11-17): promotional email (offers and benefits), authorised
+    // separately and optional; accounts that existed on that date were enrolled
+    // and can leave from the link in each mail or from their profile.
+    'privacy_version' => env('LEGAL_PRIVACY_VERSION', '1.2'),
     'terms_version' => env('LEGAL_TERMS_VERSION', '1.0'),
     'cookies_version' => env('LEGAL_COOKIES_VERSION', '1.1'),
 
     // Date the current texts took effect (Y-m-d).
-    'updated_at' => env('LEGAL_UPDATED_AT', '2026-10-09'),
+    'updated_at' => env('LEGAL_UPDATED_AT', '2026-11-17'),
 
 ];

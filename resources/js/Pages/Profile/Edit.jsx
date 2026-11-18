@@ -4,7 +4,7 @@ import AppLayout from '../../Layouts/AppLayout';
 import Card, { CardHeader } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import TextLink from '../../components/ui/TextLink';
-import { TextField, PasswordField } from '../../components/ui/Field';
+import { CheckboxField, TextField, PasswordField } from '../../components/ui/Field';
 import { openCookieSettings } from '../../lib/consent';
 
 function ProfileDetails({ user }) {
@@ -118,6 +118,44 @@ function PasswordSection() {
 }
 
 /**
+ * Promotional email, on or off. Withdrawing has to be as easy as giving the
+ * authorisation, and it only covers offers: the mail of the account and of the
+ * games keeps going.
+ */
+function MarketingSection({ subscribed }) {
+    const { data, setData, patch, processing, errors } = useForm({ subscribed });
+
+    function submit(event) {
+        event.preventDefault();
+        patch(route('profile.marketing'), { preserveScroll: true });
+    }
+
+    return (
+        <Card as="section">
+            <CardHeader
+                title="Ofertas por correo"
+                description="Descuentos y beneficios de MisterioCode."
+            />
+
+            <form onSubmit={submit} className="space-y-4">
+                <CheckboxField
+                    id="marketing_subscribed"
+                    label="Quiero recibir ofertas y beneficios por correo."
+                    hint="Los correos de tu cuenta y de tus partidas no dependen de esta opción. Puedes cambiarla cuando quieras."
+                    checked={data.subscribed}
+                    onChange={(value) => setData('subscribed', value)}
+                    error={errors.subscribed}
+                />
+
+                <Button type="submit" variant="secondary" loading={processing}>
+                    {processing ? 'Guardando…' : 'Guardar'}
+                </Button>
+            </form>
+        </Card>
+    );
+}
+
+/**
  * Where a signed-in user finds the legal texts and can change the cookie
  * choice they made on the banner — withdrawing consent has to be as easy as
  * giving it.
@@ -210,7 +248,7 @@ function DeleteAccountSection() {
     );
 }
 
-export default function Edit() {
+export default function Edit({ marketing = false }) {
     const { auth } = usePage().props;
 
     return (
@@ -220,6 +258,7 @@ export default function Edit() {
             <div className="space-y-6">
                 <ProfileDetails user={auth.user} />
                 <PasswordSection />
+                <MarketingSection subscribed={marketing} />
                 <PrivacySection />
                 <DeleteAccountSection />
             </div>

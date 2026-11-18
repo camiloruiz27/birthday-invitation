@@ -92,6 +92,48 @@ class ScheduleTest extends TestCase
         $this->assertTrue($event->withoutOverlapping);
     }
 
+    /**
+     * Off unless switched on: it mails people, and the privacy text that
+     * covers it has to be live first. When on, it runs every second day and
+     * never overlaps itself (a slow SMTP run must not start a second sender).
+     */
+    public function test_the_first_game_offer_is_scheduled_only_when_enabled(): void
+    {
+        $event = $this->find('platform:send-first-game-offers');
+
+        if (! config('platform.first_game_offer.enabled')) {
+            $this->assertNull($event);
+
+            return;
+        }
+
+        $this->assertNotNull($event);
+        $this->assertSame('40 10 * * *', $event->expression);
+        $this->assertTrue($event->withoutOverlapping);
+    }
+
+    /**
+     * Enabled, it is on the schedule once a day but only passes its filter on
+     * alternate days — across a month end too, where "*\/2" on the day of the
+     * month would run two days in a row.
+     */
+    public function test_the_first_game_offer_runs_every_second_day(): void
+    {
+        $runs = [];
+        $start = \Illuminate\Support\Carbon::parse('2026-12-20 10:40');
+
+        // Across a month end and a year end (2026 has 365 days, an odd number,
+        // so a day-of-the-year parity would skip a day at New Year).
+        for ($i = 0; $i < 40; $i++) {
+            $this->travelTo($start->copy()->addDays($i));
+            $runs[] = \App\Modules\Platform\Console\Commands\SendFirstGameOffers::runsToday();
+        }
+
+        foreach (range(1, count($runs) - 1) as $i) {
+            $this->assertNotSame($runs[$i - 1], $runs[$i], 'Two consecutive days behaved the same: '.json_encode($runs));
+        }
+    }
+
     /** Abandoned checkouts never granted anything, so daily is plenty. */
     public function test_stale_orders_are_expired(): void
     {

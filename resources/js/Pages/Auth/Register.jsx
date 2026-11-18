@@ -14,6 +14,7 @@ export default function Register({ case: caseSlug = null }) {
         password: '',
         password_confirmation: '',
         accept_terms: false,
+        accept_marketing: false,
         'cf-turnstile-response': '',
     });
 
@@ -127,6 +128,17 @@ export default function Register({ case: caseSlug = null }) {
                     onChange={(value) => setData('accept_terms', value)}
                     error={errors.accept_terms}
                     required
+                />
+
+                {/* Promotional email: separate, optional and unticked. Nothing
+                    here is a condition of creating the account. */}
+                <CheckboxField
+                    id="accept_marketing"
+                    label="Quiero recibir ofertas y beneficios de MisterioCode por correo."
+                    hint="Opcional. Puedes darte de baja cuando quieras."
+                    checked={data.accept_marketing}
+                    onChange={(value) => setData('accept_marketing', value)}
+                    error={errors.accept_marketing}
                 />
 
                 <Button type="submit" loading={processing} fullWidth>

@@ -27,6 +27,7 @@ use App\Modules\Platform\Http\Controllers\AdminLandingCampaignController;
 use App\Modules\Platform\Http\Controllers\LegalController;
 use App\Modules\Platform\Http\Controllers\LibraryController;
 use App\Modules\Platform\Http\Controllers\MarketController;
+use App\Modules\Platform\Http\Controllers\MarketingPreferenceController;
 use App\Modules\Platform\Http\Controllers\Payments\BoldWebhookController;
 use App\Modules\Platform\Http\Controllers\Payments\PaymentCallbackController;
 use App\Modules\Platform\Http\Controllers\ProfileController;
@@ -85,6 +86,15 @@ Route::get('/cookies', [LegalController::class, 'cookies'])->name('cookies');
 // The footer selector: a visitor correcting which price list (COP / USD) they
 // were put on. Open to everyone, signed in or not.
 Route::post('/mercado', [MarketController::class, 'update'])->middleware('throttle:30,1,market')->name('market.update');
+
+// The way out of promotional email, from the link in its footer. Open to
+// everyone and signed instead of authenticated: the mail is often opened on a
+// device with no session, and leaving must never need a password. The
+// signature is what proves the link was ours; it names the account.
+Route::get('/baja-ofertas/{user}', [MarketingPreferenceController::class, 'unsubscribe'])
+    ->middleware(['signed', 'throttle:30,1,marketing-unsubscribe'])
+    ->whereNumber('user')
+    ->name('marketing.unsubscribe');
 
 /*
 |--------------------------------------------------------------------------
@@ -146,6 +156,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/perfil/clave', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::patch('/perfil/ofertas', [MarketingPreferenceController::class, 'update'])->name('profile.marketing');
     Route::delete('/perfil', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/panel', DashboardController::class)->name('dashboard');
@@ -231,6 +242,7 @@ Route::middleware('auth')->group(function () {
             ->name('referrals.toggle');
         Route::get('/email-marketing', [AdminEmailMarketingController::class, 'index'])->name('email-marketing');
         Route::get('/email-marketing/exportar', [AdminEmailMarketingController::class, 'export'])->name('email-marketing.export');
+        Route::get('/email-marketing/vista-previa/primera-partida', [AdminEmailMarketingController::class, 'preview'])->name('email-marketing.preview');
         Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])
             ->whereNumber('user')
             ->name('email-marketing.exclusion');

@@ -157,6 +157,11 @@ export default function Privacy({ legal }) {
                             Medir si nuestros propios anuncios en TikTok e Instagram/Facebook
                             funcionan, únicamente si usted lo autoriza en el aviso de cookies.
                         </li>
+                        <li>
+                            Enviarle por correo ofertas y beneficios de MisterioCode, como un
+                            descuento después de cerrar su primera partida, únicamente si usted
+                            lo autoriza (ver «Autorización y jugadores invitados»).
+                        </li>
                     </ul>
                     <p>
                         No vendemos sus datos ni mostramos publicidad de terceros en el sitio. Si
@@ -166,8 +171,8 @@ export default function Privacy({ legal }) {
                         compras y registros, junto con su correo electrónico convertido en una
                         huella cifrada irreversible (hash), su dirección IP y el tipo de navegador,
                         con el único fin de medir y optimizar esos anuncios. Si no lo autoriza, no
-                        enviamos nada de eso. No le enviaremos comunicaciones comerciales o
-                        promocionales sin su autorización previa y expresa.
+                        enviamos nada de eso. Solo le enviaremos comunicaciones comerciales o
+                        promocionales con su autorización, que puede retirar en cualquier momento.
                     </p>
                 </>
             ),
@@ -185,6 +190,17 @@ export default function Privacy({ legal }) {
                         política. Guardamos la fecha y la versión aceptadas como prueba de la
                         autorización. Para las cookies analíticas y de medición publicitaria, la
                         autorización se pide por separado en el aviso de cookies.
+                    </p>
+                    <p>
+                        <strong>Ofertas por correo.</strong> La autorización para recibir ofertas y
+                        beneficios por correo es independiente y opcional: al crear una cuenta
+                        nueva la casilla parte desmarcada y la cuenta se crea igual sin marcarla.
+                        Las cuentas creadas antes del 17 de noviembre de 2026 quedaron inscritas
+                        en estos envíos; cualquiera de ellas puede darse de baja con el enlace
+                        que lleva cada correo o desde su perfil, y desde ese momento no
+                        recibe más ofertas. Los correos de la cuenta y de las partidas
+                        (verificación, recuperación de contraseña, enlaces de acceso) no son
+                        ofertas y se siguen enviando.
                     </p>
                     <p>
                         <strong>Jugadores invitados.</strong> Un jugador no necesita cuenta: el Game

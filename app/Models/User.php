@@ -84,7 +84,27 @@ class User extends Authenticatable implements MustVerifyEmail
         // A reversible administrative exclusion used only when preparing a
         // marketing export. It does not affect transactional game mail.
         'marketing_opted_out_at' => 'datetime',
+        // Authorisation to receive promotional email, and the one-per-person
+        // first-game offer. Written only by MarketingConsent and
+        // FirstGameOffer (forceFill), never from a request payload.
+        'marketing_consent_at' => 'datetime',
+        'first_game_offer_sent_at' => 'datetime',
     ];
+
+    /**
+     * May this person be sent promotional email? Authorised AND not opted out:
+     * the opt-out wins, whoever set it (the user, or an admin).
+     */
+    public function acceptsMarketing(): bool
+    {
+        return $this->marketing_consent_at !== null && $this->marketing_opted_out_at === null;
+    }
+
+    /** The same rule as acceptsMarketing(), for queries. */
+    public function scopeAcceptingMarketing(Builder $query): Builder
+    {
+        return $query->whereNotNull('marketing_consent_at')->whereNull('marketing_opted_out_at');
+    }
 
     /**
      * Cases this user may play. Access is always read from here, never from an
