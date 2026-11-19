@@ -23,6 +23,55 @@ function ContactStatus({ contact }) {
     return <Badge tone="success">Incluido</Badge>;
 }
 
+/**
+ * The on/off switch of the first-game offer. Turning it ON asks first, because
+ * it sends real email to real people (everyone already waiting goes out in the
+ * first run); turning it off is one click, since stopping should never be hard.
+ */
+function OfferSwitch({ autoOffer }) {
+    const [confirming, setConfirming] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    function set(enabled) {
+        router.patch(route('admin.email-marketing.offer'), { enabled }, {
+            preserveScroll: true,
+            onStart: () => setBusy(true),
+            onFinish: () => { setBusy(false); setConfirming(false); },
+        });
+    }
+
+    if (autoOffer.enabled) {
+        return (
+            <div className="mt-5 border-t border-line pt-5">
+                <Button variant="secondary" loading={busy} onClick={() => set(false)}>Apagar envío automático</Button>
+            </div>
+        );
+    }
+
+    if (!confirming) {
+        return (
+            <div className="mt-5 border-t border-line pt-5">
+                <Button loading={busy} onClick={() => setConfirming(true)}>Encender envío automático</Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-5 space-y-3 border-t border-line pt-5">
+            <p className="text-sm text-ink">
+                Al encender, hay <strong>{autoOffer.pending}</strong> persona(s) pendientes que recibirán el correo con su código en el próximo envío, hasta {autoOffer.batch_size} por corrida; el resto sale en las siguientes. Son correos reales.
+            </p>
+            <p className="text-xs text-ink-muted">
+                Antes de confirmar, comprueba que la Política de Privacidad con la autorización de ofertas por correo ya esté publicada y que hayas revisado la vista previa.
+            </p>
+            <div className="flex flex-wrap gap-2">
+                <Button loading={busy} onClick={() => set(true)}>Sí, encender</Button>
+                <Button variant="ghost" onClick={() => setConfirming(false)}>Cancelar</Button>
+            </div>
+        </div>
+    );
+}
+
 export default function EmailMarketing({ summary, filters, contacts, recentCases, lastExport, autoOffer }) {
     const [values, setValues] = useState(filters);
     const query = queryFrom(values);
@@ -62,17 +111,22 @@ export default function EmailMarketing({ summary, filters, contacts, recentCases
                         <div className="min-w-0 max-w-3xl">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h2 className="font-medium text-ink">Oferta de primera partida</h2>
-                                <Badge tone={autoOffer.enabled ? 'success' : 'neutral'}>{autoOffer.enabled ? 'Activo' : 'Apagado'}</Badge>
+                                <Badge tone={autoOffer.enabled ? 'success' : 'neutral'}>{autoOffer.enabled ? 'Encendido' : 'Apagado'}</Badge>
                             </div>
                             <p className="mt-1 text-sm text-ink-muted">
                                 {autoOffer.delay_days} días después de que un usuario cierra su primera partida recibe un código personal de {autoOffer.discount_percent}% para un caso de pago, de un solo uso, vigente {autoOffer.valid_days} días. Solo llega a quien autorizó ofertas y no se dio de baja. Se revisa cada 2 días, con un máximo de {autoOffer.batch_size} envíos por corrida.
                             </p>
                             <p className="mt-2 text-xs text-ink-subtle">
-                                Pendientes ahora: {autoOffer.pending} persona(s){autoOffer.enabled ? '' : ' (no se enviará nada mientras esté apagado)'}.
+                                Pendientes ahora: {autoOffer.pending} persona(s).{' '}
+                                {autoOffer.enabled ? `Próximo envío: ${formatDateTime(autoOffer.next_run_at)}.` : 'No se enviará nada mientras esté apagado.'}
+                                {autoOffer.changed_at ? ` Último cambio: ${formatDateTime(autoOffer.changed_at)}${autoOffer.changed_by ? ` por ${autoOffer.changed_by}` : ''}.` : ''}
                             </p>
                         </div>
-                        <Button href={route('admin.email-marketing.preview')} external variant="secondary" target="_blank" rel="noopener noreferrer">Ver vista previa del correo</Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button href={route('admin.email-marketing.preview')} external variant="secondary" target="_blank" rel="noopener noreferrer">Ver vista previa del correo</Button>
+                        </div>
                     </div>
+                    <OfferSwitch autoOffer={autoOffer} />
                 </Card>
 
                 <Card as="section">

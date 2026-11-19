@@ -295,8 +295,10 @@ return [
     | A promotional email with a private one-use discount, sent once per person
     | some days after they closed their first game (App\Modules\Platform\
     | Actions\FirstGameOffer). Only to accounts that authorised promotional
-    | email and have not left. OFF by default: switch it on, in the server's
-    | .env, once the privacy policy that covers it is published.
+    | email and have not left. OFF by default, and switched on from the admin
+    | panel (Email marketing), once the privacy policy that covers it is
+    | published. `enabled` below is only the default until someone flips that
+    | switch; after that the panel's choice wins (FirstGameOffer::enabled).
     |
     | delay_days        Days after the game was closed.
     | discount_percent  Off a paid case. One code per person, one use.

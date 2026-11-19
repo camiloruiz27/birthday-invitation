@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Platform\Mail\FirstGameOfferMail;
 use App\Modules\Platform\Models\PromoCode;
 use App\Modules\Platform\Support\MarketingConsent;
+use App\Modules\Platform\Support\PlatformSettings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +31,26 @@ class FirstGameOffer
     /** Codes are stored upper-case (CreatePromoCodes), so this reads PRIMERACOMPRA-XXXXXX. */
     public const CODE_PREFIX = 'Primeracompra';
 
+    /** The switch's key in platform_settings. */
+    public const SETTING = 'first_game_offer.enabled';
+
     public function __construct(private readonly CreatePromoCodes $promoCodes)
     {
+    }
+
+    /**
+     * Is the offer on? What an administrator chose in the panel, and until
+     * someone chooses, the .env default (PLATFORM_FIRST_GAME_OFFER_ENABLED).
+     */
+    public static function enabled(): bool
+    {
+        return PlatformSettings::bool(self::SETTING, (bool) config('platform.first_game_offer.enabled'));
+    }
+
+    /** Turns it on or off from the panel, remembering who did. */
+    public function setEnabled(bool $enabled, ?int $userId): void
+    {
+        PlatformSettings::setBool(self::SETTING, $enabled, $userId);
     }
 
     /**

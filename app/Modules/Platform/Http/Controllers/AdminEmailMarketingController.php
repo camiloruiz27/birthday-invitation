@@ -5,12 +5,15 @@ namespace App\Modules\Platform\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Platform\Actions\FirstGameOffer;
+use App\Modules\Platform\Console\Commands\SendFirstGameOffers;
+use App\Modules\Platform\Support\PlatformSettings;
 use App\Modules\Platform\Models\MarketingExport;
 use App\Modules\Platform\Models\MysteryCase;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -42,15 +45,45 @@ class AdminEmailMarketingController extends Controller
                     'url' => route('cases.show', $case, false),
                 ])->values(),
             'lastExport' => fn () => $this->lastExport(),
-            'autoOffer' => fn () => [
-                'enabled' => (bool) config('platform.first_game_offer.enabled'),
-                'delay_days' => (int) config('platform.first_game_offer.delay_days'),
-                'discount_percent' => (int) config('platform.first_game_offer.discount_percent'),
-                'valid_days' => (int) config('platform.first_game_offer.valid_days'),
-                'batch_size' => (int) config('platform.first_game_offer.batch_size'),
-                'pending' => $offer->pendingCount(),
-            ],
+            'autoOffer' => fn () => $this->autoOffer($offer),
         ]);
+    }
+
+    /**
+     * Turns the first-game offer on or off. The choice is stored (it survives
+     * deploys and needs no server access) and wins over the .env default.
+     */
+    public function toggleOffer(Request $request, FirstGameOffer $offer): RedirectResponse
+    {
+        $data = $request->validate(['enabled' => ['required', 'boolean']]);
+        $enabled = (bool) $data['enabled'];
+
+        $offer->setEnabled($enabled, $request->user()->id);
+
+        Log::info($enabled ? 'first_game_offer_enabled' : 'first_game_offer_disabled', ['by' => $request->user()->id]);
+
+        return back()->with('status', $enabled
+            ? 'Oferta de primera partida encendida. El próximo envío es el '.SendFirstGameOffers::nextRunAt()->locale('es')->isoFormat('dddd D [de] MMMM, h:mm a').'.'
+            : 'Oferta de primera partida apagada. No se enviará nada hasta que la vuelvas a encender.');
+    }
+
+    /** @return array<string, mixed> */
+    private function autoOffer(FirstGameOffer $offer): array
+    {
+        $row = PlatformSettings::row(FirstGameOffer::SETTING);
+
+        return [
+            'enabled' => FirstGameOffer::enabled(),
+            'delay_days' => (int) config('platform.first_game_offer.delay_days'),
+            'discount_percent' => (int) config('platform.first_game_offer.discount_percent'),
+            'valid_days' => (int) config('platform.first_game_offer.valid_days'),
+            'batch_size' => (int) config('platform.first_game_offer.batch_size'),
+            'pending' => $offer->pendingCount(),
+            'next_run_at' => SendFirstGameOffers::nextRunAt()->toIso8601String(),
+            // Who last flipped the switch, if anyone has (otherwise it is the .env default).
+            'changed_at' => $row?->updated_at?->toIso8601String(),
+            'changed_by' => $row?->updatedBy?->name,
+        ];
     }
 
     /**

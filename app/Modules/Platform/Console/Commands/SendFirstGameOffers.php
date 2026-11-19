@@ -5,14 +5,16 @@ namespace App\Modules\Platform\Console\Commands;
 use App\Modules\Immersion\Support\MailBudget;
 use App\Modules\Platform\Actions\FirstGameOffer;
 use Illuminate\Console\Command;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Throwable;
 
 /**
  * Mails the first-game offer to whoever is due it (see Actions\FirstGameOffer).
  *
- * Scheduled every second day (runsToday), and only when
- * `platform.first_game_offer.enabled` is on. Each run sends at most
+ * Scheduled every second day (runsToday) and always registered: whether it
+ * actually sends is the switch in Admin → Email marketing (FirstGameOffer::
+ * enabled(), with the .env as the default). Each run sends at most
  * `batch_size` and stops early when the mailbox's daily allowance is spent
  * (MailBudget), so the people whose game closed before the feature existed
  * are served over several runs and never crowd out the messages a live table
@@ -38,18 +40,38 @@ class SendFirstGameOffers extends Command
      */
     public static function runsToday(): bool
     {
-        $epoch = Carbon::create(2026, 1, 1, 0, 0, 0, 'UTC');
-        $today = Carbon::create(now()->year, now()->month, now()->day, 0, 0, 0, 'UTC');
+        return self::runsOn(now());
+    }
 
-        return $epoch->diffInDays($today) % 2 === 0;
+    /** Is this calendar day one of the run days? */
+    public static function runsOn(CarbonInterface $day): bool
+    {
+        $epoch = Carbon::create(2026, 1, 1, 0, 0, 0, 'UTC');
+        $date = Carbon::create($day->year, $day->month, $day->day, 0, 0, 0, 'UTC');
+
+        return $epoch->diffInDays($date) % 2 === 0;
+    }
+
+    /** The next moment the scheduler will run this, for the admin panel. */
+    public static function nextRunAt(): Carbon
+    {
+        for ($i = 0; $i <= 3; $i++) {
+            $at = now()->startOfDay()->addDays($i)->setTime(10, 40);
+
+            if ($at->isFuture() && self::runsOn($at)) {
+                return $at;
+            }
+        }
+
+        return now()->addDays(2)->setTime(10, 40);
     }
 
     public function handle(FirstGameOffer $offer): int
     {
         $dryRun = (bool) $this->option('dry-run');
 
-        if (! $dryRun && ! config('platform.first_game_offer.enabled')) {
-            $this->warn('La oferta de primera partida está apagada (PLATFORM_FIRST_GAME_OFFER_ENABLED). No se envió nada.');
+        if (! $dryRun && ! FirstGameOffer::enabled()) {
+            $this->warn('La oferta de primera partida está apagada (se enciende desde Admin → Email marketing). No se envió nada.');
 
             return self::SUCCESS;
         }

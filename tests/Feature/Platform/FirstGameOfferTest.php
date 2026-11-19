@@ -241,6 +241,50 @@ class FirstGameOfferTest extends TestCase
         $this->assertNull($user->fresh()->first_game_offer_sent_at);
     }
 
+    public function test_the_panel_switch_wins_over_the_env_default_in_both_directions(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create();
+        $this->dueUser();
+
+        // .env says on, an administrator turned it off: nothing is sent.
+        config(['platform.first_game_offer.enabled' => true]);
+        app(FirstGameOffer::class)->setEnabled(false, $admin->id);
+        $this->assertFalse(FirstGameOffer::enabled());
+        $this->artisan('platform:send-first-game-offers')->assertExitCode(0);
+        Mail::assertNothingSent();
+
+        // .env says off, an administrator turned it on: it sends.
+        config(['platform.first_game_offer.enabled' => false]);
+        app(FirstGameOffer::class)->setEnabled(true, $admin->id);
+        $this->assertTrue(FirstGameOffer::enabled());
+        $this->artisan('platform:send-first-game-offers')->assertExitCode(0);
+        Mail::assertSent(FirstGameOfferMail::class, 1);
+    }
+
+    public function test_with_no_choice_made_the_env_default_decides(): void
+    {
+        config(['platform.first_game_offer.enabled' => false]);
+        $this->assertFalse(FirstGameOffer::enabled());
+
+        config(['platform.first_game_offer.enabled' => true]);
+        $this->assertTrue(FirstGameOffer::enabled());
+    }
+
+    public function test_the_next_run_is_always_a_future_run_day_at_ten_forty(): void
+    {
+        foreach (['2026-12-30 09:00', '2026-12-30 11:00', '2026-12-31 23:50', '2027-01-01 10:39'] as $now) {
+            $this->travelTo(\Illuminate\Support\Carbon::parse($now));
+
+            $next = \App\Modules\Platform\Console\Commands\SendFirstGameOffers::nextRunAt();
+
+            $this->assertTrue($next->isFuture(), "{$now}: next run is not in the future");
+            $this->assertSame('10:40', $next->format('H:i'));
+            $this->assertTrue(\App\Modules\Platform\Console\Commands\SendFirstGameOffers::runsOn($next), "{$now}: {$next} is not a run day");
+            $this->assertLessThanOrEqual(2, now()->startOfDay()->diffInDays($next->copy()->startOfDay()));
+        }
+    }
+
     public function test_the_code_is_private_to_its_owner(): void
     {
         Mail::fake();

@@ -125,6 +125,45 @@ class AdminEmailMarketingTest extends TestCase
                 ->where('autoOffer.pending', 1));
     }
 
+    public function test_only_administrators_can_flip_the_offer_switch(): void
+    {
+        $member = User::factory()->create();
+
+        $this->patch(route('admin.email-marketing.offer'), ['enabled' => true])->assertRedirect(route('login'));
+        $this->actingAs($member)->patch(route('admin.email-marketing.offer'), ['enabled' => true])->assertNotFound();
+        $this->assertNull(\App\Modules\Platform\Support\PlatformSettings::row('first_game_offer.enabled'));
+    }
+
+    public function test_the_admin_turns_the_offer_on_and_off_and_the_panel_shows_who_did_it(): void
+    {
+        config(['platform.first_game_offer.enabled' => false]);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.email-marketing'))
+            ->assertInertia(fn (Assert $page) => $page->where('autoOffer.enabled', false)->where('autoOffer.changed_by', null)->has('autoOffer.next_run_at'));
+
+        $this->actingAs($admin)->patch(route('admin.email-marketing.offer'), ['enabled' => true])
+            ->assertSessionHas('status');
+        $this->assertTrue(\App\Modules\Platform\Actions\FirstGameOffer::enabled());
+
+        $this->actingAs($admin)->get(route('admin.email-marketing'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('autoOffer.enabled', true)
+                ->where('autoOffer.changed_by', $admin->name)
+                ->whereType('autoOffer.changed_at', 'string'));
+
+        $this->actingAs($admin)->patch(route('admin.email-marketing.offer'), ['enabled' => false])
+            ->assertSessionHas('status');
+        $this->assertFalse(\App\Modules\Platform\Actions\FirstGameOffer::enabled());
+    }
+
+    public function test_the_switch_needs_a_value(): void
+    {
+        $this->actingAs($this->admin())
+            ->patch(route('admin.email-marketing.offer'), [])
+            ->assertSessionHasErrors('enabled');
+    }
+
     public function test_csv_leaves_out_anyone_who_never_authorised_offers(): void
     {
         $admin = $this->admin();

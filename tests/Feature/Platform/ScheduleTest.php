@@ -93,19 +93,14 @@ class ScheduleTest extends TestCase
     }
 
     /**
-     * Off unless switched on: it mails people, and the privacy text that
-     * covers it has to be live first. When on, it runs every second day and
-     * never overlaps itself (a slow SMTP run must not start a second sender).
+     * Always on the schedule: whether it sends is the switch in the admin
+     * panel, which the command reads when it runs (deciding at boot would cost
+     * a database query on every scheduler tick). It never overlaps itself — a
+     * slow SMTP run must not start a second sender.
      */
-    public function test_the_first_game_offer_is_scheduled_only_when_enabled(): void
+    public function test_the_first_game_offer_is_always_scheduled_and_decides_when_it_runs(): void
     {
         $event = $this->find('platform:send-first-game-offers');
-
-        if (! config('platform.first_game_offer.enabled')) {
-            $this->assertNull($event);
-
-            return;
-        }
 
         $this->assertNotNull($event);
         $this->assertSame('40 10 * * *', $event->expression);

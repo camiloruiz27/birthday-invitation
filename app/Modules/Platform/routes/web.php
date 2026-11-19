@@ -243,6 +243,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/email-marketing', [AdminEmailMarketingController::class, 'index'])->name('email-marketing');
         Route::get('/email-marketing/exportar', [AdminEmailMarketingController::class, 'export'])->name('email-marketing.export');
         Route::get('/email-marketing/vista-previa/primera-partida', [AdminEmailMarketingController::class, 'preview'])->name('email-marketing.preview');
+        Route::patch('/email-marketing/oferta-primera-partida', [AdminEmailMarketingController::class, 'toggleOffer'])->name('email-marketing.offer');
         Route::patch('/email-marketing/contactos/{user}/exclusion', [AdminEmailMarketingController::class, 'toggleExclusion'])
             ->whereNumber('user')
             ->name('email-marketing.exclusion');
