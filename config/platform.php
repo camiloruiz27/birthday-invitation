@@ -289,6 +289,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | First-game offer
+    |--------------------------------------------------------------------------
+    |
+    | A promotional email with a private one-use discount, sent once per person
+    | some days after they closed their first game (App\Modules\Platform\
+    | Actions\FirstGameOffer). Only to accounts that authorised promotional
+    | email and have not left. OFF by default, and switched on from the admin
+    | panel (Email marketing), once the privacy policy that covers it is
+    | published. `enabled` below is only the default until someone flips that
+    | switch; after that the panel's choice wins (FirstGameOffer::enabled).
+    |
+    | delay_days        Days after the game was closed.
+    | discount_percent  Off a paid case. One code per person, one use.
+    | valid_days        Days the code lasts from the moment it is sent.
+    | batch_size        Most people mailed per run. It runs every second day, so
+    |                   the backlog of games closed before launch drains over
+    |                   several runs instead of exhausting the mailbox in one go.
+    |
+    */
+
+    'first_game_offer' => [
+        'enabled' => (bool) env('PLATFORM_FIRST_GAME_OFFER_ENABLED', false),
+        'delay_days' => (int) env('PLATFORM_FIRST_GAME_OFFER_DELAY_DAYS', 5),
+        'discount_percent' => (int) env('PLATFORM_FIRST_GAME_OFFER_PERCENT', 50),
+        'valid_days' => (int) env('PLATFORM_FIRST_GAME_OFFER_VALID_DAYS', 30),
+        'batch_size' => (int) env('PLATFORM_FIRST_GAME_OFFER_BATCH', 50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP cron trigger (fallback)
     |--------------------------------------------------------------------------
     |

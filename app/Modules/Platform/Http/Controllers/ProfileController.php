@@ -14,9 +14,13 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    public function edit(): Response
+    public function edit(Request $request): Response
     {
-        return Inertia::render('Profile/Edit');
+        return Inertia::render('Profile/Edit', [
+            // Whether promotional email is on for this account. A flag, not
+            // the timestamps: the page only needs to draw the switch.
+            'marketing' => $request->user()->acceptsMarketing(),
+        ]);
     }
 
     public function update(Request $request): RedirectResponse

@@ -26,6 +26,15 @@ class UserFactory extends Factory
         ];
     }
 
+    /** Authorised to receive promotional email (not opted out). */
+    public function marketingConsent(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'marketing_consent_at' => now(),
+            'marketing_consent_source' => 'register',
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      *

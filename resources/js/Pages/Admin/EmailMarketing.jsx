@@ -16,13 +16,63 @@ function queryFrom(filters) {
 
 function ContactStatus({ contact }) {
     if (contact.excluded) return <Badge tone="danger">No contactar</Badge>;
+    if (!contact.consented) return <Badge tone="warning">Sin autorización</Badge>;
     if (!contact.email_valid) return <Badge tone="warning">Email inválido</Badge>;
     if (!contact.verified) return <Badge tone="neutral">Sin verificar</Badge>;
 
     return <Badge tone="success">Incluido</Badge>;
 }
 
-export default function EmailMarketing({ summary, filters, contacts, recentCases, lastExport }) {
+/**
+ * The on/off switch of the first-game offer. Turning it ON asks first, because
+ * it sends real email to real people (everyone already waiting goes out in the
+ * first run); turning it off is one click, since stopping should never be hard.
+ */
+function OfferSwitch({ autoOffer }) {
+    const [confirming, setConfirming] = useState(false);
+    const [busy, setBusy] = useState(false);
+
+    function set(enabled) {
+        router.patch(route('admin.email-marketing.offer'), { enabled }, {
+            preserveScroll: true,
+            onStart: () => setBusy(true),
+            onFinish: () => { setBusy(false); setConfirming(false); },
+        });
+    }
+
+    if (autoOffer.enabled) {
+        return (
+            <div className="mt-5 border-t border-line pt-5">
+                <Button variant="secondary" loading={busy} onClick={() => set(false)}>Apagar envío automático</Button>
+            </div>
+        );
+    }
+
+    if (!confirming) {
+        return (
+            <div className="mt-5 border-t border-line pt-5">
+                <Button loading={busy} onClick={() => setConfirming(true)}>Encender envío automático</Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-5 space-y-3 border-t border-line pt-5">
+            <p className="text-sm text-ink">
+                Al encender, hay <strong>{autoOffer.pending}</strong> persona(s) pendientes que recibirán el correo con su código en el próximo envío, hasta {autoOffer.batch_size} por corrida; el resto sale en las siguientes. Son correos reales.
+            </p>
+            <p className="text-xs text-ink-muted">
+                Antes de confirmar, comprueba que la Política de Privacidad con la autorización de ofertas por correo ya esté publicada y que hayas revisado la vista previa.
+            </p>
+            <div className="flex flex-wrap gap-2">
+                <Button loading={busy} onClick={() => set(true)}>Sí, encender</Button>
+                <Button variant="ghost" onClick={() => setConfirming(false)}>Cancelar</Button>
+            </div>
+        </div>
+    );
+}
+
+export default function EmailMarketing({ summary, filters, contacts, recentCases, lastExport, autoOffer }) {
     const [values, setValues] = useState(filters);
     const query = queryFrom(values);
     const setValue = (field, value) => setValues((current) => ({ ...current, [field]: value }));
@@ -44,22 +94,47 @@ export default function EmailMarketing({ summary, filters, contacts, recentCases
             <div className="space-y-8">
                 <section>
                     <SectionHeader title="Audiencia disponible" />
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
                         <StatTile label="Clientes activos" value={summary.active_clients} />
                         <StatTile label="Emails válidos" value={summary.valid_emails} />
                         <StatTile label="Sin email válido" value={summary.invalid_or_missing_emails} tone={summary.invalid_or_missing_emails ? 'alert' : 'default'} />
                         <StatTile label="Excluidos" value={summary.excluded_contacts} tone={summary.excluded_contacts ? 'alert' : 'default'} />
+                        <StatTile label="Sin autorización" value={summary.without_consent} tone={summary.without_consent ? 'alert' : 'default'} />
                     </div>
-                    <p className="mt-3 text-sm text-ink-muted">El CSV excluye automáticamente direcciones inválidas y contactos marcados como “No contactar”. El envío se gestiona en Brevo.</p>
+                    <p className="mt-3 text-sm text-ink-muted">El CSV incluye solo a quien autorizó recibir ofertas y no se dio de baja; excluye además direcciones inválidas y contactos marcados como “No contactar”. El envío se gestiona en Brevo.</p>
                     {lastExport && <p className="mt-2 text-xs text-ink-subtle">Última exportación: {lastExport.contacts_count} contacto(s) el {formatDateTime(lastExport.exported_at)}{lastExport.exported_by ? ` por ${lastExport.exported_by}` : ''}.</p>}
                 </section>
+
+                <Card as="section">
+                    <CardHeader title="Correos automáticos" description="Se envían desde la plataforma, sin pasar por Brevo." />
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div className="min-w-0 max-w-3xl">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="font-medium text-ink">Oferta de primera partida</h2>
+                                <Badge tone={autoOffer.enabled ? 'success' : 'neutral'}>{autoOffer.enabled ? 'Encendido' : 'Apagado'}</Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-ink-muted">
+                                {autoOffer.delay_days} días después de que un usuario cierra su primera partida recibe un código personal de {autoOffer.discount_percent}% para un caso de pago, de un solo uso, vigente {autoOffer.valid_days} días. Solo llega a quien autorizó ofertas y no se dio de baja. Se revisa cada 2 días, con un máximo de {autoOffer.batch_size} envíos por corrida.
+                            </p>
+                            <p className="mt-2 text-xs text-ink-subtle">
+                                Pendientes ahora: {autoOffer.pending} persona(s).{' '}
+                                {autoOffer.enabled ? `Próximo envío: ${formatDateTime(autoOffer.next_run_at)}.` : 'No se enviará nada mientras esté apagado.'}
+                                {autoOffer.changed_at ? ` Último cambio: ${formatDateTime(autoOffer.changed_at)}${autoOffer.changed_by ? ` por ${autoOffer.changed_by}` : ''}.` : ''}
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button href={route('admin.email-marketing.preview')} external variant="secondary" target="_blank" rel="noopener noreferrer">Ver vista previa del correo</Button>
+                        </div>
+                    </div>
+                    <OfferSwitch autoOffer={autoOffer} />
+                </Card>
 
                 <Card as="section">
                     <CardHeader title="Contactos" description="Filtra la audiencia antes de preparar la importación en Brevo." />
                     <form onSubmit={applyFilters} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <TextField id="marketing-search" label="Buscar" value={values.search} onChange={(value) => setValue('search', value)} placeholder="Nombre o email" />
                         <SelectField id="marketing-verification" label="Verificación" value={values.verification} onChange={(value) => setValue('verification', value)} options={[{ value: 'all', label: 'Todas' }, { value: 'verified', label: 'Email verificado' }, { value: 'unverified', label: 'Sin verificar' }]} />
-                        <SelectField id="marketing-status" label="Marketing" value={values.marketing} onChange={(value) => setValue('marketing', value)} options={[{ value: 'all', label: 'Todos' }, { value: 'included', label: 'Incluidos' }, { value: 'excluded', label: 'No contactar' }]} />
+                        <SelectField id="marketing-status" label="Marketing" value={values.marketing} onChange={(value) => setValue('marketing', value)} options={[{ value: 'all', label: 'Todos' }, { value: 'included', label: 'Incluidos' }, { value: 'excluded', label: 'No contactar' }, { value: 'no_consent', label: 'Sin autorización' }]} />
                         <SelectField id="marketing-email" label="Email" value={values.email} onChange={(value) => setValue('email', value)} options={[{ value: 'all', label: 'Todos' }, { value: 'valid', label: 'Válido' }, { value: 'invalid', label: 'Inválido o vacío' }]} />
                         <TextField id="marketing-from" label="Registrado desde" type="date" value={values.from || ''} onChange={(value) => setValue('from', value)} />
                         <TextField id="marketing-until" label="Registrado hasta" type="date" value={values.until || ''} onChange={(value) => setValue('until', value)} />

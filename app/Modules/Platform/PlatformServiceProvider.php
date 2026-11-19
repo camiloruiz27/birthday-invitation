@@ -17,6 +17,7 @@ use App\Modules\Platform\Console\Commands\PruneCache;
 use App\Modules\Platform\Console\Commands\ReconcileOrder;
 use App\Modules\Platform\Console\Commands\ReconcilePendingOrders;
 use App\Modules\Platform\Console\Commands\SendCronDiagnosticMail;
+use App\Modules\Platform\Console\Commands\SendFirstGameOffers;
 use App\Modules\Platform\Console\Commands\SyncMysteryCases;
 use App\Modules\Platform\Console\Commands\UpdateGeoIpDatabase;
 use App\Modules\Platform\Mail\AccountPasswordResetMail;
@@ -196,6 +197,7 @@ class PlatformServiceProvider extends ServiceProvider
                 ReconcileOrder::class,
                 ReconcilePendingOrders::class,
                 SendCronDiagnosticMail::class,
+                SendFirstGameOffers::class,
                 CreatePromoCode::class,
                 CreatePromoCodeBatch::class,
                 ListPromoCodes::class,
@@ -236,6 +238,27 @@ class PlatformServiceProvider extends ServiceProvider
                         ->cron('*/7 * * * *')
                         ->withoutOverlapping(5);
                 }
+
+                // The discount offer that follows a person's first closed
+                // game.
+                //
+                // Always registered; whether it sends is the switch in the
+                // admin panel (FirstGameOffer::enabled), which the command
+                // reads when it runs. Deciding here instead would cost a
+                // database query on EVERY scheduler boot, to learn something
+                // that changes once in a blue moon.
+                //
+                // Every second day, at mid-morning: the people it serves have
+                // already waited days, so a daily or hourly look only spends
+                // the host's connection allowance (500 an hour, shared with
+                // everything else) to find the same list. The gate is a
+                // continuous day count (SendFirstGameOffers::runsToday), not
+                // cron's "*/2", which would run on the 31st and the 1st. It is
+                // only evaluated at 10:40, so it costs no connection.
+                $schedule->command(SendFirstGameOffers::class)
+                    ->dailyAt('10:40')
+                    ->when(fn () => SendFirstGameOffers::runsToday())
+                    ->withoutOverlapping();
 
                 // Expired cache and session files, and a count of the files the
                 // site holds (the plan allows a fixed number). Touches only the

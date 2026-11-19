@@ -33,8 +33,8 @@ class AdminEmailMarketingTest extends TestCase
     public function test_admin_sees_contact_summary_filters_and_recent_published_cases(): void
     {
         $admin = $this->admin();
-        $included = User::factory()->create(['email' => 'included@example.com']);
-        $excluded = User::factory()->create(['email' => 'excluded@example.com']);
+        $included = User::factory()->marketingConsent()->create(['email' => 'included@example.com']);
+        $excluded = User::factory()->marketingConsent()->create(['email' => 'excluded@example.com']);
         $excluded->forceFill(['marketing_opted_out_at' => now()])->save();
         $this->catalogCase('steve-jacobs');
 
@@ -69,12 +69,126 @@ class AdminEmailMarketingTest extends TestCase
         $this->assertNull($contact->fresh()->marketing_opted_out_at);
     }
 
+    public function test_only_administrators_can_see_the_offer_preview(): void
+    {
+        $member = User::factory()->create();
+
+        $this->get(route('admin.email-marketing.preview'))->assertRedirect(route('login'));
+        $this->actingAs($member)->get(route('admin.email-marketing.preview'))->assertNotFound();
+    }
+
+    public function test_the_preview_shows_the_mail_without_creating_a_code_or_sending_anything(): void
+    {
+        // Not Mail::fake(): the preview renders the mail through the real
+        // mailer, which the fake does not provide. A listener counts sends.
+        $sent = 0;
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSending::class, function () use (&$sent) {
+            $sent++;
+        });
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin)->get(route('admin.email-marketing.preview'));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'text/html; charset=UTF-8');
+        $response->assertSee('Vista previa', false);
+        $response->assertSee('PRIMERACOMPRA-A1B2C3', false);
+        $response->assertSee('50% menos en tu próximo caso', false);
+        // The embedded-logo reference a browser cannot resolve is swapped for a URL.
+        $response->assertDontSee('src="cid:', false);
+        $response->assertSee('/brand/isotipo-email.png', false);
+
+        $this->assertSame(0, $sent);
+        $this->assertSame(0, \App\Modules\Platform\Models\PromoCode::query()->count());
+        $this->assertNull($admin->fresh()->first_game_offer_sent_at);
+    }
+
+    public function test_the_panel_reports_the_automatic_offer_and_who_is_waiting_for_it(): void
+    {
+        config(['platform.first_game_offer.enabled' => false, 'platform.first_game_offer.delay_days' => 5]);
+        $admin = $this->admin();
+        $waiting = User::factory()->marketingConsent()->create();
+        \App\Modules\Immersion\Models\Game::create([
+            'user_id' => $waiting->id, 'name' => 'Vieja', 'status' => 'finished', 'finished_at' => now()->subDays(9),
+        ]);
+        // Closed yesterday: not due yet.
+        $recent = User::factory()->marketingConsent()->create();
+        \App\Modules\Immersion\Models\Game::create([
+            'user_id' => $recent->id, 'name' => 'Reciente', 'status' => 'finished', 'finished_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.email-marketing'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('autoOffer.enabled', false)
+                ->where('autoOffer.discount_percent', 50)
+                ->where('autoOffer.delay_days', 5)
+                ->where('autoOffer.pending', 1));
+    }
+
+    public function test_only_administrators_can_flip_the_offer_switch(): void
+    {
+        $member = User::factory()->create();
+
+        $this->patch(route('admin.email-marketing.offer'), ['enabled' => true])->assertRedirect(route('login'));
+        $this->actingAs($member)->patch(route('admin.email-marketing.offer'), ['enabled' => true])->assertNotFound();
+        $this->assertNull(\App\Modules\Platform\Support\PlatformSettings::row('first_game_offer.enabled'));
+    }
+
+    public function test_the_admin_turns_the_offer_on_and_off_and_the_panel_shows_who_did_it(): void
+    {
+        config(['platform.first_game_offer.enabled' => false]);
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->get(route('admin.email-marketing'))
+            ->assertInertia(fn (Assert $page) => $page->where('autoOffer.enabled', false)->where('autoOffer.changed_by', null)->has('autoOffer.next_run_at'));
+
+        $this->actingAs($admin)->patch(route('admin.email-marketing.offer'), ['enabled' => true])
+            ->assertSessionHas('status');
+        $this->assertTrue(\App\Modules\Platform\Actions\FirstGameOffer::enabled());
+
+        $this->actingAs($admin)->get(route('admin.email-marketing'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('autoOffer.enabled', true)
+                ->where('autoOffer.changed_by', $admin->name)
+                ->whereType('autoOffer.changed_at', 'string'));
+
+        $this->actingAs($admin)->patch(route('admin.email-marketing.offer'), ['enabled' => false])
+            ->assertSessionHas('status');
+        $this->assertFalse(\App\Modules\Platform\Actions\FirstGameOffer::enabled());
+    }
+
+    public function test_the_switch_needs_a_value(): void
+    {
+        $this->actingAs($this->admin())
+            ->patch(route('admin.email-marketing.offer'), [])
+            ->assertSessionHasErrors('enabled');
+    }
+
+    public function test_csv_leaves_out_anyone_who_never_authorised_offers(): void
+    {
+        $admin = $this->admin();
+        User::factory()->marketingConsent()->create(['email' => 'si@example.com']);
+        User::factory()->create(['email' => 'nunca-autorizo@example.com']);
+
+        $csv = $this->actingAs($admin)->get(route('admin.email-marketing.export'))->streamedContent();
+
+        $this->assertStringContainsString('si@example.com', $csv);
+        $this->assertStringNotContainsString('nunca-autorizo@example.com', $csv);
+
+        $this->actingAs($admin)
+            ->get(route('admin.email-marketing', ['marketing' => 'no_consent']))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('summary.without_consent', 1)
+                ->has('contacts', 1)
+                ->where('contacts.0.consented', false));
+    }
+
     public function test_csv_contains_only_valid_non_excluded_contacts_and_records_the_export(): void
     {
         $admin = $this->admin();
-        User::factory()->create(['name' => 'Ana Pérez', 'email' => 'ana@example.com']);
-        User::factory()->create(['name' => 'Correo Malo', 'email' => 'correo-invalido']);
-        $excluded = User::factory()->create(['name' => 'No Contactar', 'email' => 'no@example.com']);
+        User::factory()->marketingConsent()->create(['name' => 'Ana Pérez', 'email' => 'ana@example.com']);
+        User::factory()->marketingConsent()->create(['name' => 'Correo Malo', 'email' => 'correo-invalido']);
+        $excluded = User::factory()->marketingConsent()->create(['name' => 'No Contactar', 'email' => 'no@example.com']);
         $excluded->forceFill(['marketing_opted_out_at' => now()])->save();
 
         $response = $this->actingAs($admin)->get(route('admin.email-marketing.export'));

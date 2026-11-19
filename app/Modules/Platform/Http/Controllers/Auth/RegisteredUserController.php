@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\Platform\Ads\AdEvents;
 use App\Modules\Platform\Rules\CaptchaRule;
 use App\Modules\Platform\Support\Attribution;
+use App\Modules\Platform\Support\MarketingConsent;
 use App\Modules\Platform\Support\PurchaseIntent;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +42,9 @@ class RegisteredUserController extends Controller
             // Express, prior authorization (Ley 1581 de 2012): the box starts
             // unticked and nothing is created without it.
             'accept_terms' => ['accepted'],
+            // Promotional email is a separate, optional authorisation: the
+            // account is created either way, and it is off unless ticked.
+            'accept_marketing' => ['nullable', 'boolean'],
         ] + CaptchaRule::rules($request->ip()));
 
         // Where the visitor meant to go once registered (see create()), kept
@@ -59,6 +63,10 @@ class RegisteredUserController extends Controller
             'privacy_version' => config('legal.privacy_version'),
             'attribution' => Attribution::forNewUser($request, $intended),
         ]);
+
+        if ($request->boolean('accept_marketing')) {
+            MarketingConsent::grant($user, MarketingConsent::SOURCE_REGISTER);
+        }
 
         // Registering grants no case access: access comes from an Entitlement,
         // never from the account itself. The event is also what sends the
